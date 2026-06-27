@@ -12,6 +12,7 @@ export const EVENT_TYPES = [
   "points_redeemed",
   "tier_upgraded",
   "template_published",
+  "pass_removed",
 ] as const;
 
 export type EventType = (typeof EVENT_TYPES)[number];

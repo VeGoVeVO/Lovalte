@@ -29,7 +29,7 @@ export const registerDelivery: ContextModule = async (app, deps) => {
 
   // Application handlers
   const registerDevice = new RegisterDeviceHandler(passRead, deviceRepo, regRepo);
-  const unregisterDevice = new UnregisterDeviceHandler(passRead, deviceRepo, regRepo);
+  const unregisterDevice = new UnregisterDeviceHandler(passRead, deviceRepo, regRepo, deps.bus);
   const getUpdatedSerials = new GetUpdatedSerialsHandler(regRepo);
   const getLatestPass = new GetLatestPassHandler(passRead, passBinary);
   const logDiagnostics = new LogDeviceDiagnosticsHandler();

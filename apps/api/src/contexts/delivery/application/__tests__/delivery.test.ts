@@ -176,7 +176,7 @@ describe("UnregisterDeviceHandler", () => {
     const passes = makePassRead();
     const devices = makeDeviceRepo(device);
     const registrations = makeRegRepo({ count: 0 });
-    const handler = new UnregisterDeviceHandler(passes, devices, registrations);
+    const handler = new UnregisterDeviceHandler(passes, devices, registrations, { publish: async () => {}, subscribe: () => {} } as DomainEventBus);
 
     const result = await handler.execute(baseCmd);
 
@@ -192,7 +192,7 @@ describe("UnregisterDeviceHandler", () => {
     const passes = makePassRead();
     const devices = makeDeviceRepo(device);
     const registrations = makeRegRepo({ count: 0 });
-    const handler = new UnregisterDeviceHandler(passes, devices, registrations);
+    const handler = new UnregisterDeviceHandler(passes, devices, registrations, { publish: async () => {}, subscribe: () => {} } as DomainEventBus);
 
     await handler.execute(baseCmd);
 
@@ -204,7 +204,7 @@ describe("UnregisterDeviceHandler", () => {
     const passes = makePassRead();
     const devices = makeDeviceRepo(device);
     const registrations = makeRegRepo({ count: 2 });
-    const handler = new UnregisterDeviceHandler(passes, devices, registrations);
+    const handler = new UnregisterDeviceHandler(passes, devices, registrations, { publish: async () => {}, subscribe: () => {} } as DomainEventBus);
 
     await handler.execute(baseCmd);
 
@@ -215,7 +215,7 @@ describe("UnregisterDeviceHandler", () => {
     const passes = makePassRead();
     const devices = makeDeviceRepo(null); // findByLibId returns null
     const registrations = makeRegRepo();
-    const handler = new UnregisterDeviceHandler(passes, devices, registrations);
+    const handler = new UnregisterDeviceHandler(passes, devices, registrations, { publish: async () => {}, subscribe: () => {} } as DomainEventBus);
 
     const result = await handler.execute(baseCmd);
 
@@ -227,7 +227,7 @@ describe("UnregisterDeviceHandler", () => {
     const passes = makePassRead();
     const devices = makeDeviceRepo(null);
     const registrations = makeRegRepo();
-    const handler = new UnregisterDeviceHandler(passes, devices, registrations);
+    const handler = new UnregisterDeviceHandler(passes, devices, registrations, { publish: async () => {}, subscribe: () => {} } as DomainEventBus);
 
     const result = await handler.execute({ ...baseCmd, authToken: "bad-token" });
 

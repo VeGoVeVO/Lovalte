@@ -1,4 +1,5 @@
 import { Result, ok, err, UnauthorizedError } from "../../../kernel";
+import type { DomainEventBus } from "../../../kernel";
 import type { IDeviceRepository, IRegistrationRepository, IPassReadPort } from "../domain/ports";
 
 export interface UnregisterDeviceCommand {
@@ -19,6 +20,7 @@ export class UnregisterDeviceHandler {
     private readonly passes: IPassReadPort,
     private readonly devices: IDeviceRepository,
     private readonly registrations: IRegistrationRepository,
+    private readonly bus: DomainEventBus,
   ) {}
 
   async execute(cmd: UnregisterDeviceCommand): Promise<Result<void, UnauthorizedError>> {
@@ -39,6 +41,15 @@ export class UnregisterDeviceHandler {
     if (remaining === 0) {
       await this.devices.delete(device.id.value);
     }
+
+    // The customer removed the card from their Wallet — surface it so Analytics
+    // can track removals (cross-context via the bus; ids only).
+    await this.bus.publish([{
+      name: "PassRemoved",
+      occurredAt: new Date(),
+      aggregateId: pass.id,
+      payload: { passId: pass.id, tenantId: pass.tenantId, serial: cmd.serialNumber },
+    }]);
 
     return ok(undefined);
   }

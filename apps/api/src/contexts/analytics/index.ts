@@ -98,6 +98,16 @@ export const registerAnalytics: ContextModule = async (
     });
   });
 
+  // PassRemoved → pass_removed (customer deleted the card from Apple Wallet)
+  deps.bus.subscribe("PassRemoved", async (event) => {
+    const tenantId = extractTenantId(event.payload);
+    if (!tenantId) return;
+    await ingest("pass_removed", tenantId, event.occurredAt, {
+      passId: event.payload["passId"] ?? event.aggregateId,
+      serial: event.payload["serial"],
+    });
+  });
+
   // CardTemplatePublished → template_published
   deps.bus.subscribe("CardTemplatePublished", async (event) => {
     const tenantId = extractTenantId(event.payload);
