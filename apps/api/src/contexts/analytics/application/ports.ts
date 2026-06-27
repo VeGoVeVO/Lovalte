@@ -6,6 +6,7 @@ export interface OverviewDTO {
   readonly totalScans: number;
   readonly totalRedemptions: number;
   readonly pointsLiability: number;
+  readonly cardsRemoved: number;
 }
 
 /** One data point in a daily timeseries. */

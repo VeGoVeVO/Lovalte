@@ -108,11 +108,21 @@ export class AnalyticsRepository implements IAnalyticsRepository {
         [tenantId, ["points_earned", "points_redeemed"]],
       );
 
+      // Cards removed from Apple Wallet (PassRemoved → pass_removed events)
+      const removedRes = await client.query<{ total: string }>(
+        `SELECT COUNT(*) AS total
+         FROM   analytics_events
+         WHERE  tenant_id = $1
+           AND  type = $2`,
+        [tenantId, "pass_removed"],
+      );
+
       return {
         totalMembers: parseInt(membersRes.rows[0]?.total ?? "0", 10),
         totalScans: parseInt(scansRes.rows[0]?.total ?? "0", 10),
         totalRedemptions: parseInt(redemptionsRes.rows[0]?.total ?? "0", 10),
         pointsLiability: parseInt(liabilityRes.rows[0]?.liability ?? "0", 10),
+        cardsRemoved: parseInt(removedRes.rows[0]?.total ?? "0", 10),
       };
     });
   }
