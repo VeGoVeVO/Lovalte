@@ -54,7 +54,7 @@ export const css = `
   --s-1:.5rem; --s-2:1rem; --s-3:1.5rem; --s-4:2rem; --s-6:3rem; --s-8:5rem;
 
   color:var(--text);
-  background:var(--bg);
+  background:transparent; /* show the app-wide AmbientBackground through the glass */
   font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Inter",system-ui,sans-serif;
   -webkit-font-smoothing:antialiased;
   letter-spacing:-.011em;

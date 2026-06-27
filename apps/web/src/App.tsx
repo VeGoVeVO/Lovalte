@@ -1,5 +1,6 @@
 import { Routes, Route } from "react-router-dom";
-import { globalCss } from "./design-system/halo";
+import { globalCss, AmbientBackground } from "./design-system/halo";
+import { APP_VERSION } from "./version";
 import { LovalteLanding } from "./features/marketing/LovalteLanding";
 import { RequireAuth } from "./lib/auth";
 import { LoginPage } from "./features/auth/LoginPage";
@@ -19,6 +20,7 @@ export function App() {
   return (
     <>
       <style>{globalCss}</style>
+      <AmbientBackground />
       <Routes>
       <Route path="/" element={<LovalteLanding />} />
       <Route path="/login" element={<LoginPage />} />
@@ -37,6 +39,16 @@ export function App() {
 
       <Route path="*" element={<LovalteLanding />} />
       </Routes>
+      <span
+        aria-hidden="true"
+        style={{
+          position: "fixed", bottom: "calc(6px + env(safe-area-inset-bottom, 0px))", right: 10,
+          fontSize: "0.62rem", color: "rgba(32,36,42,.28)", letterSpacing: ".03em",
+          fontVariantNumeric: "tabular-nums", pointerEvents: "none", zIndex: 5,
+        }}
+      >
+        v{APP_VERSION}
+      </span>
     </>
   );
 }

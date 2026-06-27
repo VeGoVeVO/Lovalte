@@ -9,6 +9,8 @@ RUN npm ci
 COPY apps/web apps/web
 # The SPA calls the API at same-origin /api and /wallet (Caddy proxies them),
 # so there is no build-time API URL to inject.
+ARG APP_VERSION=0.0.0-dev
+ENV VITE_APP_VERSION=$APP_VERSION
 RUN npm run build --workspace apps/web
 
 # ── Caddy serves the static SPA AND reverse-proxies the API (auto-HTTPS) ──────

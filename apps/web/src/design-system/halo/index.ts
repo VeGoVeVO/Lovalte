@@ -16,6 +16,7 @@ export { Reveal } from "./components/Reveal";
 export { Dropdown, type DropdownOption } from "./components/Dropdown";
 export { ColorPicker } from "./components/ColorPicker";
 export { Scrollbar } from "./components/Scrollbar";
+export { AmbientBackground } from "./components/AmbientBackground";
 
 // hooks + utilities + icon set
 export { useReveal } from "./hooks/useReveal";

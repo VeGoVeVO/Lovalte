@@ -5,6 +5,10 @@
  * small set of reusable enter animations. All motion is reduced-motion aware.
  */
 export const globalCss = `
+/* ── Base canvas: soft dot grid behind the drifting AmbientBackground orbs ── */
+html { background-color: #FCFCFD; background-image: radial-gradient(rgba(32,36,42,.03) 1px, transparent 1px); background-size: 32px 32px; }
+body, #root { background: transparent; }
+
 /* ── Custom scrollbar (Firefox + WebKit/Blink) ─────────────────────────── */
 * { scrollbar-width: thin; scrollbar-color: rgba(120,130,150,.42) transparent; }
 *::-webkit-scrollbar { width: 10px; height: 10px; }
