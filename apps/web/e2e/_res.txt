@@ -1,0 +1,1 @@
+400 {"error":{"code":"VALIDATION","message":"Invalid request","details":[{"code":"invalid_type","expected":"object","received":"string","path":[],"message":"Expected object, received string"}]}}
