@@ -115,6 +115,7 @@ describe("IssuePassHandler", () => {
   let cache: IPassBufferCache;
   let redis: ReturnType<typeof makeRedis>;
   let clock: Clock;
+  let bus: ReturnType<typeof makeBus>;
 
   beforeEach(() => {
     passes    = makePassRepo();
@@ -123,12 +124,13 @@ describe("IssuePassHandler", () => {
     cache     = makeCache();
     redis     = makeRedis();
     clock     = makeClock();
+    bus       = makeBus();
   });
 
   function handler() {
     return new IssuePassHandler(
       passes, templates, signer, cache,
-      redis as never, clock, FAKE_CONFIG,
+      redis as never, clock, FAKE_CONFIG, bus,
     );
   }
 
@@ -145,20 +147,15 @@ describe("IssuePassHandler", () => {
     expect(result.value.createdAt).toEqual(FIXED_NOW);
   });
 
-  it("emits PassIssued event on the aggregate before persisting", async () => {
-    let capturedPass: Pass | undefined;
-    passes.save = vi.fn().mockImplementation(async (p: Pass) => { capturedPass = p; });
-
+  it("publishes PassIssued via the bus after persisting", async () => {
     await handler().execute({
       memberId: MEMBER_ID, passTypeId: PASS_TYPE_ID, tenantId: TENANT_ID,
     });
 
-    expect(capturedPass).toBeDefined();
-    const events = capturedPass!.pullEvents();
-    expect(events.some(e => e.name === "PassIssued")).toBe(true);
-    const issued = events.find(e => e.name === "PassIssued")!;
-    expect(issued.payload.memberId).toBe(MEMBER_ID);
-    expect(issued.payload.tenantId).toBe(TENANT_ID);
+    const issued = bus.captured.find(e => e.name === "PassIssued");
+    expect(issued).toBeDefined();
+    expect(issued!.payload.memberId).toBe(MEMBER_ID);
+    expect(issued!.payload.tenantId).toBe(TENANT_ID);
   });
 
   it("caches the signed buffer and stores nonce in Redis", async () => {

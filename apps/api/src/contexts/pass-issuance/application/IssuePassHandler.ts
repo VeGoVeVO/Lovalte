@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { createHmac } from "node:crypto";
 import type Redis from "ioredis";
-import { NotFoundError, ConflictError, type Result, ok, err, type Clock } from "../../../kernel";
+import { NotFoundError, ConflictError, type Result, ok, err, type Clock, type DomainEventBus } from "../../../kernel";
 import type { AppConfig } from "../../../config/env";
 import { Pass } from "../domain/Pass";
 import { SerialNumber } from "../domain/SerialNumber";
@@ -63,6 +63,7 @@ export class IssuePassHandler {
     private readonly redis: Redis,
     private readonly clock: Clock,
     private readonly config: AppConfig,
+    private readonly bus: DomainEventBus,
   ) {}
 
   async execute(cmd: IssuePassCommand): Promise<Result<IssuePassDto>> {
@@ -126,8 +127,10 @@ export class IssuePassHandler {
     // Cache signed buffer keyed by (serial, version)
     await this.cache.put(serial.value, pass.version, buffer);
 
-    // Persist pass
+    // Persist pass, then publish PassIssued so the Membership context enrols the
+    // member and Analytics records it (one-aggregate-per-tx → publish after save).
     await this.passes.save(pass);
+    await this.bus.publish(pass.pullEvents());
 
     return ok({
       passId:       pass.id.value,
