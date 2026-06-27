@@ -1,0 +1,13 @@
+{
+  "name": "lovalte-pkpass-prototype",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Minimal Apple Wallet loyalty-card (storeCard) .pkpass generator for on-device testing",
+  "scripts": {
+    "generate": "node generate.js",
+    "check": "node -e \"const{solidPng}=require('./lib/png');const p=solidPng(8,8,[1,2,3]);if(p.slice(0,8).toString('hex')!=='89504e470d0a1a0a')process.exit(1);console.log('png ok')\""
+  },
+  "dependencies": {
+    "passkit-generator": "^3.5.7"
+  }
+}

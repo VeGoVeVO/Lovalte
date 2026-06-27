@@ -1,0 +1,40 @@
+{
+  "formatVersion": 1,
+  "passTypeIdentifier": "pass.com.lovalte.loyalty",
+  "serialNumber": "LOVALTE-PROTO-0001",
+  "teamIdentifier": "K3C484R344",
+  "organizationName": "Lovalte",
+  "description": "Lovalte loyalty card (prototype)",
+
+  "logoText": "Lovalte",
+  "backgroundColor": "rgb(44, 28, 14)",
+  "foregroundColor": "rgb(255, 245, 230)",
+  "labelColor": "rgb(200, 160, 100)",
+
+  "barcodes": [
+    {
+      "format": "PKBarcodeFormatQR",
+      "message": "LOVALTE-PROTO-0001",
+      "messageEncoding": "iso-8859-1",
+      "altText": "LOVALTE-PROTO-0001"
+    }
+  ],
+
+  "storeCard": {
+    "headerFields": [
+      { "key": "tier", "label": "TIER", "value": "Gold" }
+    ],
+    "primaryFields": [
+      { "key": "points", "label": "POINTS", "value": 250 }
+    ],
+    "secondaryFields": [
+      { "key": "member", "label": "MEMBER", "value": "Test User" }
+    ],
+    "auxiliaryFields": [
+      { "key": "next", "label": "NEXT REWARD AT", "value": 500 }
+    ],
+    "backFields": [
+      { "key": "about", "label": "About", "value": "Lovalte loyalty prototype. This is a static pass for Apple Wallet testing — points do not update remotely yet." }
+    ]
+  }
+}

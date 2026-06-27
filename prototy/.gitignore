@@ -1,0 +1,8 @@
+node_modules/
+# never commit signing material or the built pass
+certs/*.pem
+certs/*.p12
+certs/*.cer
+certs/*.key
+certs/*.csr
+*.pkpass
