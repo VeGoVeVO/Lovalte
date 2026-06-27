@@ -33,8 +33,7 @@ export const registerPassIssuance: ContextModule = async (app, deps) => {
 
   // ── Handlers ─────────────────────────────────────────────────────────────
   const issuePass = new IssuePassHandler(
-    passRepo, templateRepo, signer, bufferCache,
-    deps.redis, deps.clock, deps.config, deps.bus,
+    passRepo, templateRepo, signer, bufferCache, deps.clock, deps.bus,
   );
   const getPassPkpass    = new GetPassPkpassHandler(passRepo, templateRepo, signer, bufferCache);
   const generateQrToken  = new GenerateQrTokenHandler(passRepo, deps.redis, deps.config);

@@ -1,7 +1,7 @@
 import type { DomainEventBus, Clock, Result } from "../../../kernel";
-import { ok, err, DomainError, ForbiddenError, ValidationError } from "../../../kernel";
+import { ok, err, NotFoundError, ValidationError } from "../../../kernel";
 import { RedemptionEvent, type ScanAction } from "../domain/RedemptionEvent";
-import type { IRedemptionEventRepository, IQrVerifier, ICacheStore } from "./ports";
+import type { IRedemptionEventRepository, IPassLookup, ICacheStore } from "./ports";
 
 export interface RedeemScanCommand {
   readonly qrPayload: string;
@@ -25,25 +25,27 @@ export interface RedeemScanDTO {
 const IDEM_TTL_SECONDS = 30;         // 30 s window to absorb double-taps / network retries
 const IDEM_KEY_PREFIX = "scan:idem:";
 
+/** A wallet barcode is a passId (UUID). Reject anything that can't be one. */
+const PASS_ID_RE = /^[0-9a-fA-F-]{8,64}$/;
+
 /**
  * RedeemScanHandler — orchestrates the full scan-to-award/redeem flow.
  *
- * Guard order (per security threat model):
- *  1. HMAC signature verification
- *  2. Tenant isolation check (token.tenantId must match caller session)
- *  3. Idempotency guard (30-second Redis NX) — double-tap / retry safety
- *  4. Persist RedemptionEvent
- *  5. Cache result for the idempotency window
- *  6. Publish RedemptionApplied for Membership context
+ * The wallet barcode carries only the passId (industry standard for loyalty
+ * cards). Guard order:
+ *  1. Resolve + tenant-isolate: the pass must belong to the authenticated
+ *     caller's tenant (RLS-scoped lookup — a foreign or unknown card is rejected).
+ *  2. Idempotency guard (30 s) — absorb double-taps / retries.
+ *  3. Persist RedemptionEvent → cache result → publish RedemptionApplied.
  *
- * The loyalty card's wallet QR is intentionally REUSABLE (scanned every visit),
- * so there is no single-use nonce guard. ponytail: add a per-member per-visit
- * cooldown here if point-farming becomes a concern (a business rule).
+ * The loyalty card's QR is intentionally REUSABLE (scanned every visit), so
+ * there is no single-use nonce. ponytail: add a per-member per-visit cooldown
+ * here if point-farming becomes a concern (a business rule).
  */
 export class RedeemScanHandler {
   constructor(
     private readonly repo: IRedemptionEventRepository,
-    private readonly verifier: IQrVerifier,
+    private readonly passes: IPassLookup,
     private readonly cache: ICacheStore,
     private readonly bus: DomainEventBus,
     private readonly clock: Clock,
@@ -55,32 +57,30 @@ export class RedeemScanHandler {
       return err(new ValidationError("amount must be a positive integer"));
     }
 
-    // 1. Verify QR token HS256 signature; parse claims
-    let token: Awaited<ReturnType<IQrVerifier["verify"]>>;
-    try {
-      token = await this.verifier.verify(cmd.qrPayload);
-    } catch (e) {
-      if (e instanceof DomainError) return err(e);
-      return err(new ValidationError("Invalid QR token"));
+    // 1. The barcode is the passId. Validate shape, then resolve it scoped to the
+    //    caller's tenant — this both looks it up and enforces tenant isolation:
+    //    a pass from another business is invisible under RLS → "card not found".
+    const passId = cmd.qrPayload.trim();
+    if (!PASS_ID_RE.test(passId)) {
+      return err(new ValidationError("Unrecognized QR code"));
+    }
+    const belongs = await this.passes.existsForTenant(passId, cmd.callerTenantId);
+    if (!belongs) {
+      return err(new NotFoundError("Card not found for this business"));
     }
 
-    // 2. Tenant isolation — tid in token must match the authenticated session
-    if (token.tenantId !== cmd.callerTenantId) {
-      return err(new ForbiddenError("QR token tenant mismatch"));
-    }
-
-    // 3. Idempotency guard — absorb double-taps / retries within 30 s
+    // 2. Idempotency guard — absorb double-taps / retries within 30 s
     const idemKey = `${IDEM_KEY_PREFIX}${cmd.idempotencyKey}`;
     const cached = await this.cache.get(idemKey);
     if (cached !== null) {
       return ok(JSON.parse(cached) as RedeemScanDTO);
     }
 
-    // 5. Persist the append-only redemption event
+    // 3. Persist the append-only redemption event
     const delta = cmd.action === "award" ? cmd.amount : -cmd.amount;
     const evt = RedemptionEvent.record({
       tenantId: cmd.callerTenantId,
-      passId: token.passId,
+      passId,
       action: cmd.action,
       delta,
       idempotencyKey: cmd.idempotencyKey,
@@ -89,16 +89,16 @@ export class RedeemScanHandler {
 
     await this.repo.save(evt);
 
-    // 6. Cache result for the idempotency window
+    // 4. Cache result for the idempotency window
     const result: RedeemScanDTO = {
       eventId: evt.id.value,
-      passId: token.passId,
+      passId,
       action: cmd.action,
       delta: evt.delta,
     };
     await this.cache.set(idemKey, JSON.stringify(result), IDEM_TTL_SECONDS);
 
-    // 7. Publish domain events (RedemptionApplied → Membership context)
+    // 5. Publish domain events (RedemptionApplied → Membership context)
     await this.bus.publish(evt.pullEvents());
 
     return ok(result);

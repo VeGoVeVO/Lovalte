@@ -113,7 +113,6 @@ describe("IssuePassHandler", () => {
   let templates: IPassTemplateRepository;
   let signer: IPassSigningPort;
   let cache: IPassBufferCache;
-  let redis: ReturnType<typeof makeRedis>;
   let clock: Clock;
   let bus: ReturnType<typeof makeBus>;
 
@@ -122,15 +121,13 @@ describe("IssuePassHandler", () => {
     templates = makeTemplateRepo();
     signer    = makeSigner();
     cache     = makeCache();
-    redis     = makeRedis();
     clock     = makeClock();
     bus       = makeBus();
   });
 
   function handler() {
     return new IssuePassHandler(
-      passes, templates, signer, cache,
-      redis as never, clock, FAKE_CONFIG, bus,
+      passes, templates, signer, cache, clock, bus,
     );
   }
 
@@ -158,14 +155,20 @@ describe("IssuePassHandler", () => {
     expect(issued!.payload.tenantId).toBe(TENANT_ID);
   });
 
-  it("caches the signed buffer and stores nonce in Redis", async () => {
-    await handler().execute({
+  it("caches the signed buffer and encodes the bare passId as the wallet barcode", async () => {
+    const result = await handler().execute({
       memberId: MEMBER_ID, passTypeId: PASS_TYPE_ID, tenantId: TENANT_ID,
     });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
     expect(cache.put).toHaveBeenCalledOnce();
-    expect(redis.set).toHaveBeenCalledOnce();
-    const [redisKey] = (redis.set as ReturnType<typeof vi.fn>).mock.calls[0] as string[];
-    expect(redisKey).toMatch(/^qr:nonce:/);
+
+    // The barcode message must be the short passId (sparse → reliably scannable),
+    // never an HMAC token or a "lovalte:pass:" prefix.
+    const passJson = (signer.sign as ReturnType<typeof vi.fn>).mock.calls[0][0] as {
+      barcodes: { message: string }[];
+    };
+    expect(passJson.barcodes[0].message).toBe(result.value.passId);
   });
 
   it("is idempotent: returns existing pass without calling save again", async () => {

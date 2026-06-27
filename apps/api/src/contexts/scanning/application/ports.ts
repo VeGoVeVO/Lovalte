@@ -1,4 +1,3 @@
-import type { QrToken } from "../domain/QrToken";
 import type { RedemptionEvent } from "../domain/RedemptionEvent";
 
 /** Persistence port for the append-only redemption_events table. */
@@ -8,12 +7,15 @@ export interface IRedemptionEventRepository {
 }
 
 /**
- * Cryptographic QR token verification port.
- * Implementations live in infrastructure/; they call node:crypto directly.
- * Throws a DomainError subclass on invalid signature, expired token, or malformed payload.
+ * Resolves a scanned wallet barcode (the bare passId) to whether it belongs to
+ * the scanning tenant. Implemented in infrastructure/ as an RLS-scoped read of
+ * the pass-issuance `passes` table — so a pass from another tenant is invisible
+ * and the scan is rejected, giving tenant isolation for free. No crypto: the
+ * trust boundary is the authenticated staff session, not the barcode.
  */
-export interface IQrVerifier {
-  verify(rawToken: string): Promise<QrToken>;
+export interface IPassLookup {
+  /** True iff a live (non-voided) pass with this id exists for `tenantId`. */
+  existsForTenant(passId: string, tenantId: string): Promise<boolean>;
 }
 
 /**

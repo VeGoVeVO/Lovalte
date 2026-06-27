@@ -60,8 +60,9 @@ export class GetPassPkpassHandler {
       return err(new NotFoundError("Pass template not found"));
     }
 
-    // Re-use a stable QR message (the barcode already encodes passId; keep it consistent)
-    const qrMessage = `lovalte:pass:${pass.id.value}`;
+    // Wallet barcode = the bare passId (same as IssuePassHandler) — short → sparse
+    // QR that scans reliably; the staff-authed scan endpoint resolves it.
+    const qrMessage = pass.id.value;
     const passJson  = this.builder.build(pass, template, qrMessage);
     const buffer    = await this.signer.sign(
       passJson as unknown as Record<string, unknown>,

@@ -1,8 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { createHmac } from "node:crypto";
-import type Redis from "ioredis";
 import { NotFoundError, ConflictError, type Result, ok, err, type Clock, type DomainEventBus } from "../../../kernel";
-import type { AppConfig } from "../../../config/env";
 import { Pass } from "../domain/Pass";
 import { SerialNumber } from "../domain/SerialNumber";
 import { AuthenticationToken } from "../domain/AuthenticationToken";
@@ -29,23 +26,6 @@ export interface IssuePassDto {
   createdAt: Date;
 }
 
-/** QR nonce TTL: 10 years (pass lifetime; nonce is the real single-use guard). */
-const QR_NONCE_TTL_SECONDS = 315_360_000;
-
-/** Build a compact HMAC-SHA256 QR token: base64url(payload).base64url(sig). */
-function buildQrToken(
-  passId: string,
-  tenantId: string,
-  nonce: string,
-  secret: string,
-): string {
-  const iat     = Math.floor(Date.now() / 1000);
-  const payload = JSON.stringify({ passId, tenantId, nonce, iat });
-  const body    = Buffer.from(payload).toString("base64url");
-  const sig     = createHmac("sha256", secret).update(body).digest("base64url");
-  return `${body}.${sig}`;
-}
-
 /**
  * IssuePassHandler
  *
@@ -60,9 +40,7 @@ export class IssuePassHandler {
     private readonly templates: IPassTemplateRepository,
     private readonly signer: IPassSigningPort,
     private readonly cache: IPassBufferCache,
-    private readonly redis: Redis,
     private readonly clock: Clock,
-    private readonly config: AppConfig,
     private readonly bus: DomainEventBus,
   ) {}
 
@@ -93,9 +71,6 @@ export class IssuePassHandler {
     const authToken = AuthenticationToken.fromRaw(randomBytes(32).toString("hex"));
     const now       = this.clock.now();
 
-    // Generate QR nonce (token is built after pass.id is known below)
-    const nonce = randomBytes(16).toString("hex");
-
     const fieldValues = (cmd.fieldValues ?? []).map(fv => ({ ...fv }));
     const pass = Pass.issue({
       passTypeId:   cmd.passTypeId,
@@ -107,15 +82,11 @@ export class IssuePassHandler {
       now,
     });
 
-    // Build QR token now that we have the real passId
-    const qrMessage = buildQrToken(
-      pass.id.value, cmd.tenantId, nonce, this.config.QR_TOKEN_SECRET,
-    );
-
-    // Store nonce in Redis (single-use guard; TTL = pass lifetime)
-    await this.redis.set(
-      `qr:nonce:${nonce}`, pass.id.value, "EX", QR_NONCE_TTL_SECONDS,
-    );
+    // Wallet barcode = the bare passId. Industry standard for loyalty cards:
+    // a short, stable identifier → sparse (low-version) QR that scans reliably
+    // off a phone screen. Trust/tenant-isolation lives in the staff-authed scan
+    // endpoint, not in the barcode (a signed token only bloated the QR).
+    const qrMessage = pass.id.value;
 
     // Build + sign pass document (throws DomainError if certs not configured)
     const passJson = this.builder.build(pass, template, qrMessage);

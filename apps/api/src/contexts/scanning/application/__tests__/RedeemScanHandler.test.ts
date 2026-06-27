@@ -1,35 +1,24 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { RedeemScanHandler, type RedeemScanCommand } from "../RedeemScanHandler";
-import type { IRedemptionEventRepository, IQrVerifier, ICacheStore } from "../ports";
+import type { IRedemptionEventRepository, IPassLookup, ICacheStore } from "../ports";
 import type { DomainEvent, DomainEventBus, Clock } from "../../../../kernel";
-import { ValidationError, ConflictError, ForbiddenError } from "../../../../kernel";
-import { QrToken } from "../../domain/QrToken";
+import { ValidationError, NotFoundError } from "../../../../kernel";
 
 // ─── Fakes ───────────────────────────────────────────────────────────────────
 
-const TENANT_ID = "tenant-uuid-1";
-const PASS_ID = "pass-uuid-1";
-const NONCE = "aabbccddeeff0011";
+const TENANT_ID = "11111111-1111-4111-8111-111111111111";
+const PASS_ID = "22222222-2222-4222-8222-222222222222";
 const NOW = new Date("2026-06-01T10:00:00Z");
 
-function makeToken(overrides: Partial<ReturnType<typeof QrToken.create>["props"]> = {}): QrToken {
-  return QrToken.create({
-    passId: PASS_ID,
-    tenantId: TENANT_ID,
-    nonce: NONCE,
-    iat: Math.floor(NOW.getTime() / 1000) - 60,
-    exp: Math.floor(NOW.getTime() / 1000) + 315360000, // +10 years
-    ...overrides,
-  });
+/** The wallet barcode is now the bare passId (a UUID). */
+function makePassLookup(belongs = true): IPassLookup {
+  return { existsForTenant: vi.fn().mockResolvedValue(belongs) };
 }
 
-function makeCacheStore(opts: {
-  nonceIsNew?: boolean;
-  cachedIdem?: string | null;
-} = {}): ICacheStore {
-  const { nonceIsNew = true, cachedIdem = null } = opts;
+function makeCacheStore(opts: { cachedIdem?: string | null } = {}): ICacheStore {
+  const { cachedIdem = null } = opts;
   return {
-    setNx: vi.fn().mockResolvedValue(nonceIsNew),
+    setNx: vi.fn().mockResolvedValue(true),
     get: vi.fn().mockResolvedValue(cachedIdem),
     set: vi.fn().mockResolvedValue(undefined),
   };
@@ -55,7 +44,7 @@ function makeBus(): DomainEventBus & { published: DomainEvent[] } {
 const fixedClock: Clock = { now: () => NOW };
 
 const baseCmd: RedeemScanCommand = {
-  qrPayload: "valid.qr.token",
+  qrPayload: PASS_ID,
   action: "award",
   amount: 10,
   idempotencyKey: "idem-key-abc",
@@ -76,9 +65,9 @@ describe("RedeemScanHandler", () => {
 
   describe("happy path — award", () => {
     it("persists a RedemptionEvent, returns the DTO, and emits RedemptionApplied", async () => {
-      const verifier: IQrVerifier = { verify: vi.fn().mockResolvedValue(makeToken()) };
-      const cache = makeCacheStore({ nonceIsNew: true, cachedIdem: null });
-      const handler = new RedeemScanHandler(repo, verifier, cache, bus, fixedClock);
+      const passes = makePassLookup(true);
+      const cache = makeCacheStore({ cachedIdem: null });
+      const handler = new RedeemScanHandler(repo, passes, cache, bus, fixedClock);
 
       const result = await handler.execute(baseCmd);
 
@@ -89,6 +78,9 @@ describe("RedeemScanHandler", () => {
       expect(result.value.action).toBe("award");
       expect(result.value.delta).toBe(10);
       expect(typeof result.value.eventId).toBe("string");
+
+      // resolved scoped to the caller's tenant
+      expect(passes.existsForTenant).toHaveBeenCalledWith(PASS_ID, TENANT_ID);
 
       // repo.save was called once
       expect(repo.save).toHaveBeenCalledOnce();
@@ -105,9 +97,7 @@ describe("RedeemScanHandler", () => {
     });
 
     it("stores negative delta for a 'redeem' action", async () => {
-      const verifier: IQrVerifier = { verify: vi.fn().mockResolvedValue(makeToken()) };
-      const cache = makeCacheStore({ nonceIsNew: true, cachedIdem: null });
-      const handler = new RedeemScanHandler(repo, verifier, cache, bus, fixedClock);
+      const handler = new RedeemScanHandler(repo, makePassLookup(true), makeCacheStore(), bus, fixedClock);
 
       const result = await handler.execute({ ...baseCmd, action: "redeem", amount: 25 });
 
@@ -122,10 +112,9 @@ describe("RedeemScanHandler", () => {
   });
 
   describe("reusable wallet QR (no single-use)", () => {
-    it("awards again on a repeat scan of the same token — the loyalty card is reusable", async () => {
-      const verifier: IQrVerifier = { verify: vi.fn().mockResolvedValue(makeToken()) };
+    it("awards again on a repeat scan of the same card — the loyalty card is reusable", async () => {
       const cache = makeCacheStore({ cachedIdem: null }); // fresh visit (new idempotency key)
-      const handler = new RedeemScanHandler(repo, verifier, cache, bus, fixedClock);
+      const handler = new RedeemScanHandler(repo, makePassLookup(true), cache, bus, fixedClock);
 
       const result = await handler.execute(baseCmd);
 
@@ -144,12 +133,8 @@ describe("RedeemScanHandler", () => {
         action: "award",
         delta: 10,
       };
-      const verifier: IQrVerifier = { verify: vi.fn().mockResolvedValue(makeToken()) };
-      const cache = makeCacheStore({
-        nonceIsNew: true,
-        cachedIdem: JSON.stringify(priorResult),
-      });
-      const handler = new RedeemScanHandler(repo, verifier, cache, bus, fixedClock);
+      const cache = makeCacheStore({ cachedIdem: JSON.stringify(priorResult) });
+      const handler = new RedeemScanHandler(repo, makePassLookup(true), cache, bus, fixedClock);
 
       const result = await handler.execute(baseCmd);
 
@@ -163,71 +148,50 @@ describe("RedeemScanHandler", () => {
     });
   });
 
-  describe("forged / expired token", () => {
-    it("returns ValidationError when the verifier throws a non-DomainError", async () => {
-      const verifier: IQrVerifier = {
-        verify: vi.fn().mockRejectedValue(new Error("jwt malformed")),
-      };
-      const cache = makeCacheStore();
-      const handler = new RedeemScanHandler(repo, verifier, cache, bus, fixedClock);
+  describe("unknown / foreign card", () => {
+    it("returns NotFoundError when the pass is not in the caller's tenant (RLS-scoped lookup misses)", async () => {
+      const passes = makePassLookup(false); // foreign or unknown pass → invisible
+      const handler = new RedeemScanHandler(repo, passes, makeCacheStore(), bus, fixedClock);
 
       const result = await handler.execute(baseCmd);
+
+      expect(result.ok).toBe(false);
+      if (result.ok) return;
+      expect(result.error).toBeInstanceOf(NotFoundError);
+      expect(repo.save).not.toHaveBeenCalled();
+    });
+
+    it("returns ValidationError when the scanned payload is not a passId (e.g. a random URL QR)", async () => {
+      const passes = makePassLookup(true);
+      const handler = new RedeemScanHandler(repo, passes, makeCacheStore(), bus, fixedClock);
+
+      const result = await handler.execute({ ...baseCmd, qrPayload: "https://example.com/promo" });
 
       expect(result.ok).toBe(false);
       if (result.ok) return;
       expect(result.error).toBeInstanceOf(ValidationError);
+      // never even looks it up
+      expect(passes.existsForTenant).not.toHaveBeenCalled();
       expect(repo.save).not.toHaveBeenCalled();
-    });
-
-    it("propagates a ForbiddenError thrown by the verifier (forged signature)", async () => {
-      const verifier: IQrVerifier = {
-        verify: vi.fn().mockRejectedValue(new ForbiddenError("invalid signature")),
-      };
-      const cache = makeCacheStore();
-      const handler = new RedeemScanHandler(repo, verifier, cache, bus, fixedClock);
-
-      const result = await handler.execute(baseCmd);
-
-      expect(result.ok).toBe(false);
-      if (result.ok) return;
-      expect(result.error).toBeInstanceOf(ForbiddenError);
-      expect(repo.save).not.toHaveBeenCalled();
-    });
-
-    it("returns ForbiddenError when the token tenant does not match the caller", async () => {
-      const tokenForOtherTenant = makeToken({ tenantId: "other-tenant" });
-      const verifier: IQrVerifier = { verify: vi.fn().mockResolvedValue(tokenForOtherTenant) };
-      const cache = makeCacheStore();
-      const handler = new RedeemScanHandler(repo, verifier, cache, bus, fixedClock);
-
-      const result = await handler.execute(baseCmd);
-
-      expect(result.ok).toBe(false);
-      if (result.ok) return;
-      expect(result.error).toBeInstanceOf(ForbiddenError);
-      expect(result.error.message).toMatch(/tenant mismatch/i);
     });
   });
 
   describe("input validation", () => {
     it("returns ValidationError when amount is zero", async () => {
-      const verifier: IQrVerifier = { verify: vi.fn() };
-      const cache = makeCacheStore();
-      const handler = new RedeemScanHandler(repo, verifier, cache, bus, fixedClock);
+      const passes = makePassLookup(true);
+      const handler = new RedeemScanHandler(repo, passes, makeCacheStore(), bus, fixedClock);
 
       const result = await handler.execute({ ...baseCmd, amount: 0 });
 
       expect(result.ok).toBe(false);
       if (result.ok) return;
       expect(result.error).toBeInstanceOf(ValidationError);
-      // verifier is never called for invalid input
-      expect(verifier.verify).not.toHaveBeenCalled();
+      // pass is never resolved for invalid input
+      expect(passes.existsForTenant).not.toHaveBeenCalled();
     });
 
     it("returns ValidationError when amount is negative", async () => {
-      const verifier: IQrVerifier = { verify: vi.fn() };
-      const cache = makeCacheStore();
-      const handler = new RedeemScanHandler(repo, verifier, cache, bus, fixedClock);
+      const handler = new RedeemScanHandler(repo, makePassLookup(true), makeCacheStore(), bus, fixedClock);
 
       const result = await handler.execute({ ...baseCmd, amount: -5 });
 
