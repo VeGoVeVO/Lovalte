@@ -1,0 +1,37 @@
+# dependencies
+node_modules/
+.pnp/
+.pnp.js
+
+# builds
+dist/
+build/
+*.tsbuildinfo
+
+# env & secrets — never commit any env file (use deploy/env.production.sample as the template)
+.env
+.env.*
+certs/
+secrets/
+backups/
+*.p12
+*.pem
+*.p8
+
+# local-only Claude settings (machine-specific)
+.claude/settings.local.json
+
+# logs
+*.log
+npm-debug.log*
+
+# tooling / local state
+.claude-flow/
+.swarm/
+.mcp.json
+ruvector.db
+coverage/
+
+# OS
+.DS_Store
+Thumbs.db

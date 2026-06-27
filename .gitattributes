@@ -1,0 +1,5 @@
+# Normalize line endings: LF in the repo (so shell scripts run on the Linux droplet),
+# Git still checks out CRLF for Windows-only files.
+* text=auto eol=lf
+*.sh text eol=lf
+*.{cmd,bat,ps1} text eol=crlf

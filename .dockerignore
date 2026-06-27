@@ -1,0 +1,19 @@
+# Keep the build context small and NEVER bake secrets into an image.
+**/node_modules
+**/dist
+**/.vite
+.git
+.github
+.claude
+plans
+research
+prototy
+secrets
+backups
+**/.env
+**/.env.*
+*.md
+**/*.md
+**/coverage
+**/test-results
+**/playwright-report
