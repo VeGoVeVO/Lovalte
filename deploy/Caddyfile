@@ -1,0 +1,33 @@
+# Caddy: automatic Let's Encrypt HTTPS for $DOMAIN, reverse-proxy to the API,
+# static SPA hosting with history fallback, and hardened response headers.
+# $DOMAIN and $ACME_EMAIL are injected from the compose environment.
+{
+	email {$ACME_EMAIL:admin@example.com}
+	# Redirect HTTP→HTTPS and provision certs automatically (default behaviour).
+}
+
+{$DOMAIN:localhost} {
+	encode zstd gzip
+
+	# API + Apple Wallet web service → Fastify container.
+	@backend path /api/* /wallet/*
+	reverse_proxy @backend api:3001
+
+	# Single-page app: serve files, fall back to index.html for client routes.
+	root * /srv
+	try_files {path} /index.html
+	file_server
+
+	header {
+		# HSTS (only sent over HTTPS). Drop or shorten max-age while testing.
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(self), geolocation=(), microphone=()"
+		# CSP: self scripts, inline + injected styles, images from self/data/https
+		# (card art), self API calls. Tighten as needed.
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self'; font-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+		-Server
+	}
+}

@@ -1,0 +1,94 @@
+# Production stack for a single small DigitalOcean droplet (works on 512 MB).
+#
+# Images are BUILT IN CI (GitHub Actions) and PULLED here — the droplet never
+# builds (Vite/tsc would OOM on 512 MB). Postgres + Redis are memory-tuned and
+# stay on an internal network, never published to the host.
+#
+#   Deploy:   bash deploy/deploy.sh         (pulls images, migrates, restarts)
+#   Migrate:  docker compose -f docker-compose.prod.yml --env-file .env.production run --rm api node dist/db/migrate.js
+services:
+  caddy:
+    image: ${WEB_IMAGE}            # e.g. ghcr.io/you/lovalte-web:latest
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL}
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+    networks: [edge]
+
+  api:
+    image: ${API_IMAGE}            # e.g. ghcr.io/you/lovalte-api:latest
+    restart: unless-stopped
+    env_file: [.env.production]
+    environment:
+      NODE_ENV: production
+      # Keep Node's heap modest so it co-exists with Postgres on a 512 MB box.
+      NODE_OPTIONS: "--max-old-space-size=192"
+    volumes:
+      - ./secrets/certs:/run/certs:ro
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    networks: [edge, internal]
+    expose:
+      - "3001"
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    # Low-memory tuning for a 512 MB host (defaults assume far more RAM).
+    command:
+      - postgres
+      - -c
+      - shared_buffers=48MB
+      - -c
+      - max_connections=30
+      - -c
+      - effective_cache_size=128MB
+      - -c
+      - work_mem=2MB
+      - -c
+      - maintenance_work_mem=24MB
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [internal]
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    # Cap Redis RAM so it can never starve the box; QR nonces are tiny + expendable.
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "48mb", "--maxmemory-policy", "allkeys-lru"]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [internal]
+
+volumes:
+  pgdata:
+  redisdata:
+  caddy_data:
+  caddy_config:
+
+networks:
+  edge:
+  internal:
