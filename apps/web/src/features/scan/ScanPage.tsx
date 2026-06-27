@@ -18,9 +18,10 @@ type RedeemResult = {
 /* ── Page ────────────────────────────────────────────────────────────────── */
 
 /**
- * Staff QR-scan surface. Uses the BarcodeDetector API (camera) when available;
- * falls back to a manual paste input when unsupported or permission is denied.
- * Calls POST /api/v1/scan/redeem with a per-request Idempotency-Key header.
+ * Staff QR-scan surface. Camera scanning via nimiq qr-scanner (works on all
+ * browsers over HTTPS); falls back to a manual paste input only if there is no
+ * camera or permission is denied. Calls POST /api/v1/scan/redeem with a
+ * per-request Idempotency-Key header.
  */
 export function ScanPage() {
   const { videoRef, status, detectedToken, startCamera, stopCamera, clearToken } =
@@ -69,7 +70,7 @@ export function ScanPage() {
     const pts = `${n} point${n !== 1 ? "s" : ""}`;
     liveText = mutation.data.action === "award" ? `Awarded ${pts}!` : `Redeemed ${pts}!`;
   } else if (mutation.isError) {
-    liveText = (mutation.error as ApiError)?.message ?? "Scan failed. Please try again.";
+    liveText = (mutation.error as unknown as ApiError)?.message ?? "Scan failed. Please try again.";
   } else if (status === "requesting") {
     liveText = "Requesting camera permission…";
   } else if (status === "scanning") {
