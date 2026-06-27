@@ -1,0 +1,98 @@
+{
+  "_comment": "VERIFIED example storeCard (loyalty) pass.json for Lovalte. Replace teamIdentifier, passTypeIdentifier, serialNumber, authenticationToken, webServiceURL, and locations with real values. Colors are rgb() strings only (no hex, no stripColor). 'barcode' (singular) is included only for iOS 8 backward-compat; iOS 9+ uses 'barcodes'. See ../02-pass-json-reference.md.",
+  "formatVersion": 1,
+  "passTypeIdentifier": "pass.com.lovalte.loyalty",
+  "serialNumber": "LV-LOYALTY-4892710",
+  "teamIdentifier": "ABCDE12345",
+  "organizationName": "Lovalte",
+  "description": "Lovalte loyalty card for Jane Smith",
+
+  "logoText": "Lovalte",
+  "backgroundColor": "rgb(44, 28, 14)",
+  "foregroundColor": "rgb(255, 245, 230)",
+  "labelColor": "rgb(200, 160, 100)",
+  "suppressStripShine": true,
+
+  "sharingProhibited": false,
+  "groupingIdentifier": "com.lovalte.loyalty",
+
+  "webServiceURL": "https://passes.lovalte.com/v1/",
+  "authenticationToken": "REPLACE-with-32+-cryptographically-random-chars",
+
+  "barcodes": [
+    {
+      "format": "PKBarcodeFormatQR",
+      "message": "LV:4892710:JANE:SMITH:GOLD",
+      "messageEncoding": "iso-8859-1",
+      "altText": "Member #4892710"
+    }
+  ],
+  "barcode": {
+    "format": "PKBarcodeFormatQR",
+    "message": "LV:4892710:JANE:SMITH:GOLD",
+    "messageEncoding": "iso-8859-1",
+    "altText": "Member #4892710"
+  },
+
+  "locations": [
+    {
+      "latitude": 51.5133,
+      "longitude": -0.0886,
+      "relevantText": "Lovalte is nearby. Show your loyalty card!"
+    }
+  ],
+  "maxDistance": 150,
+
+  "expirationDate": "2027-12-31T23:59:59Z",
+  "voided": false,
+
+  "associatedStoreIdentifiers": [1234567890],
+  "appLaunchURL": "lovalte://loyalty/open?member=4892710",
+  "userInfo": {
+    "tier": "gold",
+    "enrolledAt": "2023-03-15"
+  },
+
+  "storeCard": {
+    "headerFields": [
+      { "key": "tier", "label": "TIER", "value": "Gold", "textAlignment": "PKTextAlignmentRight" }
+    ],
+    "primaryFields": [
+      {
+        "key": "points",
+        "label": "POINTS BALANCE",
+        "value": 2350,
+        "numberStyle": "PKNumberStyleDecimal",
+        "changeMessage": "Your Lovalte points balance is now %@!",
+        "textAlignment": "PKTextAlignmentLeft"
+      }
+    ],
+    "secondaryFields": [
+      { "key": "memberName", "label": "MEMBER", "value": "Jane Smith", "textAlignment": "PKTextAlignmentLeft" },
+      { "key": "memberId", "label": "CARD NUMBER", "value": "4892710", "textAlignment": "PKTextAlignmentRight" }
+    ],
+    "auxiliaryFields": [
+      { "key": "nextReward", "label": "NEXT REWARD AT", "value": 2500, "numberStyle": "PKNumberStyleDecimal", "textAlignment": "PKTextAlignmentRight" }
+    ],
+    "backFields": [
+      {
+        "key": "memberSince",
+        "label": "Member Since",
+        "value": "2023-03-15T00:00:00Z",
+        "dateStyle": "PKDateStyleLong",
+        "timeStyle": "PKDateStyleNone"
+      },
+      { "key": "earnRate", "label": "Earn Rate", "value": "Earn 10 points per 1 unit spent. Gold members earn 15." },
+      { "key": "rewardNote", "label": "Rewards", "value": "Redeem 500 points for a free drink." },
+      {
+        "key": "terms",
+        "label": "Terms & Conditions",
+        "value": "Points expire after 12 months of inactivity. See lovalte.com/loyalty/terms",
+        "attributedValue": "Points expire after 12 months of inactivity. <a href=\"https://lovalte.com/loyalty/terms\">Full terms</a>",
+        "dataDetectorTypes": ["PKDataDetectorTypeLink"]
+      },
+      { "key": "contact", "label": "Customer Support", "value": "+44 20 7946 0321", "dataDetectorTypes": ["PKDataDetectorTypePhoneNumber"] },
+      { "key": "website", "label": "Website", "value": "https://lovalte.com", "dataDetectorTypes": ["PKDataDetectorTypeLink"] }
+    ]
+  }
+}
