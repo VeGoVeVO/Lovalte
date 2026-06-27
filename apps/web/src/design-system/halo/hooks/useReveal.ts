@@ -1,6 +1,6 @@
 import { useRef, useEffect } from "react";
 
-/* reveal-on-scroll hook — verbatim from the original Halo component. */
+/* reveal-on-scroll hook - verbatim from the original Halo component. */
 export function useReveal() {
   const ref = useRef(null);
   useEffect(() => {

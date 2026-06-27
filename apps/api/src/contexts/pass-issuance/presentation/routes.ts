@@ -50,10 +50,10 @@ const downloadQuerySchema  = z.object({ t: z.string().min(8).max(2048) });
  * Registers pass-issuance routes under /api/v1/passes.
  *
  * Routes:
- *   POST   /api/v1/passes                      — Issue a new pass (idempotent)
- *   GET    /api/v1/passes/:passId/pkpass        — Download signed .pkpass
- *   POST   /api/v1/passes/:passId/qr-token      — Mint a short-lived QR token
- *   PATCH  /api/v1/passes/:passId/fields        — Manually update field values
+ *   POST   /api/v1/passes                      - Issue a new pass (idempotent)
+ *   GET    /api/v1/passes/:passId/pkpass        - Download signed .pkpass
+ *   POST   /api/v1/passes/:passId/qr-token      - Mint a short-lived QR token
+ *   PATCH  /api/v1/passes/:passId/fields        - Manually update field values
  */
 export function registerPassRoutes(
   app: FastifyInstance,
@@ -63,7 +63,7 @@ export function registerPassRoutes(
   const authPreHandler       = requireAuth(deps.config.SESSION_SECRET);
   const ownerManagerPreHandler = requireAuth(deps.config.SESSION_SECRET, ["owner", "manager"]);
 
-  // POST /api/v1/passes — issue a pass
+  // POST /api/v1/passes - issue a pass
   app.post("/api/v1/passes", { preHandler: ownerManagerPreHandler }, async (req, reply) => {
     const auth = getAuth(req);
     const body = parse(issuePassBodySchema, req.body);
@@ -77,7 +77,7 @@ export function registerPassRoutes(
     return reply.status(201).send({ data: r.value });
   });
 
-  // GET /api/v1/passes/:passId/pkpass — download signed .pkpass
+  // GET /api/v1/passes/:passId/pkpass - download signed .pkpass
   app.get("/api/v1/passes/:passId/pkpass", { preHandler: authPreHandler }, async (req, reply) => {
     const auth   = getAuth(req);
     const params = parse(passIdParamsSchema, req.params);
@@ -107,7 +107,7 @@ export function registerPassRoutes(
       .send(r.value.buffer);
   });
 
-  // POST /api/v1/passes/:passId/qr-token — mint QR token
+  // POST /api/v1/passes/:passId/qr-token - mint QR token
   app.post("/api/v1/passes/:passId/qr-token", { preHandler: authPreHandler }, async (req, reply) => {
     const auth   = getAuth(req);
     const params = parse(passIdParamsSchema, req.params);
@@ -121,7 +121,7 @@ export function registerPassRoutes(
     return reply.status(200).send({ data: r.value });
   });
 
-  // PATCH /api/v1/passes/:passId/fields — manual field update (owner/manager)
+  // PATCH /api/v1/passes/:passId/fields - manual field update (owner/manager)
   app.patch("/api/v1/passes/:passId/fields", { preHandler: ownerManagerPreHandler }, async (req, reply) => {
     const auth   = getAuth(req);
     const params = parse(passIdParamsSchema, req.params);
@@ -135,7 +135,7 @@ export function registerPassRoutes(
     return reply.status(200).send({ data: { updated: true } });
   });
 
-  // POST /api/v1/passes/enroll-link — mint a self-enrollment QR link (owner/manager)
+  // POST /api/v1/passes/enroll-link - mint a self-enrollment QR link (owner/manager)
   app.post("/api/v1/passes/enroll-link", { preHandler: ownerManagerPreHandler }, async (req, reply) => {
     const auth = getAuth(req);
     const body = parse(enrollLinkBodySchema, req.body);
@@ -144,7 +144,7 @@ export function registerPassRoutes(
     return reply.status(200).send({ data: r.value });
   });
 
-  // POST /api/v1/public/enroll — PUBLIC: a scanned QR creates a unique member + pass
+  // POST /api/v1/public/enroll - PUBLIC: a scanned QR creates a unique member + pass
   app.post("/api/v1/public/enroll", async (req, reply) => {
     const body = parse(publicEnrollBodySchema, req.body);
     const r = await handlers.publicEnroll.execute({ token: body.token });
@@ -152,7 +152,7 @@ export function registerPassRoutes(
     return reply.status(201).send({ data: r.value });
   });
 
-  // GET /api/v1/public/passes/:passId/pkpass?t=<downloadToken> — PUBLIC token-gated download
+  // GET /api/v1/public/passes/:passId/pkpass?t=<downloadToken> - PUBLIC token-gated download
   app.get("/api/v1/public/passes/:passId/pkpass", async (req, reply) => {
     const params = parse(passIdParamsSchema, req.params);
     const query  = parse(downloadQuerySchema, req.query);

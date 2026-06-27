@@ -9,7 +9,7 @@ export interface IRedemptionEventRepository {
 /**
  * Resolves a scanned wallet barcode (the bare passId) to whether it belongs to
  * the scanning tenant. Implemented in infrastructure/ as an RLS-scoped read of
- * the pass-issuance `passes` table — so a pass from another tenant is invisible
+ * the pass-issuance `passes` table - so a pass from another tenant is invisible
  * and the scan is rejected, giving tenant isolation for free. No crypto: the
  * trust boundary is the authenticated staff session, not the barcode.
  */

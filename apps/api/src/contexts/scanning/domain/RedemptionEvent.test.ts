@@ -50,7 +50,7 @@ describe("RedemptionEvent", () => {
     expect(domainEvt.payload.action).toBe("redeem");
   });
 
-  it("pullEvents clears the queue — second call returns empty", () => {
+  it("pullEvents clears the queue - second call returns empty", () => {
     const evt = RedemptionEvent.record({
       ...baseParams,
       action: "award",

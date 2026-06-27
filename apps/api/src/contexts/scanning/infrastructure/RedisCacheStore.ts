@@ -11,7 +11,7 @@ export class RedisCacheStore implements ICacheStore {
   constructor(private readonly redis: Redis) {}
 
   async setNx(key: string, value: string, ttlSeconds: number): Promise<boolean> {
-    // SET key value EX ttl NX — atomic: only sets if key is absent
+    // SET key value EX ttl NX - atomic: only sets if key is absent
     const result = await this.redis.set(key, value, "EX", ttlSeconds, "NX");
     return result === "OK";
   }

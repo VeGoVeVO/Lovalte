@@ -20,7 +20,7 @@ export interface StoredImageDTO {
 
 /**
  * Store an uploaded (or Lucide-rasterised) card image. All validation lives in
- * CardImage.create — this handler just wires domain → repository and returns the
+ * CardImage.create - this handler just wires domain → repository and returns the
  * public ref the builder writes into the template's BrandConfig.
  */
 export class StoreImageHandler {

@@ -5,7 +5,7 @@ interface Props { value: string }
 /**
  * Immutable authentication token set once at pass minting.
  * Apple Wallet includes this token in every request to the web service.
- * NEVER changes after issuance — Apple requires this for APNs push continuity.
+ * NEVER changes after issuance - Apple requires this for APNs push continuity.
  *
  * Caller generates entropy: crypto.randomBytes(32).toString('hex').
  * Domain only validates and wraps; no I/O here.

@@ -26,7 +26,7 @@ export function useEnrollLink() {
 }
 
 /** Owner/manager: issue a pass directly to a walk-in. The member id is generated
- *  server-side-style here (a fresh UUID) — never typed by a human. */
+ *  server-side-style here (a fresh UUID) - never typed by a human. */
 export function useIssueDirect() {
   return useMutation<IssuePassDto, ApiError, { templateId: string }>({
     mutationFn: ({ templateId }) =>

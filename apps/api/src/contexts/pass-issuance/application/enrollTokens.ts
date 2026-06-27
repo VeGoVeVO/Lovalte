@@ -7,7 +7,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
  * `typ` namespaces a token so an "enroll" token can never be replayed as a
  * "download" token. Tokens are unguessable and tamper-proof (the merchant's
  * tenant/template ids are signed), so the public enroll/download endpoints need
- * no session — the token IS the capability.
+ * no session - the token IS the capability.
  */
 export type TokenType = "enroll" | "download";
 

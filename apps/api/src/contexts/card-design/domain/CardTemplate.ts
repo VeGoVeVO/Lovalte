@@ -75,7 +75,7 @@ export class CardTemplate extends AggregateRoot<CardTemplateId> {
     return t;
   }
 
-  /** Reconstitute from persistence — no events emitted. */
+  /** Reconstitute from persistence - no events emitted. */
   static reconstitute(id: CardTemplateId, props: CardTemplateProps): CardTemplate {
     return new CardTemplate(id, props);
   }

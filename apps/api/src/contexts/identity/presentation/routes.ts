@@ -63,7 +63,7 @@ export function registerIdentityRoutes(
 ): void {
   const secret = deps.config.SESSION_SECRET;
 
-  // POST /api/v1/auth/signup — create a new tenant + owner account
+  // POST /api/v1/auth/signup - create a new tenant + owner account
   app.post("/api/v1/auth/signup", async (req, reply) => {
     const input = parse(signUpSchema, req.body);
     const r = await handlers.signUp.execute(input);
@@ -76,7 +76,7 @@ export function registerIdentityRoutes(
     return reply.status(201).send({ data: r.value });
   });
 
-  // POST /api/v1/auth/login — authenticate and issue session cookie
+  // POST /api/v1/auth/login - authenticate and issue session cookie
   app.post("/api/v1/auth/login", async (req, reply) => {
     const input = parse(loginSchema, req.body);
     const r = await handlers.login.execute(input);
@@ -96,7 +96,7 @@ export function registerIdentityRoutes(
     });
   });
 
-  // POST /api/v1/auth/logout — clear session cookie
+  // POST /api/v1/auth/logout - clear session cookie
   app.post(
     "/api/v1/auth/logout",
     { preHandler: requireAuth(secret) },
@@ -106,7 +106,7 @@ export function registerIdentityRoutes(
     }
   );
 
-  // POST /api/v1/auth/accept-invitation — create account from invitation token
+  // POST /api/v1/auth/accept-invitation - create account from invitation token
   app.post("/api/v1/auth/accept-invitation", async (req, reply) => {
     const input = parse(acceptInvitationSchema, req.body);
     const r = await handlers.acceptInvitation.execute({
@@ -123,7 +123,7 @@ export function registerIdentityRoutes(
     return reply.status(200).send({ data: r.value });
   });
 
-  // POST /api/v1/users/invite — invite a staff or manager (owner or manager only)
+  // POST /api/v1/users/invite - invite a staff or manager (owner or manager only)
   app.post(
     "/api/v1/users/invite",
     { preHandler: requireAuth(secret, ["owner", "manager"]) },
@@ -142,7 +142,7 @@ export function registerIdentityRoutes(
     }
   );
 
-  // GET /api/v1/users — list all users in the tenant (owner or manager only)
+  // GET /api/v1/users - list all users in the tenant (owner or manager only)
   app.get(
     "/api/v1/users",
     { preHandler: requireAuth(secret, ["owner", "manager"]) },
@@ -154,7 +154,7 @@ export function registerIdentityRoutes(
     }
   );
 
-  // GET /api/v1/auth/me — return the current session's auth context
+  // GET /api/v1/auth/me - return the current session's auth context
   app.get(
     "/api/v1/auth/me",
     { preHandler: requireAuth(secret) },

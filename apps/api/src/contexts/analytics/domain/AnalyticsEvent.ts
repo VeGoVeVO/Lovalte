@@ -1,5 +1,5 @@
 /**
- * Analytics context — domain types.
+ * Analytics context - domain types.
  * Read-model only: no aggregate, no domain events emitted from this context.
  * Imports ONLY from "../../../kernel".
  */
@@ -30,7 +30,7 @@ export interface AnalyticsEventData {
 
 /**
  * Factory: validate inputs and return an AnalyticsEventData.
- * Throws on invalid type or missing tenantId — enforces append-only invariant
+ * Throws on invalid type or missing tenantId - enforces append-only invariant
  * that only known, well-formed events reach the write path.
  */
 export function createAnalyticsEvent(

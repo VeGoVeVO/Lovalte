@@ -2,7 +2,7 @@ import { GlassButton } from "../components/GlassButton";
 import { Icon } from "../icons";
 import { scrollTo } from "../lib/scrollTo";
 
-/* sticky glass nav — verbatim from the original Halo component. */
+/* sticky glass nav - verbatim from the original Halo component. */
 export function Nav() {
   return (
     <header className="nav">

@@ -54,7 +54,7 @@ function makePublishableTemplate(): CardTemplate {
   });
 }
 
-/** Draft missing iconRef — BrandConfig.validate() rejects this. */
+/** Draft missing iconRef - BrandConfig.validate() rejects this. */
 function makeTemplateWithoutIcon(): CardTemplate {
   return CardTemplate.reconstitute(CardTemplateId.of(TEMPLATE_ID), {
     ...makeBaseProps(),
@@ -72,7 +72,7 @@ function makeTemplateWithoutIcon(): CardTemplate {
   });
 }
 
-/** Draft with 0 primaryFields — validate() requires exactly 1. */
+/** Draft with 0 primaryFields - validate() requires exactly 1. */
 function makeTemplateWithNoPrimaryFields(): CardTemplate {
   return CardTemplate.reconstitute(CardTemplateId.of(TEMPLATE_ID), {
     ...makeBaseProps(),
@@ -90,7 +90,7 @@ function makeTemplateWithNoPrimaryFields(): CardTemplate {
   });
 }
 
-/** Draft with 4 headerFields — validate() enforces ≤ 3. */
+/** Draft with 4 headerFields - validate() enforces ≤ 3. */
 function makeTemplateWithTooManyHeaders(): CardTemplate {
   const fields = [1, 2, 3, 4].map(n => ({
     key: `h${n}`, label: `H${n}`, valueTemplate: `{{h${n}}}`,
@@ -101,7 +101,7 @@ function makeTemplateWithTooManyHeaders(): CardTemplate {
       organizationName: "Acme",
       backgroundColor: RgbColor.create(0, 0, 0),
       foregroundColor: RgbColor.create(255, 255, 255),
-      headerFields: fields,  // 4 — violates Apple Wallet ≤ 3
+      headerFields: fields,  // 4 - violates Apple Wallet ≤ 3
       primaryFields: [{ key: "pts", label: "Pts", valueTemplate: "{{points}}" }],
       secondaryFields: [],
       auxiliaryFields: [],

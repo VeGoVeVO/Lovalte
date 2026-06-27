@@ -49,7 +49,7 @@ export class Tenant extends AggregateRoot<TenantId> {
     return tenant;
   }
 
-  /** Reconstitute from persistence — no event emitted. */
+  /** Reconstitute from persistence - no event emitted. */
   static reconstitute(id: string, props: TenantProps): Tenant {
     return new Tenant(TenantId.from(id), props);
   }

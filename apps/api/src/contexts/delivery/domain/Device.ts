@@ -12,7 +12,7 @@ export interface DeviceProps {
  * Aggregate root for an Apple Wallet-enabled device.
  * pushToken is mutable: Apple may issue a new token at any time; the device
  * re-registers with the new token and we overwrite the stored value.
- * Invariant: (deviceLibraryIdentifier) is globally unique — enforced by DB UNIQUE.
+ * Invariant: (deviceLibraryIdentifier) is globally unique - enforced by DB UNIQUE.
  */
 export class Device extends AggregateRoot<DeviceId> {
   private _pushToken: string;
@@ -43,7 +43,7 @@ export class Device extends AggregateRoot<DeviceId> {
     return device;
   }
 
-  /** Reconstitute from a persisted row — no events. */
+  /** Reconstitute from a persisted row - no events. */
   static reconstitute(props: DeviceProps): Device {
     return new Device(props.id, props.deviceLibraryIdentifier, props.pushToken, props.updatedAt);
   }

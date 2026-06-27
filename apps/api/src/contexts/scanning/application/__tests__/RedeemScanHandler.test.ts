@@ -63,7 +63,7 @@ describe("RedeemScanHandler", () => {
     bus = makeBus();
   });
 
-  describe("happy path — award", () => {
+  describe("happy path - award", () => {
     it("persists a RedemptionEvent, returns the DTO, and emits RedemptionApplied", async () => {
       const passes = makePassLookup(true);
       const cache = makeCacheStore({ cachedIdem: null });
@@ -112,7 +112,7 @@ describe("RedeemScanHandler", () => {
   });
 
   describe("reusable wallet QR (no single-use)", () => {
-    it("awards again on a repeat scan of the same card — the loyalty card is reusable", async () => {
+    it("awards again on a repeat scan of the same card - the loyalty card is reusable", async () => {
       const cache = makeCacheStore({ cachedIdem: null }); // fresh visit (new idempotency key)
       const handler = new RedeemScanHandler(repo, makePassLookup(true), cache, bus, fixedClock);
 

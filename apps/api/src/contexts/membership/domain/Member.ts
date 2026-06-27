@@ -8,10 +8,10 @@ export type MemberStatus = "active" | "suspended" | "deleted";
 export interface MemberProps {
   id: MemberId;
   tenantId: string;
-  /** Reference by ID only — never the Pass aggregate itself. */
+  /** Reference by ID only - never the Pass aggregate itself. */
   passId: string;
   displayName: string | null;
-  /** PII — may be null for anonymous enrolment. */
+  /** PII - may be null for anonymous enrolment. */
   email: string | null;
   balance: PointsBalance;
   currentTier: string;

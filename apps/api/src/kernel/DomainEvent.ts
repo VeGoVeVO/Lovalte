@@ -8,7 +8,7 @@ export interface DomainEvent {
 
 export type DomainEventHandler = (event: DomainEvent) => Promise<void> | void;
 
-/** Contexts integrate ONLY through this bus — never by importing each other's domain. */
+/** Contexts integrate ONLY through this bus - never by importing each other's domain. */
 export interface DomainEventBus {
   publish(events: DomainEvent[]): Promise<void>;
   subscribe(eventName: string, handler: DomainEventHandler): void;

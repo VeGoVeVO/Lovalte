@@ -1,4 +1,4 @@
-/* ambient glow background — verbatim from the original Halo component. */
+/* ambient glow background - verbatim from the original Halo component. */
 export function Ambient() {
   return (
     <div className="ambient" aria-hidden="true">

@@ -3,6 +3,7 @@ import { useMutation } from "@tanstack/react-query";
 import { api, type ApiError } from "../../lib/api";
 import { AppShell } from "../../lib/AppShell";
 import { GlassCard, GlassButton, GlassInput } from "../../design-system/halo";
+import { useT } from "../../lib/i18n";
 import { useBarcodeScanner } from "./useBarcodeScanner";
 
 /* ── Types ──────────────────────────────────────────────────────────────── */
@@ -46,6 +47,7 @@ const scanCss = `
  * per-request Idempotency-Key header.
  */
 export function ScanPage() {
+  const { t } = useT();
   const { videoRef, status, detectedToken, capturedImage, startCamera, stopCamera, clearToken } =
     useBarcodeScanner();
   const [manualToken, setManualToken] = useState("");
@@ -86,31 +88,34 @@ export function ScanPage() {
   /* Build the single live-region string so screen readers hear one update. */
   let liveText = "";
   if (mutation.isPending) {
-    liveText = "Processing…";
+    liveText = t("Processing…");
   } else if (mutation.isSuccess && mutation.data) {
     const n = Math.abs(mutation.data.delta);
-    const pts = `${n} point${n !== 1 ? "s" : ""}`;
-    liveText = mutation.data.action === "award" ? `Awarded ${pts}!` : `Redeemed ${pts}!`;
+    if (mutation.data.action === "award") {
+      liveText = n === 1 ? t("Awarded 1 point!") : t("Awarded {n} points!", { n });
+    } else {
+      liveText = n === 1 ? t("Redeemed 1 point!") : t("Redeemed {n} points!", { n });
+    }
   } else if (mutation.isError) {
-    liveText = (mutation.error as unknown as ApiError)?.message ?? "Scan failed. Please try again.";
+    liveText = (mutation.error as unknown as ApiError)?.message ?? t("Scan failed. Please try again.");
   } else if (status === "requesting") {
-    liveText = "Requesting camera permission…";
+    liveText = t("Requesting camera permission…");
   } else if (status === "scanning") {
-    liveText = "Scanning for QR code…";
+    liveText = t("Scanning for QR code…");
   }
 
   /* ── Render ─────────────────────────────────────────────────────────── */
   return (
-    <AppShell title="Scan a card">
+    <AppShell title={t("Scan a card")}>
       <style>{scanCss}</style>
       <GlassCard light className="waitlist" style={{ maxWidth: 480 }}>
         {/* Context line */}
         <p className="body" style={{ marginBottom: "1.25rem" }}>
           {showManualFallback
             ? status === "denied"
-              ? "Camera access was denied. Paste the QR token below to continue."
-              : "QR scanning is not supported in this browser. Paste the QR token below."
-            : "Point the camera at a customer's QR code to award or redeem points."}
+              ? t("Camera access was denied. Paste the QR token below to continue.")
+              : t("QR scanning is not supported in this browser. Paste the QR token below.")
+            : t("Point the camera at a customer's QR code to award or redeem points.")}
         </p>
 
         {/* ── Camera section (hidden when in manual-fallback mode or after detection) */}
@@ -119,20 +124,20 @@ export function ScanPage() {
             {status === "idle" && (
               <GlassButton
                 onClick={startCamera}
-                aria-label="Start camera to scan a QR code"
+                aria-label={t("Start camera to scan a QR code")}
               >
-                Start Camera
+                {t("Start Camera")}
               </GlassButton>
             )}
 
             {/*
               Keep the <video> in the DOM (just hidden) while the camera section
               is visible so videoRef is attached before getUserMedia resolves.
-              No CSS animation/transition on the video — prefers-reduced-motion safe.
+              No CSS animation/transition on the video - prefers-reduced-motion safe.
             */}
             <div
               role="region"
-              aria-label="Camera viewfinder"
+              aria-label={t("Camera viewfinder")}
               style={{ display: status === "scanning" ? "block" : "none" }}
               aria-hidden={status !== "scanning"}
             >
@@ -142,11 +147,11 @@ export function ScanPage() {
                 <div className="scan-line" aria-hidden="true" />
               </div>
               <p className="meta" style={{ textAlign: "center", margin: "0.6rem 0 0", fontSize: "0.8rem" }}>
-                Hold the customer's card QR inside the frame
+                {t("Hold the customer's card QR inside the frame")}
               </p>
               <div style={{ marginTop: "0.75rem", textAlign: "center" }}>
-                <GlassButton variant="ghost" onClick={stopCamera} aria-label="Stop the camera">
-                  Stop Camera
+                <GlassButton variant="ghost" onClick={stopCamera} aria-label={t("Stop the camera")}>
+                  {t("Stop Camera")}
                 </GlassButton>
               </div>
             </div>
@@ -161,7 +166,7 @@ export function ScanPage() {
               className="meta"
               style={{ display: "block", marginBottom: "0.35rem" }}
             >
-              QR Token
+              {t("QR Token")}
             </label>
             <GlassInput
               id="qr-token-input"
@@ -171,8 +176,8 @@ export function ScanPage() {
                 setManualToken(e.target.value);
                 if (mutation.isError || mutation.isSuccess) mutation.reset();
               }}
-              placeholder="Paste QR token here"
-              aria-label="QR token"
+              placeholder={t("Paste QR token here")}
+              aria-label={t("QR token")}
               aria-describedby="scan-status"
               disabled={mutation.isPending}
               autoComplete="off"
@@ -182,17 +187,17 @@ export function ScanPage() {
 
         {/* ── Detected: auto-cropped QR + success animation (camera path) */}
         {detectedToken && (
-          <div className="scan-detected" aria-label="QR detected">
+          <div className="scan-detected" aria-label={t("QR detected")}>
             <div className="scan-crop-wrap">
               {capturedImage && (
-                <img className="scan-crop" src={capturedImage} alt="Scanned QR code" width={128} height={128} />
+                <img className="scan-crop" src={capturedImage} alt={t("Scanned QR code")} width={128} height={128} />
               )}
               <span className="scan-ring" aria-hidden="true" />
               <span className="scan-check" aria-hidden="true">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 7" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </span>
             </div>
-            <p className="meta" style={{ marginTop: "0.7rem" }}>Card detected — award or redeem below.</p>
+            <p className="meta" style={{ marginTop: "0.7rem" }}>{t("Card detected - award or redeem below.")}</p>
           </div>
         )}
 
@@ -205,25 +210,25 @@ export function ScanPage() {
             <GlassButton
               onClick={() => handleAction("award")}
               disabled={mutation.isPending}
-              aria-label="Award one loyalty point to this member"
+              aria-label={t("Award one loyalty point to this member")}
             >
-              Award point
+              {t("Award point")}
             </GlassButton>
             <GlassButton
               variant="ghost"
               onClick={() => handleAction("redeem")}
               disabled={mutation.isPending}
-              aria-label="Redeem a loyalty reward for this member"
+              aria-label={t("Redeem a loyalty reward for this member")}
             >
-              Redeem reward
+              {t("Redeem reward")}
             </GlassButton>
             {detectedToken && !mutation.isPending && (
               <GlassButton
                 variant="ghost"
                 onClick={handleScanAgain}
-                aria-label="Clear this QR and scan a new code"
+                aria-label={t("Clear this QR and scan a new code")}
               >
-                Scan again
+                {t("Scan again")}
               </GlassButton>
             )}
           </div>

@@ -1,4 +1,4 @@
-/** Clock port — inject so domain/handlers stay deterministic and testable. */
+/** Clock port - inject so domain/handlers stay deterministic and testable. */
 export interface Clock {
   now(): Date;
 }

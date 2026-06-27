@@ -90,7 +90,7 @@ export class UserRepository implements IUserRepository {
     );
   }
 
-  /** Used by IdentityTxRunner inside a transaction — saves via the provided client. */
+  /** Used by IdentityTxRunner inside a transaction - saves via the provided client. */
   async saveWithClient(client: PoolClient, user: User): Promise<void> {
     await client.query(
       `INSERT INTO iam.users

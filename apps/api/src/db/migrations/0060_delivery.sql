@@ -4,7 +4,7 @@
 CREATE SCHEMA IF NOT EXISTS delivery;
 
 -- One row per physical Apple device (device_library_identifier is Apple-assigned, opaque).
--- push_token is overwritten on every re-registration — no versioning.
+-- push_token is overwritten on every re-registration - no versioning.
 CREATE TABLE delivery.devices (
   id                          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   device_library_identifier   TEXT        NOT NULL UNIQUE,

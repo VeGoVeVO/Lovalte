@@ -13,7 +13,7 @@ export interface UserDTO {
 
 /**
  * Query handler: list all users belonging to the calling tenant.
- * Scoped by tenantId from the auth context — never crosses tenant boundaries.
+ * Scoped by tenantId from the auth context - never crosses tenant boundaries.
  */
 export class ListUsersHandler {
   constructor(private readonly users: IUserRepository) {}

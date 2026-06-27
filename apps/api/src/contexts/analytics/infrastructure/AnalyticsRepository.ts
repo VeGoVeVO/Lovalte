@@ -4,7 +4,7 @@ import type { IAnalyticsRepository, OverviewDTO, TimeseriesPoint } from "../appl
 
 /**
  * Infrastructure implementation of IAnalyticsRepository.
- * All SQL is parameterized ($1, $2, …) — never string-interpolated.
+ * All SQL is parameterized ($1, $2, …) - never string-interpolated.
  * Every query runs inside a transaction that sets app.current_tenant so RLS is satisfied;
  * the WHERE tenant_id = $N clauses add belt-and-suspenders isolation.
  */
@@ -62,7 +62,7 @@ export class AnalyticsRepository implements IAnalyticsRepository {
   }
 
   // ──────────────────────────────────────────────────────────────────────────
-  // Read path — on-the-fly GROUP BY (no materialized views required at M-tier)
+  // Read path - on-the-fly GROUP BY (no materialized views required at M-tier)
   // ──────────────────────────────────────────────────────────────────────────
 
   async getOverview(tenantId: string): Promise<OverviewDTO> {

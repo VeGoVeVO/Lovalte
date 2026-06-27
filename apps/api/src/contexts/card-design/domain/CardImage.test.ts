@@ -28,7 +28,7 @@ describe("CardImage", () => {
   });
 
   it("rejects content whose magic bytes do not match the declared type", () => {
-    // Claims PNG but carries JPEG bytes — the classic content-type spoof.
+    // Claims PNG but carries JPEG bytes - the classic content-type spoof.
     expect(() => CardImage.create(TENANT, "icon", "image/png", JPEG)).toThrow(/does not match/i);
   });
 
@@ -44,7 +44,7 @@ describe("CardImage", () => {
   });
 
   it("rejects an unknown kind", () => {
-    // @ts-expect-error — exercising the runtime guard
+    // @ts-expect-error - exercising the runtime guard
     expect(() => CardImage.create(TENANT, "banner", "image/png", PNG)).toThrow(DomainError);
   });
 });

@@ -36,7 +36,7 @@ export class RedemptionEvent extends AggregateRoot<RedemptionEventId> {
     super(id);
   }
 
-  /** Factory — records the event and queues the RedemptionApplied domain event. */
+  /** Factory - records the event and queues the RedemptionApplied domain event. */
   static record(params: {
     tenantId: string;
     passId: string;
@@ -58,7 +58,7 @@ export class RedemptionEvent extends AggregateRoot<RedemptionEventId> {
     return evt;
   }
 
-  /** Rehydrate from persistence — no events emitted. */
+  /** Rehydrate from persistence - no events emitted. */
   static reconstitute(params: {
     id: string;
     tenantId: string;

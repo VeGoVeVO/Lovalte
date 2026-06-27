@@ -12,7 +12,7 @@ import { LogDeviceDiagnosticsHandler } from "./application/LogDeviceDiagnosticsH
 import { registerDeliveryRoutes } from "./presentation/routes";
 
 /**
- * Delivery bounded context — Apple PassKit web service (5 endpoints) + APNs push stubs.
+ * Delivery bounded context - Apple PassKit web service (5 endpoints) + APNs push stubs.
  *
  * Cross-context integration (inbound):
  *   "PassFieldsUpdated" event emitted by pass-issuance after a loyalty update.

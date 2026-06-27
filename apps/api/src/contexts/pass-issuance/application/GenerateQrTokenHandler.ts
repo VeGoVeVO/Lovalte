@@ -55,7 +55,7 @@ export class GenerateQrTokenHandler {
       .digest("base64url");
     const token = `${body}.${sig}`;
 
-    // Store nonce in Redis — single-use guard for the scanning context
+    // Store nonce in Redis - single-use guard for the scanning context
     await this.redis.set(`qr:nonce:${nonce}`, pass.id.value, "EX", ttl);
 
     return ok({

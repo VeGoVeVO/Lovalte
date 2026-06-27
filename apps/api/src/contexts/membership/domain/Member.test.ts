@@ -72,7 +72,7 @@ describe("Member aggregate", () => {
 
   it("does not emit TierUpgraded when tier stays the same", () => {
     const member = makeActive(50, "bronze");
-    member.applyPoints(30, TIERS); // 80 — still bronze
+    member.applyPoints(30, TIERS); // 80 - still bronze
 
     const events = member.pullEvents();
     expect(events.find((e) => e.name === "TierUpgraded")).toBeUndefined();

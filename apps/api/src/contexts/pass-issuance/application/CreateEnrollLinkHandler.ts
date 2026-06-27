@@ -15,7 +15,7 @@ export interface EnrollLinkDto {
 
 /**
  * Mints a signed self-enrollment link for a published template. A customer who
- * scans its QR gets a brand-new, unique member id + pass — the merchant never
+ * scans its QR gets a brand-new, unique member id + pass - the merchant never
  * types or manages member ids.
  */
 export class CreateEnrollLinkHandler {

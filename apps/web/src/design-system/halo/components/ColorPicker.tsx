@@ -9,7 +9,7 @@ interface ColorPickerProps {
   ariaLabel?: string;
 }
 
-/** Curated palette — loyalty-card friendly darks, brand hues, and accents. */
+/** Curated palette - loyalty-card friendly darks, brand hues, and accents. */
 const PALETTE = [
   "#1a1a2e", "#16213e", "#0f3460", "#1b2430", "#222831", "#2d3142",
   "#5BA7C9", "#3a86ff", "#4361ee", "#7209b7", "#9d4edd", "#b5179e",

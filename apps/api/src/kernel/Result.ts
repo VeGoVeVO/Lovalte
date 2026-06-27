@@ -1,6 +1,6 @@
 import { DomainError } from "./errors";
 
-/** Explicit success/failure return for handlers — avoids throwing for expected paths. */
+/** Explicit success/failure return for handlers - avoids throwing for expected paths. */
 export type Result<T, E = DomainError> =
   | { readonly ok: true; readonly value: T }
   | { readonly ok: false; readonly error: E };

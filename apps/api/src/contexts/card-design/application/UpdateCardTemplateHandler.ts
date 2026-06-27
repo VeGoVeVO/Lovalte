@@ -40,7 +40,7 @@ export class UpdateCardTemplateHandler {
         secondaryFields: input.secondaryFields,
         auxiliaryFields: input.auxiliaryFields,
         backFields: input.backFields,
-        // Preserve existing asset refs — use UpdateCardTemplate to change brand config only
+        // Preserve existing asset refs - use UpdateCardTemplate to change brand config only
         iconRef: template.brand.iconRef,
         logoRef: template.brand.logoRef,
         stripRef: template.brand.stripRef,

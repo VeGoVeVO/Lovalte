@@ -4,7 +4,7 @@ import { GlassInput } from "../components/GlassInput";
 import { GlassButton } from "../components/GlassButton";
 import { Icon } from "../icons";
 
-/* waitlist capture — verbatim from the original Halo component.
+/* waitlist capture - verbatim from the original Halo component.
    `email`, `setEmail`, `joined`, `join` are owned by the page composition
    (HaloLanding) and passed down so the form JSX stays unchanged. */
 export function Waitlist({ email, setEmail, joined, join }) {
@@ -17,7 +17,7 @@ export function Waitlist({ email, setEmail, joined, join }) {
             <h2 className="section" id="waitlist-title">Be among the first.</h2>
             <p className="lead" style={{ maxWidth: "40ch" }}>
               Reservations open this autumn. Leave your email and we’ll hold your
-              place — one note, no noise.
+              place - one note, no noise.
             </p>
             {joined ? (
               <div className="thanks" role="status">

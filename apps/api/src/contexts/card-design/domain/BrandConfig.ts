@@ -26,7 +26,7 @@ export interface BrandConfigParams {
 }
 
 /**
- * BrandConfig value object — holds all Apple Wallet pass configuration.
+ * BrandConfig value object - holds all Apple Wallet pass configuration.
  * Colors MUST be rgb(r,g,b) strings; validate() enforces field-count constraints
  * before publishing.
  */

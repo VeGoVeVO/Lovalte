@@ -142,7 +142,7 @@ describe("ApplyPointsHandler", () => {
   });
 
   it("does NOT emit TierUpgraded when tier stays the same", async () => {
-    // 50 + 30 = 80 — stays bronze (threshold is 100)
+    // 50 + 30 = 80 - stays bronze (threshold is 100)
     const member  = makeActiveMember(50, "bronze");
     const members = makeMemberRepo({ findById: vi.fn().mockResolvedValue(member) });
 

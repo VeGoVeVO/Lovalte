@@ -22,7 +22,7 @@ export class RgbColor extends ValueObject<RgbProps> {
   }
 
   /**
-   * Parse an `rgb(r, g, b)` string. Throws ValidationError for hex or any other format —
+   * Parse an `rgb(r, g, b)` string. Throws ValidationError for hex or any other format -
    * hex is silently ignored by Apple Wallet so we reject it at the boundary.
    */
   static fromString(s: string): RgbColor {

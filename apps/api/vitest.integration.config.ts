@@ -11,7 +11,7 @@ import { defineConfig } from "vitest/config";
  *
  * Tests share a single app instance and therefore a single DB + Redis
  * connection pool.  They are intentionally serial (singleFork) so that
- * ordered state — e.g. signup before scan — is deterministic.
+ * ordered state - e.g. signup before scan - is deterministic.
  */
 export default defineConfig({
   test: {

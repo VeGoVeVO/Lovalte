@@ -7,6 +7,7 @@ import {
   Tooltip,
   CartesianGrid,
 } from "recharts";
+import { useT } from "../../lib/i18n";
 
 export interface TimeseriesPoint {
   day: string;
@@ -49,10 +50,12 @@ const centeredBox: React.CSSProperties = {
 };
 
 export function MetricsChart({ data, metricLabel, isLoading, isError }: MetricsChartProps) {
+  const { t } = useT();
+
   if (isLoading) {
     return (
-      <div style={centeredBox} aria-busy="true" aria-label="Loading chart data">
-        <span className="body">Loading…</span>
+      <div style={centeredBox} aria-busy="true" aria-label={t("Loading chart data")}>
+        <span className="body">{t("Loading…")}</span>
       </div>
     );
   }
@@ -60,15 +63,15 @@ export function MetricsChart({ data, metricLabel, isLoading, isError }: MetricsC
   if (isError) {
     return (
       <div role="alert" style={centeredBox}>
-        <span className="body">Failed to load chart data. Please try again.</span>
+        <span className="body">{t("Failed to load chart data. Please try again.")}</span>
       </div>
     );
   }
 
   if (data.length === 0) {
     return (
-      <div style={centeredBox} aria-label={`No ${metricLabel} data for this period`}>
-        <span className="body">No data for this period.</span>
+      <div style={centeredBox} aria-label={t("No {metric} data for this period", { metric: metricLabel })}>
+        <span className="body">{t("No data for this period.")}</span>
       </div>
     );
   }
@@ -76,7 +79,7 @@ export function MetricsChart({ data, metricLabel, isLoading, isError }: MetricsC
   const chartData = data.map((p) => ({ day: fmtDay(p.day), count: p.count }));
 
   return (
-    <div aria-label={`${metricLabel} timeseries line chart`}>
+    <div aria-label={t("{metric} timeseries line chart", { metric: metricLabel })}>
       <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
         <LineChart data={chartData} margin={{ top: 4, right: 12, bottom: 4, left: 0 }}>
           <CartesianGrid

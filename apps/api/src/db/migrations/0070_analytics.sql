@@ -1,5 +1,5 @@
 -- ============================================================
--- Migration 0070: Analytics context — analytics_events table
+-- Migration 0070: Analytics context - analytics_events table
 -- ============================================================
 -- Append-only fact table. No UPDATE or DELETE are ever issued by
 -- the application; RLS restrictive policies enforce this at the DB level.

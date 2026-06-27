@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "./api";
 import { haloCss } from "../design-system/halo";
+import { useT, LanguageSwitcher } from "./i18n";
 
 const NAV: { to: string; label: string }[] = [
   { to: "/app", label: "Dashboard" },
@@ -66,6 +67,7 @@ export function AppShell({ title, children }: { title?: string; children: ReactN
   const nav = useNavigate();
   const loc = useLocation();
   const qc = useQueryClient();
+  const { t } = useT();
   const [moreOpen, setMoreOpen] = useState(false);
   const logout = useMutation({
     mutationFn: () => api.post("/api/v1/auth/logout"),
@@ -86,10 +88,11 @@ export function AppShell({ title, children }: { title?: string; children: ReactN
                 <span className="dot" aria-hidden="true" /> Lovalte
               </Link>
               <div className="navlinks">
-                {NAV.map((n) => <Link key={n.to} to={n.to}>{n.label}</Link>)}
+                {NAV.map((n) => <Link key={n.to} to={n.to}>{t(n.label)}</Link>)}
               </div>
-              <div className="navcta">
-                <button className="btn ghost" onClick={() => logout.mutate()} aria-label="Log out">Log out</button>
+              <div className="navcta" style={{ gap: ".6rem" }}>
+                <LanguageSwitcher />
+                <button className="btn ghost" onClick={() => logout.mutate()} aria-label={t("Log out")}>{t("Log out")}</button>
               </div>
             </nav>
           </div>
@@ -110,8 +113,9 @@ export function AppShell({ title, children }: { title?: string; children: ReactN
               <>
                 <div onClick={() => setMoreOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 55 }} />
                 <div className="lvt-more-menu" role="menu">
-                  {MORE.map((m) => <Link key={m.to} role="menuitem" to={m.to} onClick={() => setMoreOpen(false)}>{m.label}</Link>)}
-                  <button role="menuitem" onClick={() => { setMoreOpen(false); logout.mutate(); }}>Log out</button>
+                  {MORE.map((m) => <Link key={m.to} role="menuitem" to={m.to} onClick={() => setMoreOpen(false)}>{t(m.label)}</Link>)}
+                  <div style={{ padding: ".45rem .6rem" }}><LanguageSwitcher /></div>
+                  <button role="menuitem" onClick={() => { setMoreOpen(false); logout.mutate(); }}>{t("Log out")}</button>
                 </div>
               </>
             )}
@@ -119,16 +123,16 @@ export function AppShell({ title, children }: { title?: string; children: ReactN
         </header>
 
         <main className="container lvt-rise lvt-main" style={{ paddingTop: "2.5rem", paddingBottom: "5rem" }}>
-          {title ? <h1 className="section" style={{ marginBottom: "2rem" }}>{title}</h1> : null}
+          {title ? <h1 className="section" style={{ marginBottom: "2rem", textAlign: "center" }}>{title}</h1> : null}
           {children}
         </main>
 
         {/* Mobile bottom tab bar */}
         <nav className="lvt-tabbar" aria-label="Primary">
-          {TABS.map((t) => (
-            <Link key={t.to} to={t.to} className={`lvt-tab${active(t.to) ? " active" : ""}`} aria-current={active(t.to) ? "page" : undefined}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{ICONS[t.icon]}</svg>
-              {t.label}
+          {TABS.map((tab) => (
+            <Link key={tab.to} to={tab.to} className={`lvt-tab${active(tab.to) ? " active" : ""}`} aria-current={active(tab.to) ? "page" : undefined}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{ICONS[tab.icon]}</svg>
+              {t(tab.label)}
             </Link>
           ))}
         </nav>

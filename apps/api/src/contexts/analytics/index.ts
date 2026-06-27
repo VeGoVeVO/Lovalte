@@ -8,7 +8,7 @@ import { registerAnalyticsRoutes } from "./presentation/routes";
 import { createAnalyticsEvent } from "./domain/AnalyticsEvent";
 
 /**
- * Analytics bounded context — ContextModule entry point.
+ * Analytics bounded context - ContextModule entry point.
  *
  * Responsibilities:
  *  1. Wire infrastructure (AnalyticsRepository) with application handlers.
@@ -31,7 +31,7 @@ export const registerAnalytics: ContextModule = async (
 
   /**
    * Safely extract tenantId from event payload; returns null if absent.
-   * Missing tenantId is logged and skipped — analytics failures must not
+   * Missing tenantId is logged and skipped - analytics failures must not
    * propagate back into the domain event bus and disrupt other subscribers.
    */
   function extractTenantId(payload: Record<string, unknown>): string | null {
@@ -50,7 +50,7 @@ export const registerAnalytics: ContextModule = async (
       const data = createAnalyticsEvent(type, tenantId, occurredAt, payload);
       await repo.insertEvent(data);
     } catch (err) {
-      // Analytics ingestion is best-effort — do not crash the bus.
+      // Analytics ingestion is best-effort - do not crash the bus.
       console.error("[analytics] ingestion error for type=%s tenant=%s: %s", type, tenantId, err);
     }
   }

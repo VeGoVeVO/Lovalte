@@ -83,7 +83,7 @@ function registerAnalyticsSubscriptions(
       const data = createAnalyticsEvent(type, tenantId, occurredAt, payload);
       await repo.insertEvent(data);
     } catch {
-      // best-effort — swallow errors
+      // best-effort - swallow errors
     }
   }
 

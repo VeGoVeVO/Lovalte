@@ -3,6 +3,7 @@ import { GlassButton } from "../../design-system/halo";
 import { IconPicker } from "./IconPicker";
 import { svgToPngDataUrl } from "./lucideRaster";
 import { useUploadImage, fileToDataUrl, validateImageFile } from "./useImages";
+import { useT } from "../../lib/i18n";
 
 interface AssetFieldProps {
   kind: "icon" | "logo" | "strip";
@@ -21,6 +22,7 @@ interface AssetFieldProps {
  * the image in the card-image DB and hand back its public ref via `onChange`.
  */
 export function AssetField({ kind, label, hint, value, onChange, iconColor }: AssetFieldProps) {
+  const { t } = useT();
   const fileRef = useRef<HTMLInputElement>(null);
   const [picking, setPicking] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,7 +45,7 @@ export function AssetField({ kind, label, hint, value, onChange, iconColor }: As
       const res = await upload.mutateAsync({ kind, source: "upload", dataUrl });
       onChange(res.url);
     } catch (err) {
-      setError((err as { message?: string })?.message ?? "Upload failed.");
+      setError((err as { message?: string })?.message ?? t("Upload failed."));
     }
   };
 
@@ -56,7 +58,7 @@ export function AssetField({ kind, label, hint, value, onChange, iconColor }: As
       const res = await upload.mutateAsync({ kind, source: "lucide", dataUrl });
       onChange(res.url);
     } catch (err) {
-      setError((err as { message?: string })?.message ?? "Could not save icon.");
+      setError((err as { message?: string })?.message ?? t("Could not save icon."));
     }
   };
 
@@ -72,10 +74,10 @@ export function AssetField({ kind, label, hint, value, onChange, iconColor }: As
         }}
       >
         {value ? (
-          <img src={value} alt={`${label} preview`} width={56} height={56} loading="lazy"
+          <img src={value} alt={t("{label} preview", { label })} width={56} height={56} loading="lazy"
             style={{ width: "100%", height: "100%", objectFit: "contain" }} />
         ) : (
-          <span aria-hidden="true" style={{ color: "var(--muted, #889)", fontSize: "0.7rem" }}>none</span>
+          <span aria-hidden="true" style={{ color: "var(--muted, #889)", fontSize: "0.7rem" }}>{t("none")}</span>
         )}
       </div>
 
@@ -88,17 +90,17 @@ export function AssetField({ kind, label, hint, value, onChange, iconColor }: As
           {kind === "icon" && (
             <GlassButton type="button" variant="ghost" onClick={() => setPicking(true)} disabled={busy}
               style={{ fontSize: "0.8rem", padding: "0.35rem 0.7rem" }}>
-              Choose icon
+              {t("Choose icon")}
             </GlassButton>
           )}
           <GlassButton type="button" variant="ghost" onClick={() => fileRef.current?.click()} disabled={busy}
             aria-busy={busy} style={{ fontSize: "0.8rem", padding: "0.35rem 0.7rem" }}>
-            {busy ? "Uploading…" : "Upload"}
+            {busy ? t("Uploading…") : t("Upload")}
           </GlassButton>
           {value && (
             <GlassButton type="button" variant="ghost" onClick={() => onChange("")} disabled={busy}
               style={{ fontSize: "0.8rem", padding: "0.35rem 0.7rem" }}>
-              Remove
+              {t("Remove")}
             </GlassButton>
           )}
         </div>

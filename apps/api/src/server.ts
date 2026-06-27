@@ -11,7 +11,7 @@ async function main(): Promise<void> {
   try {
     (process as unknown as { loadEnvFile?: (p: string) => void }).loadEnvFile?.(".env");
   } catch {
-    /* no .env file — rely on the real environment */
+    /* no .env file - rely on the real environment */
   }
   const config = loadConfig();
   const pool = new Pool({ connectionString: config.DATABASE_URL });

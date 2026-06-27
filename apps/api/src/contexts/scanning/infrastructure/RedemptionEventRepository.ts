@@ -10,9 +10,9 @@ const PG_UNIQUE_VIOLATION = "23505";
  * PostgreSQL implementation of IRedemptionEventRepository.
  *
  * Security:
- *  - Parameterized SQL only — no string concatenation.
+ *  - Parameterized SQL only - no string concatenation.
  *  - Sets app.current_tenant per transaction so RLS policy applies to the INSERT.
- *  - Silently ignores idempotency_key unique violations (23505) — the Redis
+ *  - Silently ignores idempotency_key unique violations (23505) - the Redis
  *    idempotency guard already deduplicates before this path is reached, but the
  *    DB constraint acts as a final belt-and-suspenders for race conditions.
  */
@@ -43,7 +43,7 @@ export class RedemptionEventRepository implements IRedemptionEventRepository {
           ],
         );
       } catch (e: unknown) {
-        // Unique violation on idempotency_key: already persisted — treat as success
+        // Unique violation on idempotency_key: already persisted - treat as success
         if (
           e instanceof Error &&
           (e as Error & { code?: string }).code === PG_UNIQUE_VIOLATION

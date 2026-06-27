@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api, type ApiError } from "../../lib/api";
 import { GlassCard, GlassButton } from "../../design-system/halo";
 import type { Member } from "./MembersPage";
+import { useT } from "../../lib/i18n";
 
 // ── types ────────────────────────────────────────────────────────────────────
 type ActivityEntry = {
@@ -60,6 +61,7 @@ const TD: React.CSSProperties = { padding: "0.9rem 1.25rem", verticalAlign: "mid
 
 // ── component ─────────────────────────────────────────────────────────────────
 export function MemberDetail({ memberId, onBack }: MemberDetailProps) {
+  const { t } = useT();
   const PAGE_SIZE = 10;
   const [page, setPage] = useState(1);
 
@@ -87,14 +89,14 @@ export function MemberDetail({ memberId, onBack }: MemberDetailProps) {
         <button
           className="btn ghost"
           onClick={onBack}
-          aria-label="Back to members list"
+          aria-label={t("Back to members list")}
           style={{ display: "inline-flex", alignItems: "center", gap: "0.45rem", padding: "0.55rem 0.9rem" }}
         >
           <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
             strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M19 12H5M11 6l-6 6 6 6" />
           </svg>
-          Members
+          {t("Members")}
         </button>
       </div>
 
@@ -102,26 +104,25 @@ export function MemberDetail({ memberId, onBack }: MemberDetailProps) {
       {memberQ.isError ? (
         <GlassCard className="feature" style={{ marginBottom: "1.5rem" }}>
           <p role="alert" style={{ margin: 0, color: "var(--muted)" }}>
-            Could not load member:{" "}
-            {(memberQ.error as ApiError)?.message ?? "Unknown error"}
+            {t("Could not load member: {message}", { message: (memberQ.error as ApiError)?.message ?? t("Unknown error") })}
           </p>
         </GlassCard>
       ) : (
         <GlassCard hover light className="feature" style={{ marginBottom: "1.5rem" }}>
           {memberQ.isLoading ? (
-            <p aria-live="polite" style={{ margin: 0, color: "var(--muted)" }}>Loading…</p>
+            <p aria-live="polite" style={{ margin: 0, color: "var(--muted)" }}>{t("Loading…")}</p>
           ) : (
             <>
               <h2 style={{ margin: "0 0 1.25rem", fontSize: "1.55rem", fontWeight: 600,
                 letterSpacing: "-.025em", color: "var(--text)" }}>
-                {m?.displayName ?? m?.email ?? "Member"}
+                {m?.displayName ?? m?.email ?? t("Member")}
               </h2>
               <dl style={{ display: "flex", gap: "2.5rem", flexWrap: "wrap", margin: 0 }}>
                 {m?.email && (
                   <div>
                     <dt style={{ fontSize: "0.7rem", fontWeight: 600, letterSpacing: "0.06em",
                       textTransform: "uppercase", color: "var(--muted)", marginBottom: "0.3rem" }}>
-                      Email
+                      {t("Email")}
                     </dt>
                     <dd style={{ margin: 0 }}>{m.email}</dd>
                   </div>
@@ -129,19 +130,19 @@ export function MemberDetail({ memberId, onBack }: MemberDetailProps) {
                 <div>
                   <dt style={{ fontSize: "0.7rem", fontWeight: 600, letterSpacing: "0.06em",
                     textTransform: "uppercase", color: "var(--muted)", marginBottom: "0.3rem" }}>
-                    Balance
+                    {t("Balance")}
                   </dt>
                   <dd style={{ margin: 0, fontVariantNumeric: "tabular-nums" }}>
-                    {m?.balance?.toLocaleString() ?? "—"}&thinsp;pts
+                    {m?.balance?.toLocaleString() ?? "-"}&thinsp;pts
                   </dd>
                 </div>
                 <div>
                   <dt style={{ fontSize: "0.7rem", fontWeight: 600, letterSpacing: "0.06em",
                     textTransform: "uppercase", color: "var(--muted)", marginBottom: "0.3rem" }}>
-                    Tier
+                    {t("Tier")}
                   </dt>
                   <dd style={{ margin: 0, textTransform: "capitalize" }}>
-                    {m?.tier ?? "—"}
+                    {m?.tier ?? "-"}
                   </dd>
                 </div>
               </dl>
@@ -153,39 +154,38 @@ export function MemberDetail({ memberId, onBack }: MemberDetailProps) {
       {/* Activity ledger */}
       <h3 style={{ margin: "0 0 1rem", fontSize: "0.72rem", fontWeight: 600,
         letterSpacing: "0.06em", color: "var(--muted)", textTransform: "uppercase" }}>
-        Activity
+        {t("Activity")}
       </h3>
 
       {activityQ.isError ? (
         <GlassCard className="feature">
           <p role="alert" style={{ margin: 0, color: "var(--muted)" }}>
-            Could not load activity:{" "}
-            {(activityQ.error as ApiError)?.message ?? "Unknown error"}
+            {t("Could not load activity: {message}", { message: (activityQ.error as ApiError)?.message ?? t("Unknown error") })}
           </p>
         </GlassCard>
       ) : activityQ.isLoading ? (
         <GlassCard className="feature">
           <p aria-live="polite" style={{ margin: 0, color: "var(--muted)" }}>
-            Loading activity…
+            {t("Loading activity…")}
           </p>
         </GlassCard>
       ) : !act?.items?.length ? (
         <GlassCard className="feature" style={{ textAlign: "center", padding: "3rem 2rem" }}>
-          <p style={{ margin: 0, color: "var(--muted)" }}>No activity recorded yet.</p>
+          <p style={{ margin: 0, color: "var(--muted)" }}>{t("No activity recorded yet.")}</p>
         </GlassCard>
       ) : (
         <>
           <GlassCard className="feature" style={{ padding: 0, overflow: "hidden" }}>
             <div style={{ overflowX: "auto" }}>
               <table
-                aria-label="Activity ledger"
+                aria-label={t("Activity ledger")}
                 style={{ width: "100%", borderCollapse: "collapse", minWidth: "26rem" }}
               >
                 <thead>
                   <tr style={{ borderBottom: "1px solid rgba(32,36,42,0.08)" }}>
-                    <th scope="col" style={TH}>Date</th>
-                    <th scope="col" style={TH}>Reason</th>
-                    <th scope="col" style={{ ...TH, textAlign: "right" }}>Points</th>
+                    <th scope="col" style={TH}>{t("Date")}</th>
+                    <th scope="col" style={TH}>{t("Reason")}</th>
+                    <th scope="col" style={{ ...TH, textAlign: "right" }}>{t("Points")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -207,7 +207,7 @@ export function MemberDetail({ memberId, onBack }: MemberDetailProps) {
                           fontWeight: 600,
                           color: entry.delta >= 0 ? "#1a7a45" : "#b93333",
                         }}
-                        aria-label={`${entry.delta >= 0 ? "+" : ""}${entry.delta} points`}
+                        aria-label={t("{delta} points", { delta: `${entry.delta >= 0 ? "+" : ""}${entry.delta.toLocaleString()}` })}
                       >
                         {entry.delta >= 0 ? "+" : ""}
                         {entry.delta.toLocaleString()}
@@ -222,7 +222,7 @@ export function MemberDetail({ memberId, onBack }: MemberDetailProps) {
           {/* Pagination */}
           {totalPages > 1 && (
             <nav
-              aria-label="Activity pagination"
+              aria-label={t("Activity pagination")}
               style={{ display: "flex", justifyContent: "space-between",
                 alignItems: "center", marginTop: "1rem", gap: "1rem" }}
             >
@@ -230,25 +230,25 @@ export function MemberDetail({ memberId, onBack }: MemberDetailProps) {
                 className="btn ghost"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1}
-                aria-label="Previous page"
+                aria-label={t("Previous page")}
                 aria-disabled={page <= 1}
                 style={{ opacity: page <= 1 ? 0.4 : 1 }}
               >
-                ← Previous
+                {t("← Previous")}
               </button>
               <span style={{ fontSize: "0.85rem", color: "var(--muted)" }}
                 aria-live="polite" aria-atomic="true">
-                Page {page} of {totalPages}
+                {t("Page {page} of {totalPages}", { page, totalPages })}
               </span>
               <button
                 className="btn ghost"
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page >= totalPages}
-                aria-label="Next page"
+                aria-label={t("Next page")}
                 aria-disabled={page >= totalPages}
                 style={{ opacity: page >= totalPages ? 0.4 : 1 }}
               >
-                Next →
+                {t("Next →")}
               </button>
             </nav>
           )}

@@ -1,4 +1,4 @@
-/* footer — verbatim from the original Halo component. */
+/* footer - verbatim from the original Halo component. */
 export function Footer() {
   return (
     <footer>

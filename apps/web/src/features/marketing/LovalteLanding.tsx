@@ -1,8 +1,9 @@
 import { Link } from "react-router-dom";
 import { GlassCard, Reveal, haloCss } from "../../design-system/halo";
+import { useT, LanguageSwitcher } from "../../lib/i18n";
 
 /* Lovalte marketing landing (the public front door at '/').
-   Reuses the Halo glass design system (tokens + primitives) — loyalty content,
+   Reuses the Halo glass design system (tokens + primitives) - loyalty content,
    real router-link CTAs into the app. Presentational only, no state. */
 
 function Ico({ d }: { d: string }) {
@@ -33,11 +34,11 @@ function QrMotif() {
 
 const FEATURES = [
   { d: "M3 7h18v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7zm0 0l2-3h14l2 3M16 12h3", title: "Design your card",
-    body: "A visual builder — colors, logo, fields and reward rules. Publish a card to Apple Wallet in minutes." },
+    body: "A visual builder - colors, logo, fields and reward rules. Publish a card to Apple Wallet in minutes." },
   { d: "M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h2v2h-2zM18 14h2M14 18h2v2M18 18h2",
     title: "One QR to scan", body: "Staff scan a customer's pass to award or redeem points. No app for them, no extra hardware for you." },
   { d: "M4 19V5m0 14h16M8 16V11m4 5V8m4 8v-3", title: "See what works",
-    body: "A live dashboard of members, visits, redemptions and points liability — across every location." },
+    body: "A live dashboard of members, visits, redemptions and points liability - across every location." },
 ];
 
 const STEPS = [
@@ -47,6 +48,7 @@ const STEPS = [
 ];
 
 export function LovalteLanding() {
+  const { t } = useT();
   return (
     <div className="halo" style={{ minHeight: "100vh" }}>
       <style>{haloCss}</style>
@@ -59,16 +61,17 @@ export function LovalteLanding() {
         {/* nav */}
         <header className="nav">
           <div className="container">
-            <nav className="glass navbar" aria-label="Primary">
+            <nav className="glass navbar" aria-label={t("Primary")}>
               <span className="brand"><span className="dot" aria-hidden="true" />Lovalte</span>
               <div className="navlinks">
-                <a href="#features">Product</a>
-                <a href="#how">How it works</a>
-                <a href="#start">Pricing</a>
+                <a href="#features">{t("Product")}</a>
+                <a href="#how">{t("How it works")}</a>
+                <a href="#start">{t("Pricing")}</a>
               </div>
               <div className="navcta" style={{ gap: "0.9rem" }}>
-                <Link to="/login" className="btn ghost">Sign in</Link>
-                <Link to="/signup" className="btn">Get started</Link>
+                <LanguageSwitcher />
+                <Link to="/login" className="btn ghost">{t("Sign in")}</Link>
+                <Link to="/signup" className="btn">{t("Get started")}</Link>
               </div>
             </nav>
           </div>
@@ -80,18 +83,17 @@ export function LovalteLanding() {
             <div className="container">
               <div className="hero-wrap">
                 <div className="hero-copy">
-                  <span className="eyebrow">Loyalty in Apple Wallet</span>
-                  <h1 className="hero" id="hero-title">Loyalty cards your customers actually keep.</h1>
+                  <span className="eyebrow">{t("Loyalty in Apple Wallet")}</span>
+                  <h1 className="hero" id="hero-title">{t("Loyalty cards your customers actually keep.")}</h1>
                   <p className="lead">
-                    Lovalte turns paper punch cards into a beautiful pass in Apple Wallet. Design your
-                    card, share one QR, and watch repeat visits grow — nothing for customers to install.
+                    {t("Lovalte turns paper punch cards into a beautiful pass in Apple Wallet. Design your card, share one QR, and watch repeat visits grow - nothing for customers to install.")}
                   </p>
                   <div className="hero-actions">
-                    <Link to="/signup" className="btn">Get started free</Link>
-                    <a href="#how" className="btn ghost">See how it works</a>
+                    <Link to="/signup" className="btn">{t("Get started free")}</Link>
+                    <a href="#how" className="btn ghost">{t("See how it works")}</a>
                   </div>
                   <p className="body" style={{ marginTop: "0.4rem" }}>
-                    Already a member? <Link to="/login">Sign in</Link>
+                    {t("Already a member?")} <Link to="/login">{t("Sign in")}</Link>
                   </p>
                 </div>
 
@@ -133,15 +135,15 @@ export function LovalteLanding() {
           <section id="features" aria-labelledby="features-title">
             <div className="container">
               <Reveal className="section-head">
-                <span className="eyebrow">Everything you need</span>
-                <h2 className="section" id="features-title">A loyalty program your customers love.</h2>
+                <span className="eyebrow">{t("Everything you need")}</span>
+                <h2 className="section" id="features-title">{t("A loyalty program your customers love.")}</h2>
               </Reveal>
               <Reveal className="grid-3">
                 {FEATURES.map((f) => (
                   <GlassCard hover light className="feature" key={f.title}>
                     <span className="ico"><Ico d={f.d} /></span>
-                    <h3 className="cardt">{f.title}</h3>
-                    <p className="body">{f.body}</p>
+                    <h3 className="cardt">{t(f.title)}</h3>
+                    <p className="body">{t(f.body)}</p>
                   </GlassCard>
                 ))}
               </Reveal>
@@ -152,15 +154,15 @@ export function LovalteLanding() {
           <section id="how" aria-labelledby="how-title">
             <div className="container">
               <Reveal className="section-head">
-                <span className="eyebrow">How it works</span>
-                <h2 className="section" id="how-title">Live in three steps.</h2>
+                <span className="eyebrow">{t("How it works")}</span>
+                <h2 className="section" id="how-title">{t("Live in three steps.")}</h2>
               </Reveal>
               <Reveal className="grid-3">
                 {STEPS.map((s) => (
                   <GlassCard light className="feature" key={s.n}>
                     <span className="ico" aria-hidden="true" style={{ fontWeight: 600 }}>{s.n}</span>
-                    <h3 className="cardt">{s.title}</h3>
-                    <p className="body">{s.body}</p>
+                    <h3 className="cardt">{t(s.title)}</h3>
+                    <p className="body">{t(s.body)}</p>
                   </GlassCard>
                 ))}
               </Reveal>
@@ -172,14 +174,14 @@ export function LovalteLanding() {
             <div className="container">
               <Reveal>
                 <GlassCard light className="waitlist">
-                  <span className="eyebrow">Free to start</span>
-                  <h2 className="section" id="start-title">Start your loyalty program.</h2>
+                  <span className="eyebrow">{t("Free to start")}</span>
+                  <h2 className="section" id="start-title">{t("Start your loyalty program.")}</h2>
                   <p className="lead" style={{ maxWidth: "42ch" }}>
-                    Build your first card today. No customer app, no hardware — just a QR and Apple Wallet.
+                    {t("Build your first card today. No customer app, no hardware - just a QR and Apple Wallet.")}
                   </p>
                   <div className="hero-actions" style={{ justifyContent: "center" }}>
-                    <Link to="/signup" className="btn">Get started free</Link>
-                    <Link to="/login" className="btn ghost">Sign in</Link>
+                    <Link to="/signup" className="btn">{t("Get started free")}</Link>
+                    <Link to="/login" className="btn ghost">{t("Sign in")}</Link>
                   </div>
                 </GlassCard>
               </Reveal>
@@ -192,10 +194,10 @@ export function LovalteLanding() {
             <div className="foot">
               <span className="brand"><span className="dot" aria-hidden="true" />Lovalte</span>
               <div className="links">
-                <a href="#features">Product</a><a href="#how">How it works</a>
-                <Link to="/login">Sign in</Link><Link to="/signup">Get started</Link>
+                <a href="#features">{t("Product")}</a><a href="#how">{t("How it works")}</a>
+                <Link to="/login">{t("Sign in")}</Link><Link to="/signup">{t("Get started")}</Link>
               </div>
-              <div className="copy">© 2026 Lovalte. Loyalty in Apple Wallet.</div>
+              <div className="copy">{t("© 2026 Lovalte. Loyalty in Apple Wallet.")}</div>
             </div>
           </div>
         </footer>

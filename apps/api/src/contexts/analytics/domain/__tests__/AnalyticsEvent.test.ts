@@ -52,7 +52,7 @@ describe("createAnalyticsEvent", () => {
   it("returns a frozen payload reference (not mutated by factory)", () => {
     const payload = { memberId: "m1", pointsDelta: 10 };
     const event = createAnalyticsEvent("points_earned", "tenant-id", new Date(), payload);
-    // payload object is the same reference — factory does not deep-clone
+    // payload object is the same reference - factory does not deep-clone
     expect(event.payload).toBe(payload);
   });
 });

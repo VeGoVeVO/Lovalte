@@ -1,4 +1,4 @@
-/** Shared client-side image limits — mirror the server's CardImage domain rules. */
+/** Shared client-side image limits - mirror the server's CardImage domain rules. */
 export const ALLOWED_UPLOAD_TYPES = [
   "image/png",
   "image/jpeg",

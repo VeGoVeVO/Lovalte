@@ -9,7 +9,7 @@ interface SlugProps { value: string }
 export class Slug extends ValueObject<SlugProps> {
   private static readonly RE = /^[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$|^[a-z0-9]$/;
 
-  /** Create from a raw slug string — validates format. */
+  /** Create from a raw slug string - validates format. */
   static create(raw: string): Slug {
     const s = raw.trim().toLowerCase();
     if (!s || !Slug.RE.test(s)) {

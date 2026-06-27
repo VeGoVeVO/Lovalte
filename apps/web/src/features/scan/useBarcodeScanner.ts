@@ -107,7 +107,7 @@ export function useBarcodeScanner(): UseBarcodeScanner {
             setStatus("idle");
             return;
           } catch {
-            /* no QR in this frame — keep scanning */
+            /* no QR in this frame - keep scanning */
           }
         }
         timerRef.current = window.setTimeout(tick, 110); // ~9 scans/sec

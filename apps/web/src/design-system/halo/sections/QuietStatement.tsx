@@ -1,7 +1,7 @@
 import { Reveal } from "../components/Reveal";
 import { GlassCard } from "../components/GlassCard";
 
-/* quiet statement + meta row — verbatim from the original Halo component. */
+/* quiet statement + meta row - verbatim from the original Halo component. */
 export function QuietStatement() {
   return (
     <section id="detail" aria-labelledby="detail-title">
@@ -11,7 +11,7 @@ export function QuietStatement() {
           Designed to be felt, not noticed.
         </h2>
         <p className="lead">
-          Most lights demand attention — a switch, a setting, a glare. Halo was
+          Most lights demand attention - a switch, a setting, a glare. Halo was
           built to recede. The effort went into the parts you never see.
         </p>
         <div className="meta-row">

@@ -1,7 +1,7 @@
 import { Reveal } from "../components/Reveal";
 import { GlassCard } from "../components/GlassCard";
 
-/* testimonial quote — verbatim from the original Halo component. */
+/* testimonial quote - verbatim from the original Halo component. */
 export function Testimonial() {
   return (
     <section id="story" aria-labelledby="story-title">

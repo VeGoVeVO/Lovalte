@@ -4,6 +4,7 @@ import { api, type ApiError } from "../../lib/api";
 import { AppShell } from "../../lib/AppShell";
 import { GlassCard, Icon } from "../../design-system/halo";
 import { MemberDetail } from "./MemberDetail";
+import { useT } from "../../lib/i18n";
 
 // ── types (exported so MemberDetail can share) ────────────────────────────────
 export type Member = {
@@ -51,6 +52,7 @@ function TierBadge({ tier }: { tier: string }) {
 
 // ── MemberListView ────────────────────────────────────────────────────────────
 function MemberListView({ onSelect }: { onSelect: (id: string) => void }) {
+  const { t } = useT();
   const { data: members, isLoading, isError, error } = useQuery<Member[], ApiError>({
     queryKey: ["members"],
     queryFn: () => api.get<Member[]>("/api/v1/members"),
@@ -60,8 +62,7 @@ function MemberListView({ onSelect }: { onSelect: (id: string) => void }) {
     return (
       <GlassCard className="feature">
         <p role="alert" style={{ margin: 0, color: "var(--muted)" }}>
-          Failed to load members:{" "}
-          {(error as ApiError)?.message ?? "Unknown error"}
+          {t("Failed to load members: {message}", { message: (error as ApiError)?.message ?? t("Unknown error") })}
         </p>
       </GlassCard>
     );
@@ -70,8 +71,8 @@ function MemberListView({ onSelect }: { onSelect: (id: string) => void }) {
   if (isLoading) {
     return (
       <GlassCard className="feature">
-        <p aria-live="polite" aria-label="Loading members" style={{ margin: 0, color: "var(--muted)" }}>
-          Loading…
+        <p aria-live="polite" aria-label={t("Loading members")} style={{ margin: 0, color: "var(--muted)" }}>
+          {t("Loading…")}
         </p>
       </GlassCard>
     );
@@ -81,10 +82,10 @@ function MemberListView({ onSelect }: { onSelect: (id: string) => void }) {
     return (
       <GlassCard className="feature" style={{ textAlign: "center", padding: "5rem 2rem" }}>
         <p style={{ margin: "0 0 0.5rem", fontSize: "1.05rem", fontWeight: 500 }}>
-          No members yet — issue a card to get started.
+          {t("No members yet - issue a card to get started.")}
         </p>
         <p className="body" style={{ margin: 0 }}>
-          Members appear here once a loyalty card has been issued to a customer.
+          {t("Members appear here once a loyalty card has been issued to a customer.")}
         </p>
       </GlassCard>
     );
@@ -94,22 +95,22 @@ function MemberListView({ onSelect }: { onSelect: (id: string) => void }) {
     <GlassCard className="feature" style={{ padding: 0, overflow: "hidden" }}>
       <div style={{ overflowX: "auto" }}>
         <table
-          aria-label="Members"
+          aria-label={t("Members")}
           style={{ width: "100%", borderCollapse: "collapse", minWidth: "38rem" }}
         >
           <thead>
             <tr style={{ borderBottom: "1px solid rgba(32,36,42,0.08)" }}>
-              <th scope="col" style={TH}>Name</th>
-              <th scope="col" style={TH}>Email</th>
-              <th scope="col" style={{ ...TH, textAlign: "right" }}>Balance</th>
-              <th scope="col" style={TH}>Tier</th>
+              <th scope="col" style={TH}>{t("Name")}</th>
+              <th scope="col" style={TH}>{t("Email")}</th>
+              <th scope="col" style={{ ...TH, textAlign: "right" }}>{t("Balance")}</th>
+              <th scope="col" style={TH}>{t("Tier")}</th>
               <th scope="col" style={{ ...TH, width: "3.5rem", textAlign: "center" }}>
-                {/* icon-only column — label provided on each action button */}
+                {/* icon-only column - label provided on each action button */}
                 <span style={{
                   position: "absolute", width: 1, height: 1, padding: 0, margin: -1,
                   overflow: "hidden", clip: "rect(0,0,0,0)", whiteSpace: "nowrap", border: 0,
                 }}>
-                  Actions
+                  {t("Actions")}
                 </span>
               </th>
             </tr>
@@ -121,14 +122,14 @@ function MemberListView({ onSelect }: { onSelect: (id: string) => void }) {
                 style={{ borderBottom: "1px solid rgba(32,36,42,0.05)" }}
               >
                 <td style={{ ...TD, fontWeight: 500 }}>
-                  {m.displayName ?? <span style={{ color: "var(--muted)" }}>—</span>}
+                  {m.displayName ?? <span style={{ color: "var(--muted)" }}>-</span>}
                 </td>
                 <td style={{ ...TD, color: "var(--muted)", fontSize: "0.9rem" }}>
-                  {m.email ?? <span style={{ opacity: 0.5 }}>—</span>}
+                  {m.email ?? <span style={{ opacity: 0.5 }}>-</span>}
                 </td>
                 <td
                   style={{ ...TD, textAlign: "right", fontVariantNumeric: "tabular-nums" }}
-                  aria-label={`${m.balance.toLocaleString()} points`}
+                  aria-label={t("{balance} points", { balance: m.balance.toLocaleString() })}
                 >
                   {m.balance.toLocaleString()}&thinsp;pts
                 </td>
@@ -138,7 +139,7 @@ function MemberListView({ onSelect }: { onSelect: (id: string) => void }) {
                 <td style={{ ...TD, textAlign: "center" }}>
                   <button
                     className="btn ghost"
-                    aria-label={`View details for ${m.displayName ?? m.email ?? "member"}`}
+                    aria-label={t("View details for {name}", { name: m.displayName ?? m.email ?? t("member") })}
                     onClick={() => onSelect(m.id)}
                     style={{ padding: "0.4rem 0.55rem", lineHeight: 1, display: "inline-flex" }}
                   >
@@ -159,7 +160,7 @@ function MemberListView({ onSelect }: { onSelect: (id: string) => void }) {
         }}
         aria-live="polite"
       >
-        {members.length} member{members.length !== 1 ? "s" : ""}
+        {t("{count} members", { count: members.length })}
       </div>
     </GlassCard>
   );
@@ -167,10 +168,11 @@ function MemberListView({ onSelect }: { onSelect: (id: string) => void }) {
 
 // ── MembersPage (named export) ────────────────────────────────────────────────
 export function MembersPage() {
+  const { t } = useT();
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   return (
-    <AppShell title={selectedId ? undefined : "Members"}>
+    <AppShell title={selectedId ? undefined : t("Members")}>
       {selectedId ? (
         <MemberDetail memberId={selectedId} onBack={() => setSelectedId(null)} />
       ) : (

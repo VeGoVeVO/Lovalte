@@ -1,6 +1,6 @@
 import { useRef } from "react";
 
-/* glass card primitive (pointer-tracked specular light) — verbatim from the original Halo component. */
+/* glass card primitive (pointer-tracked specular light) - verbatim from the original Halo component. */
 export function GlassCard({ className = "", hover = false, light = false, children, ...rest }) {
   const ref = useRef(null);
   const raf = useRef(0);

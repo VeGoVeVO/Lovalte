@@ -16,7 +16,7 @@ type TenantRow = {
 /**
  * PostgreSQL implementation of ITenantRepository.
  * iam.tenants has no RLS (tenant table itself is not scoped by tenant_id).
- * All SQL uses parameterised $N placeholders — no string concatenation.
+ * All SQL uses parameterised $N placeholders - no string concatenation.
  */
 export class TenantRepository implements ITenantRepository {
   constructor(private readonly pool: Pool) {}

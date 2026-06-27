@@ -64,7 +64,7 @@ export interface CardImageProps {
 }
 
 /**
- * CardImage — a stored binary card asset (icon/logo/strip). The entity carries
+ * CardImage - a stored binary card asset (icon/logo/strip). The entity carries
  * metadata only; the raw bytes are passed alongside to the repository so large
  * blobs never travel through domain logic. `create` enforces every boundary
  * invariant (kind, MIME allowlist, size cap, magic-byte match) so an invalid

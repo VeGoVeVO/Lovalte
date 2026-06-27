@@ -2,7 +2,7 @@ import { GlassButton } from "../components/GlassButton";
 import { Icon } from "../icons";
 import { scrollTo } from "../lib/scrollTo";
 
-/* hero with parallax glass disc — verbatim from the original Halo component.
+/* hero with parallax glass disc - verbatim from the original Halo component.
    `discRef` is owned by the page composition (HaloLanding) which drives the
    pointer parallax effect; passed down so the JSX stays unchanged. */
 export function Hero({ discRef }) {

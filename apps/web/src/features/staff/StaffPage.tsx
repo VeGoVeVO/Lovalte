@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, type ApiError } from "../../lib/api";
 import { AppShell } from "../../lib/AppShell";
 import { GlassCard, GlassButton, GlassInput, Icon, Dropdown } from "../../design-system/halo";
+import { useT } from "../../lib/i18n";
 
 /* ── domain types (mirror identity context DTOs) ─────────────── */
 type UserRole = "owner" | "manager" | "staff";
@@ -32,9 +33,10 @@ const ROLE_BG: Record<UserRole, string> = {
 };
 
 function RoleBadge({ role }: { role: UserRole }) {
+  const { t } = useT();
   return (
     <span
-      aria-label={`Role: ${role}`}
+      aria-label={t("Role: {role}", { role })}
       style={{
         fontSize: "0.72rem",
         fontWeight: 600,
@@ -52,10 +54,11 @@ function RoleBadge({ role }: { role: UserRole }) {
 }
 
 function StatusBadge({ status }: { status: UserStatus }) {
+  const { t } = useT();
   if (status === "active") return null;
   return (
     <span
-      aria-label={`Status: ${status}`}
+      aria-label={t("Status: {status}", { status })}
       style={{
         fontSize: "0.68rem",
         fontWeight: 500,
@@ -73,6 +76,7 @@ function StatusBadge({ status }: { status: UserStatus }) {
 
 /* ── page ─────────────────────────────────────────────────────── */
 export function StaffPage() {
+  const { t } = useT();
   const qc = useQueryClient();
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<"manager" | "staff">("staff");
@@ -95,7 +99,7 @@ export function StaffPage() {
       qc.invalidateQueries({ queryKey: ["staff-users"] });
     },
     onError: (e: ApiError) => {
-      setInviteError(e.message ?? "Invitation failed");
+      setInviteError(e.message ?? t("Invitation failed"));
     },
   });
 
@@ -115,16 +119,16 @@ export function StaffPage() {
   };
 
   return (
-    <AppShell title="Staff">
+    <AppShell title={t("Staff")}>
       <div style={{ display: "flex", flexDirection: "column", gap: "2rem", maxWidth: "720px" }}>
 
         {/* ── Invite form ──────────────────────────────────────── */}
-        <GlassCard light className="feature" aria-label="Invite team member">
+        <GlassCard light className="feature" aria-label={t("Invite team member")}>
           <h2 className="section" style={{ fontSize: "1.15rem" }}>
-            Invite team member
+            {t("Invite team member")}
           </h2>
           <p className="body" style={{ margin: "0 0 0.25rem" }}>
-            Owners and managers can invite staff or additional managers.
+            {t("Owners and managers can invite staff or additional managers.")}
           </p>
 
           <form
@@ -137,14 +141,14 @@ export function StaffPage() {
                 htmlFor="invite-email"
                 style={{ display: "block", fontSize: "0.85rem", color: "var(--muted)", marginBottom: "0.35rem", fontWeight: 500 }}
               >
-                Email address
+                {t("Email address")}
               </label>
               <GlassInput
                 id="invite-email"
                 type="email"
                 autoComplete="email"
-                placeholder="colleague@example.com"
-                aria-label="Email address"
+                placeholder={t("colleague@example.com")}
+                aria-label={t("Email address")}
                 value={email}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
                 required
@@ -156,16 +160,16 @@ export function StaffPage() {
                 htmlFor="invite-role"
                 style={{ display: "block", fontSize: "0.85rem", color: "var(--muted)", marginBottom: "0.35rem", fontWeight: 500 }}
               >
-                Role
+                {t("Role")}
               </label>
               <Dropdown
                 id="invite-role"
-                ariaLabel="Role"
+                ariaLabel={t("Role")}
                 value={role}
                 onChange={(v) => setRole(v as "manager" | "staff")}
                 options={[
-                  { value: "staff", label: "Staff" },
-                  { value: "manager", label: "Manager" },
+                  { value: "staff", label: t("Staff") },
+                  { value: "manager", label: t("Manager") },
                 ]}
               />
             </div>
@@ -177,7 +181,7 @@ export function StaffPage() {
             ) : null}
 
             <GlassButton type="submit" disabled={invite.isPending || !email.trim()}>
-              {invite.isPending ? "Sending…" : "Send invite"}
+              {invite.isPending ? t("Sending…") : t("Send invite")}
             </GlassButton>
           </form>
 
@@ -191,13 +195,12 @@ export function StaffPage() {
               <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
                 <Icon.Check aria-hidden="true" />
                 <span style={{ fontWeight: 500 }}>
-                  Invite sent to {inviteResult.email}
+                  {t("Invite sent to {email}", { email: inviteResult.email })}
                 </span>
                 <RoleBadge role={inviteResult.role} />
               </div>
               <p style={{ margin: "0 0 0.5rem", fontSize: "0.82rem", color: "var(--muted)" }}>
-                Share this token with the invitee — expires{" "}
-                {new Date(inviteResult.expiresAt).toLocaleDateString()}.
+                {t("Share this token with the invitee - expires {date}.", { date: new Date(inviteResult.expiresAt).toLocaleDateString() })}
               </p>
               <div style={{ display: "flex", gap: "0.5rem", alignItems: "flex-start" }}>
                 <code
@@ -218,10 +221,10 @@ export function StaffPage() {
                   type="button"
                   variant="ghost"
                   onClick={copyToken}
-                  aria-label="Copy invitation token"
+                  aria-label={t("Copy invitation token")}
                   style={{ flexShrink: 0, padding: "0.5rem 0.85rem", fontSize: "0.82rem" }}
                 >
-                  {copied ? "Copied" : "Copy"}
+                  {copied ? t("Copied") : t("Copy")}
                 </GlassButton>
               </div>
             </div>
@@ -229,25 +232,25 @@ export function StaffPage() {
         </GlassCard>
 
         {/* ── Team list ─────────────────────────────────────────── */}
-        <GlassCard light className="feature" aria-label="Team members">
+        <GlassCard light className="feature" aria-label={t("Team members")}>
           <h2 className="section" style={{ fontSize: "1.15rem" }}>
-            Team members
+            {t("Team members")}
           </h2>
 
           {isLoading ? (
             <p className="body" aria-busy="true" aria-live="polite">
-              Loading team…
+              {t("Loading team…")}
             </p>
           ) : isError ? (
             <p className="body" role="alert">
-              Could not load users. Only owners and managers can view this page.
+              {t("Could not load users. Only owners and managers can view this page.")}
             </p>
           ) : !users?.length ? (
-            <p className="body">No team members yet — invite someone above.</p>
+            <p className="body">{t("No team members yet - invite someone above.")}</p>
           ) : (
             <ul
               role="list"
-              aria-label="Team members"
+              aria-label={t("Team members")}
               style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: "0.5rem" }}
             >
               {users.map((user) => (
@@ -262,7 +265,7 @@ export function StaffPage() {
                         className="body"
                         style={{ display: "block", fontSize: "0.75rem", marginTop: "0.1rem" }}
                       >
-                        Joined {new Date(user.createdAt).toLocaleDateString()}
+                        {t("Joined {date}", { date: new Date(user.createdAt).toLocaleDateString() })}
                       </span>
                     </div>
                     <div style={{ display: "flex", gap: "0.4rem", alignItems: "center", flexShrink: 0 }}>

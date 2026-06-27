@@ -7,7 +7,7 @@ import type { IPassSigningPort } from "../domain/ports";
 const IMAGE_REF_RE = /\/api\/v1\/images\/([0-9a-fA-F-]{36})/;
 
 /**
- * PassKitSigningAdapter — implements IPassSigningPort with passkit-generator v3.5.7.
+ * PassKitSigningAdapter - implements IPassSigningPort with passkit-generator v3.5.7.
  *
  * Builds a real .pkpass bundle: a `pass.json` buffer (so passkit detects the
  * storeCard type + validates), Apple-named image buffers, signed with the

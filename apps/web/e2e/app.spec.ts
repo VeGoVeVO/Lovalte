@@ -22,7 +22,7 @@ test("auth guard redirects unauthenticated /app to /login", async ({ page }) => 
 test("signup -> dashboard -> every app page renders -> logout", async ({ page }) => {
   // --- signup ---
   // Type with real key events (pressSequentially) so React's controlled-input
-  // onChange runs per keystroke — plain fill() can outrun React state.
+  // onChange runs per keystroke - plain fill() can outrun React state.
   await page.goto("/signup");
   const bizField = page.getByPlaceholder("Business name");
   const emailField = page.getByPlaceholder("you@business.com");

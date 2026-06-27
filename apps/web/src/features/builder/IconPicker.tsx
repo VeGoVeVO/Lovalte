@@ -2,6 +2,7 @@ import { useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { createPortal } from "react-dom";
 import { DynamicIcon, iconNames } from "lucide-react/dynamic";
 import { Scrollbar } from "../../design-system/halo";
+import { useT } from "../../lib/i18n";
 
 /** kebab-case ("a-arrow-down") → readable label ("A Arrow Down"). */
 function pretty(name: string): string {
@@ -36,6 +37,7 @@ interface IconPickerProps {
  * accessible: autofocus search, Esc closes, Tab trapped within the dialog.
  */
 export function IconPicker({ onPick, onClose }: IconPickerProps) {
+  const { t } = useT();
   const [query, setQuery] = useState("");
   const dialogRef = useRef<HTMLDivElement>(null);
 
@@ -133,20 +135,20 @@ export function IconPicker({ onPick, onClose }: IconPickerProps) {
         <div style={{ display: "flex", alignItems: "center", gap: "1rem", padding: "1.1rem 1.25rem 0.9rem" }}>
           <div style={{ flex: 1 }}>
             <h2 id="icon-picker-title" style={{ margin: 0, fontSize: "1.1rem", fontWeight: 650, color: "#20242A", letterSpacing: "-0.01em" }}>
-              Choose an icon
+              {t("Choose an icon")}
             </h2>
             <p id="icon-results-count" role="status" aria-live="polite"
               style={{ margin: "0.15rem 0 0", fontSize: "0.78rem", color: "#6F7684" }}>
               {matches.total === 0
-                ? "No icons match — try another word."
+                ? t("No icons match - try another word.")
                 : matches.mode === "featured"
-                  ? `Popular icons · ${all.length} in total — search to find any.`
+                  ? t("Popular icons · {n} in total - search to find any.", { n: all.length })
                   : matches.total > VISIBLE_CAP
-                    ? `Showing ${VISIBLE_CAP} of ${matches.total} — keep typing to narrow.`
-                    : `${matches.total} icon${matches.total === 1 ? "" : "s"}.`}
+                    ? t("Showing {shown} of {total} - keep typing to narrow.", { shown: VISIBLE_CAP, total: matches.total })
+                    : matches.total === 1 ? t("1 icon.") : t("{n} icons.", { n: matches.total })}
             </p>
           </div>
-          <button type="button" className="lvt-ip-close" onClick={onClose} aria-label="Close icon picker">✕</button>
+          <button type="button" className="lvt-ip-close" onClick={onClose} aria-label={t("Close icon picker")}>✕</button>
         </div>
 
         {/* Search */}
@@ -160,8 +162,8 @@ export function IconPicker({ onPick, onClose }: IconPickerProps) {
             autoFocus
             type="text"
             value={query}
-            placeholder="Search icons — e.g. coffee, star, gift"
-            aria-label={`Search ${all.length} icons`}
+            placeholder={t("Search icons - e.g. coffee, star, gift")}
+            aria-label={t("Search {n} icons", { n: all.length })}
             aria-describedby="icon-results-count"
             onChange={(e) => setQuery(e.target.value)}
           />
@@ -171,7 +173,7 @@ export function IconPicker({ onPick, onClose }: IconPickerProps) {
         <Scrollbar style={{ flex: 1, padding: "0.25rem 1.25rem 1.25rem", background: "#FBFCFE", borderTop: "1px solid rgba(20,24,32,.06)" }}>
           {matches.shown.length === 0 ? (
             <p style={{ textAlign: "center", color: "#6F7684", padding: "2.5rem 1rem", fontSize: "0.9rem" }}>
-              Nothing here. Try “coffee”, “gift”, or “star”.
+              {t("No icons match - try another word.")}
             </p>
           ) : (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(68px, 1fr))", gap: "0.5rem", paddingTop: "0.75rem" }}>

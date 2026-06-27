@@ -14,7 +14,7 @@ import type { IPassBinaryPort } from "../domain/ports";
  */
 export class PassBinaryAdapter implements IPassBinaryPort {
   async get(_s3Key: string): Promise<Buffer | null> {
-    // TODO: fetch from S3 — return null triggers a 503 in the route layer.
+    // TODO: fetch from S3 - return null triggers a 503 in the route layer.
     return null;
   }
 }

@@ -2,7 +2,7 @@ import { Reveal } from "../components/Reveal";
 import { GlassCard } from "../components/GlassCard";
 import { features } from "../content/features";
 
-/* feature grid — verbatim from the original Halo component. */
+/* feature grid - verbatim from the original Halo component. */
 export function Features() {
   return (
     <section id="features" aria-labelledby="features-title">

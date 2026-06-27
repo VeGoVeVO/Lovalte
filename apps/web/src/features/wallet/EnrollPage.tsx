@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { GlassCard, GlassButton, haloCss } from "../../design-system/halo";
 import { publicEnroll, type PublicEnrollDto } from "./useEnroll";
+import { useT } from "@/lib/i18n";
 
 type State =
   | { phase: "loading" }
@@ -26,11 +27,12 @@ const css = `
 
 /**
  * Public landing page reached by scanning a merchant's enrollment QR
- * (`/enroll#<token>`). Auto-creates a unique member + pass — no login, no typing.
+ * (`/enroll#<token>`). Auto-creates a unique member + pass - no login, no typing.
  * Branded with the Halo theme (injects haloCss + wraps in `.halo`) since it
  * renders outside the authenticated AppShell.
  */
 export function EnrollPage() {
+  const { t } = useT();
   const [state, setState] = useState<State>({ phase: "loading" });
   const ran = useRef(false); // guard StrictMode double-invoke → avoid double enrollment
 
@@ -39,15 +41,15 @@ export function EnrollPage() {
     ran.current = true;
     const token = window.location.hash.replace(/^#/, "").trim();
     if (!token) {
-      setState({ phase: "error", message: "This enrollment link is missing its code." });
+      setState({ phase: "error", message: t("This enrollment link is missing its code.") });
       return;
     }
     publicEnroll(token)
       .then((pass) => setState({ phase: "done", pass }))
       .catch((e: { message?: string }) =>
-        setState({ phase: "error", message: e?.message ?? "This enrollment link is invalid or expired." }),
+        setState({ phase: "error", message: e?.message ?? t("This enrollment link is invalid or expired.") }),
       );
-  }, []);
+  }, [t]);
 
   return (
     <div className="halo">
@@ -73,7 +75,7 @@ export function EnrollPage() {
             {state.phase === "loading" && (
               <div role="status" aria-live="polite">
                 <div className="enroll-spin" aria-hidden="true" />
-                <p className="body" style={{ margin: "1.1rem 0 0" }}>Setting up your loyalty card…</p>
+                <p className="body" style={{ margin: "1.1rem 0 0" }}>{t("Setting up your loyalty card…")}</p>
               </div>
             )}
 
@@ -82,24 +84,24 @@ export function EnrollPage() {
                 <div className="enroll-badge" aria-hidden="true">
                   <svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 7" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
                 </div>
-                <h1 className="cardt" style={{ margin: "0 0 .4rem", fontSize: "clamp(1.3rem,5vw,1.6rem)" }}>You're in! 🎉</h1>
+                <h1 className="cardt" style={{ margin: "0 0 .4rem", fontSize: "clamp(1.3rem,5vw,1.6rem)" }}>{t("You're in! 🎉")}</h1>
                 <p className="body" style={{ margin: "0 0 1.5rem", color: "var(--muted, #6F7684)" }}>
-                  Your loyalty card is ready. Add it to Apple Wallet:
+                  {t("Your loyalty card is ready. Add it to Apple Wallet:")}
                 </p>
                 <a
                   className="enroll-wallet"
                   href={`/api/v1/public/passes/${state.pass.passId}/pkpass?t=${encodeURIComponent(state.pass.downloadToken)}`}
-                  aria-label="Add to Apple Wallet — downloads your pass"
+                  aria-label={t("Add to Apple Wallet - downloads your pass")}
                 >
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <rect x="2.5" y="5.5" width="19" height="14" rx="3" stroke="currentColor" strokeWidth="1.7" />
                     <path d="M2.5 10h19" stroke="currentColor" strokeWidth="1.7" />
                     <circle cx="17.5" cy="14.5" r="1.4" fill="currentColor" />
                   </svg>
-                  Add to Apple Wallet
+                  {t("Add to Apple Wallet")}
                 </a>
                 <p className="meta" style={{ marginTop: "1.25rem", fontSize: ".75rem", color: "var(--muted, #6F7684)" }}>
-                  On iPhone this opens straight in Wallet. If nothing happens, open this page in Safari.
+                  {t("On iPhone this opens straight in Wallet. If nothing happens, open this page in Safari.")}
                 </p>
               </div>
             )}
@@ -109,15 +111,15 @@ export function EnrollPage() {
                 <div className="enroll-badge err" aria-hidden="true">
                   <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M12 8v5M12 16.5h.01" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" /><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" /></svg>
                 </div>
-                <h1 className="cardt" style={{ margin: "0 0 .4rem", fontSize: "clamp(1.2rem,5vw,1.5rem)" }}>Couldn't set up your card</h1>
+                <h1 className="cardt" style={{ margin: "0 0 .4rem", fontSize: "clamp(1.2rem,5vw,1.5rem)" }}>{t("Couldn't set up your card")}</h1>
                 <p className="body" style={{ margin: "0 0 1.25rem", color: "var(--muted, #6F7684)" }}>{state.message}</p>
-                <GlassButton type="button" onClick={() => window.location.reload()}>Try again</GlassButton>
+                <GlassButton type="button" onClick={() => window.location.reload()}>{t("Try again")}</GlassButton>
               </div>
             )}
           </GlassCard>
 
           <p className="meta" style={{ textAlign: "center", marginTop: "1rem", fontSize: ".72rem", color: "var(--muted, #6F7684)" }}>
-            Loyalty cards in Apple Wallet · lovalte.com
+            {t("Loyalty cards in Apple Wallet · lovalte.com")}
           </p>
         </div>
       </main>

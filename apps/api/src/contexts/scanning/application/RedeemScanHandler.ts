@@ -9,7 +9,7 @@ export interface RedeemScanCommand {
   /** Always positive; handler applies sign based on action. */
   readonly amount: number;
   readonly idempotencyKey: string;
-  /** tenantId from the caller's session — used for tenant isolation check. */
+  /** tenantId from the caller's session - used for tenant isolation check. */
   readonly callerTenantId: string;
   readonly staffUserId: string;
 }
@@ -29,13 +29,13 @@ const IDEM_KEY_PREFIX = "scan:idem:";
 const PASS_ID_RE = /^[0-9a-fA-F-]{8,64}$/;
 
 /**
- * RedeemScanHandler — orchestrates the full scan-to-award/redeem flow.
+ * RedeemScanHandler - orchestrates the full scan-to-award/redeem flow.
  *
  * The wallet barcode carries only the passId (industry standard for loyalty
  * cards). Guard order:
  *  1. Resolve + tenant-isolate: the pass must belong to the authenticated
- *     caller's tenant (RLS-scoped lookup — a foreign or unknown card is rejected).
- *  2. Idempotency guard (30 s) — absorb double-taps / retries.
+ *     caller's tenant (RLS-scoped lookup - a foreign or unknown card is rejected).
+ *  2. Idempotency guard (30 s) - absorb double-taps / retries.
  *  3. Persist RedemptionEvent → cache result → publish RedemptionApplied.
  *
  * The loyalty card's QR is intentionally REUSABLE (scanned every visit), so
@@ -58,7 +58,7 @@ export class RedeemScanHandler {
     }
 
     // 1. The barcode is the passId. Validate shape, then resolve it scoped to the
-    //    caller's tenant — this both looks it up and enforces tenant isolation:
+    //    caller's tenant - this both looks it up and enforces tenant isolation:
     //    a pass from another business is invisible under RLS → "card not found".
     const passId = cmd.qrPayload.trim();
     if (!PASS_ID_RE.test(passId)) {
@@ -69,7 +69,7 @@ export class RedeemScanHandler {
       return err(new NotFoundError("Card not found for this business"));
     }
 
-    // 2. Idempotency guard — absorb double-taps / retries within 30 s
+    // 2. Idempotency guard - absorb double-taps / retries within 30 s
     const idemKey = `${IDEM_KEY_PREFIX}${cmd.idempotencyKey}`;
     const cached = await this.cache.get(idemKey);
     if (cached !== null) {

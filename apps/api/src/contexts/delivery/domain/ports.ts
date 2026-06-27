@@ -32,7 +32,7 @@ export interface IRegistrationRepository {
   save(reg: Registration): Promise<void>;
   /** Delete a single registration. Also called by unregister flow. */
   deleteByDeviceAndSerial(deviceId: string, serialNumber: string): Promise<void>;
-  /** Count remaining registrations for a device — used to decide if device row can be deleted. */
+  /** Count remaining registrations for a device - used to decide if device row can be deleted. */
   countByDevice(deviceId: string): Promise<number>;
   /** Apple endpoint 9.2: serials updated since an opaque epoch tag. */
   findUpdatedSince(

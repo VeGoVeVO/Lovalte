@@ -2,6 +2,8 @@
  *  Mimics the Apple Wallet storeCard layout at ~375 px width.
  *  role="img" so screen readers treat it as a decorative graphic, not a form. */
 
+import { useT } from "../../lib/i18n";
+
 interface Props {
   organizationName: string;
   logoText?: string;
@@ -24,12 +26,13 @@ export function CardPreview({
   primaryValue,
   iconUrl,
 }: Props) {
+  const { t } = useT();
   const lbl = labelColor || foregroundColor;
 
   return (
     <div
       role="img"
-      aria-label={`Loyalty card preview for ${organizationName || "your business"}`}
+      aria-label={t("Loyalty card preview for {name}", { name: organizationName || t("your business") })}
       style={{
         background: backgroundColor || "rgb(26,26,46)",
         borderRadius: 20,
@@ -65,10 +68,10 @@ export function CardPreview({
             </div>
           )}
           <div style={{ fontSize: "1rem", fontWeight: 600, letterSpacing: "-0.015em" }}>
-            {organizationName || "Your Business"}
+            {organizationName || t("Your Business")}
           </div>
         </div>
-        {/* Card icon (chosen Lucide/uploaded image) — falls back to a tier star */}
+        {/* Card icon (chosen Lucide/uploaded image) - falls back to a tier star */}
         <div
           aria-hidden="true"
           style={{

@@ -98,7 +98,7 @@ export function registerDeliveryRoutes(
       // status 200
       reply.header("Last-Modified", result.lastModified);
       if (!result.buffer) {
-        // S3 cache miss — pass-issuance must (re)sign and cache before we can serve.
+        // S3 cache miss - pass-issuance must (re)sign and cache before we can serve.
         return reply.status(503).send();
       }
       return reply

@@ -20,7 +20,7 @@ const timeseriesQuerySchema = z.object({
 /**
  * Register all analytics REST routes on the Fastify instance.
  * All routes require owner or manager role.
- * tenantId is always extracted from the verified session — never from the request body.
+ * tenantId is always extracted from the verified session - never from the request body.
  */
 export function registerAnalyticsRoutes(
   app: FastifyInstance,

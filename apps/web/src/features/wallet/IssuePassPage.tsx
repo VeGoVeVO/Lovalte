@@ -5,38 +5,41 @@ import { api } from "../../lib/api";
 import { AppShell } from "../../lib/AppShell";
 import { GlassCard, GlassButton, Dropdown } from "../../design-system/halo";
 import { useEnrollLink, useIssueDirect, type EnrollLinkDto, type IssuePassDto } from "./useEnroll";
+import { useT } from "@/lib/i18n";
 
 type CardTemplateDTO = { id: string; name: string; status: string; brand: { organizationName: string } };
 
-function signingHint(message?: string): string {
+function signingHint(message: string | undefined, t: (key: string) => string): string {
   const lower = (message ?? "").toLowerCase();
   const isSigning = ["signing", "certificate", "pkcs12", "p12", "icon image"].some((k) => lower.includes(k));
   return isSigning
-    ? "Pass signing isn't fully configured yet (Apple certificate / card icon). Check the card has an icon and the certs are set."
-    : (message ?? "Something went wrong. Please try again.");
+    ? t("Pass signing isn't fully configured yet (Apple certificate / card icon). Check the card has an icon and the certs are set.")
+    : t("Something went wrong. Please try again.");
 }
 
 function TemplateSelect({ templates, value, onChange }: {
   templates: CardTemplateDTO[]; value: string; onChange: (id: string) => void;
 }) {
+  const { t } = useT();
   return (
     <div>
       <label htmlFor="tpl-select" className="meta" style={{ display: "block", marginBottom: "0.4rem" }}>
-        Loyalty card
+        {t("Loyalty card")}
       </label>
       <Dropdown
         id="tpl-select"
-        ariaLabel="Loyalty card"
-        placeholder="Select a published card…"
+        ariaLabel={t("Loyalty card")}
+        placeholder={t("Select a published card…")}
         value={value}
         onChange={onChange}
-        options={templates.map((t) => ({ value: t.id, label: `${t.name} — ${t.brand.organizationName}` }))}
+        options={templates.map((tpl) => ({ value: tpl.id, label: `${tpl.name} - ${tpl.brand.organizationName}` }))}
       />
     </div>
   );
 }
 
 export function IssuePassPage() {
+  const { t } = useT();
   const [templateId, setTemplateId] = useState("");
   const [link, setLink] = useState<EnrollLinkDto | null>(null);
   const [issued, setIssued] = useState<IssuePassDto | null>(null);
@@ -57,29 +60,28 @@ export function IssuePassPage() {
   const makeQr = async () => {
     setError(null); setIssued(null);
     try { setLink(await enrollLink.mutateAsync({ templateId })); }
-    catch (e) { setError(signingHint((e as { message?: string })?.message)); }
+    catch (e) { setError(signingHint((e as { message?: string })?.message, t)); }
   };
   const issueNow = async () => {
     setError(null); setLink(null);
     try { setIssued(await issueDirect.mutateAsync({ templateId })); }
-    catch (e) { setError(signingHint((e as { message?: string })?.message)); }
+    catch (e) { setError(signingHint((e as { message?: string })?.message, t)); }
   };
 
   return (
-    <AppShell title="Issue a Wallet Pass">
+    <AppShell title={t("Issue a Wallet Pass")}>
       <div style={{ maxWidth: 540, margin: "0 auto" }}>
         <GlassCard light className="waitlist">
           <p className="body" style={{ marginBottom: "1.5rem" }}>
-            Pick a published card, then let customers self-enroll by scanning a QR — each scan
-            creates a unique member automatically. No member IDs to type.
+            {t("Pick a published card, then let customers self-enroll by scanning a QR - each scan creates a unique member automatically. No member IDs to type.")}
           </p>
 
-          {isLoading && <p className="meta" role="status" aria-live="polite">Loading cards…</p>}
-          {isError && <p className="meta" role="alert" style={{ color: "#c0392b" }}>Could not load cards. Refresh the page.</p>}
+          {isLoading && <p className="meta" role="status" aria-live="polite">{t("Loading cards…")}</p>}
+          {isError && <p className="meta" role="alert" style={{ color: "#c0392b" }}>{t("Could not load cards. Refresh the page.")}</p>}
 
           {!isLoading && !isError && templates.length === 0 && (
             <GlassCard className="feature"><p className="body">
-              No published cards yet. Create and publish a card in the builder first.
+              {t("No published cards yet. Create and publish a card in the builder first.")}
             </p></GlassCard>
           )}
 
@@ -90,20 +92,20 @@ export function IssuePassPage() {
               <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
                 <GlassButton type="button" onClick={makeQr}
                   disabled={!templateId || enrollLink.isPending} aria-busy={enrollLink.isPending}>
-                  {enrollLink.isPending ? "Creating…" : "Create enrollment QR"}
+                  {enrollLink.isPending ? t("Creating…") : t("Create enrollment QR")}
                 </GlassButton>
                 <GlassButton type="button" variant="ghost" onClick={issueNow}
                   disabled={!templateId || issueDirect.isPending} aria-busy={issueDirect.isPending}>
-                  {issueDirect.isPending ? "Issuing…" : "Issue one to a walk-in"}
+                  {issueDirect.isPending ? t("Issuing…") : t("Issue one to a walk-in")}
                 </GlassButton>
               </div>
 
               {error && <p role="alert" className="meta" style={{ color: "#c0392b" }}>{error}</p>}
 
               {link && (
-                <section aria-label="Enrollment QR" style={{ textAlign: "center", marginTop: "0.5rem" }}>
+                <section aria-label={t("Enrollment QR")} style={{ textAlign: "center", marginTop: "0.5rem" }}>
                   <p className="meta" style={{ marginBottom: "0.8rem" }}>
-                    Customers scan this to get their loyalty card
+                    {t("Customers scan this to get their loyalty card")}
                   </p>
                   <div style={{ display: "inline-block", padding: "1rem", background: "#fff", borderRadius: 12 }}>
                     <QRCodeSVG value={link.url} size={196} />
@@ -115,14 +117,14 @@ export function IssuePassPage() {
               )}
 
               {issued && (
-                <section aria-label="Issued pass" style={{ marginTop: "0.5rem" }}>
+                <section aria-label={t("Issued pass")} style={{ marginTop: "0.5rem" }}>
                   <p className="body" role="status" style={{ color: "rgb(0,150,70)", marginBottom: "0.8rem" }}>
-                    Pass issued — member <code>{issued.memberId.slice(0, 8)}</code>.
+                    {t("Pass issued - member {memberId}.", { memberId: issued.memberId.slice(0, 8) })}
                   </p>
                   <a href={`/api/v1/passes/${issued.passId}/pkpass`} download="lovalte.pkpass"
                     className="btn" style={{ display: "inline-block", textDecoration: "none" }}
-                    aria-label="Add to Apple Wallet — downloads the .pkpass file">
-                    Add to Apple Wallet
+                    aria-label={t("Add to Apple Wallet - downloads the .pkpass file")}>
+                    {t("Add to Apple Wallet")}
                   </a>
                 </section>
               )}

@@ -9,7 +9,7 @@ async function migrate(): Promise<void> {
   try {
     (process as unknown as { loadEnvFile?: (p: string) => void }).loadEnvFile?.(".env");
   } catch {
-    /* no .env — rely on real env */
+    /* no .env - rely on real env */
   }
   const cfg = loadConfig();
   const pool = new Pool({ connectionString: cfg.DATABASE_URL });

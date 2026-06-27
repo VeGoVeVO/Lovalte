@@ -19,9 +19,9 @@ function log(obj: Record<string, unknown>): void {
  * APNs HTTP/2 push-notification adapter (ES256 JWT auth).
  *
  * Reads from process.env (NOT config/env.ts):
- *   APNS_KEY_PATH  — path to the .p8 private key file
- *   APNS_KEY_ID    — 10-character key ID shown in Apple Developer portal
- *   APNS_TEAM_ID   — 10-character Team ID shown in Apple Developer portal
+ *   APNS_KEY_PATH  - path to the .p8 private key file
+ *   APNS_KEY_ID    - 10-character key ID shown in Apple Developer portal
+ *   APNS_TEAM_ID   - 10-character Team ID shown in Apple Developer portal
  *
  * Falls back to a no-op log when any of those env vars is absent so that
  * non-production environments continue to work without credentials.
@@ -87,7 +87,7 @@ export class ApnsAdapter implements IPushNotificationPort {
 
   /**
    * Send one push to a single device token.
-   * Always resolves — errors are logged but never propagated so that a bad
+   * Always resolves - errors are logged but never propagated so that a bad
    * token doesn't block the remaining batch.
    */
   private sendOne(

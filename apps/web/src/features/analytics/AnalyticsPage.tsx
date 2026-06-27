@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { AppShell } from "../../lib/AppShell";
 import { GlassCard } from "../../design-system/halo";
 import { api } from "../../lib/api";
+import { useT } from "../../lib/i18n";
 import { MetricsChart } from "./MetricsChart";
 import type { TimeseriesPoint } from "./MetricsChart";
 
@@ -70,6 +71,7 @@ const kpiGridCss = `
 /* ─── component ──────────────────────────────────────────────────────── */
 
 export function AnalyticsPage() {
+  const { t } = useT();
   const [metric, setMetric] = useState<MetricValue>("scan");
   const [days, setDays] = useState<number>(30);
 
@@ -96,7 +98,7 @@ export function AnalyticsPage() {
     METRICS.find((m) => m.value === metric)?.label ?? metric;
 
   return (
-    <AppShell title="Analytics">
+    <AppShell title={t("Analytics")}>
       <style>{kpiGridCss}</style>
 
       {/* ── KPI cards ──────────────────────────────────────────────── */}
@@ -106,13 +108,13 @@ export function AnalyticsPage() {
           className="eyebrow"
           style={{ marginBottom: "1rem" }}
         >
-          Overview
+          {t("Overview")}
         </h2>
 
         {overview.isError && (
           <div role="alert" className="glass feature" style={{ marginBottom: "1.5rem" }}>
             <p className="body" style={{ margin: 0 }}>
-              Unable to load overview data — please refresh or sign in.
+              {t("Unable to load overview data - please refresh or sign in.")}
             </p>
           </div>
         )}
@@ -120,15 +122,15 @@ export function AnalyticsPage() {
         <ul
           className="grid-3 analytics-kpi-grid"
           style={{ gap: "1.5rem", listStyle: "none", padding: 0, margin: "0 0 2.5rem" }}
-          aria-label="Key performance indicators"
+          aria-label={t("Key performance indicators")}
         >
           {KPIS.map((kpi) => {
             const value = overview.data?.[kpi.key];
             const displayValue =
               overview.isLoading
-                ? "—"
+                ? "-"
                 : overview.isError
-                ? "—"
+                ? "-"
                 : (value ?? 0).toLocaleString();
 
             return (
@@ -136,12 +138,12 @@ export function AnalyticsPage() {
                 <GlassCard hover light className="meta">
                   <div
                     className="n"
-                    aria-label={`${kpi.label}: ${overview.isLoading ? "loading" : displayValue}`}
+                    aria-label={`${t(kpi.label)}: ${overview.isLoading ? t("loading") : displayValue}`}
                     aria-busy={overview.isLoading}
                   >
                     {displayValue}
                   </div>
-                  <div className="l">{kpi.label}</div>
+                  <div className="l">{t(kpi.label)}</div>
                 </GlassCard>
               </li>
             );
@@ -163,7 +165,7 @@ export function AnalyticsPage() {
           }}
         >
           <h2 className="cardt" id="chart-heading">
-            {metricLabel} over time
+            {t("{label} over time", { label: t(metricLabel) })}
           </h2>
 
           <div
@@ -176,7 +178,7 @@ export function AnalyticsPage() {
                 className="eyebrow"
                 style={{ display: "block", marginBottom: ".5rem" }}
               >
-                Metric
+                {t("Metric")}
               </span>
               <div style={{ display: "flex", gap: ".4rem", flexWrap: "wrap" }}>
                 {METRICS.map((m) => (
@@ -188,7 +190,7 @@ export function AnalyticsPage() {
                     aria-pressed={metric === m.value}
                     type="button"
                   >
-                    {m.label}
+                    {t(m.label)}
                   </button>
                 ))}
               </div>
@@ -201,7 +203,7 @@ export function AnalyticsPage() {
                 className="eyebrow"
                 style={{ display: "block", marginBottom: ".5rem" }}
               >
-                Range
+                {t("Range")}
               </span>
               <div style={{ display: "flex", gap: ".4rem" }}>
                 {DAY_OPTIONS.map((d) => (
@@ -211,7 +213,7 @@ export function AnalyticsPage() {
                     style={{ padding: ".4rem .7rem", fontSize: ".85rem" }}
                     onClick={() => setDays(d)}
                     aria-pressed={days === d}
-                    aria-label={`Last ${d} days`}
+                    aria-label={t("Last {n} days", { n: d })}
                     type="button"
                   >
                     {d}d
@@ -225,7 +227,7 @@ export function AnalyticsPage() {
         {/* Chart */}
         <MetricsChart
           data={timeseries.data?.series ?? []}
-          metricLabel={metricLabel}
+          metricLabel={t(metricLabel)}
           isLoading={timeseries.isLoading}
           isError={timeseries.isError}
         />

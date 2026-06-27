@@ -31,7 +31,7 @@ export const registerIdentity: ContextModule = async (app, deps) => {
     listUsers: new ListUsersHandler(userRepo),
   };
 
-  // Cross-context subscriptions (none for identity in MVP — it is upstream to all)
+  // Cross-context subscriptions (none for identity in MVP - it is upstream to all)
   // Future: subscribe to "TenantSuspended" from a billing context to gate logins.
 
   // Presentation

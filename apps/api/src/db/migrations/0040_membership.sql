@@ -1,7 +1,7 @@
 -- 0040_membership.sql
 -- Membership / Loyalty bounded context: tiers, members, point_ledger.
 -- Requires: 0000_init.sql (app_current_tenant), iam schema (tenants table).
--- Balance is always derived via SELECT SUM(delta) — never stored as a column.
+-- Balance is always derived via SELECT SUM(delta) - never stored as a column.
 
 CREATE SCHEMA IF NOT EXISTS loyalty;
 
@@ -26,7 +26,7 @@ CREATE INDEX IF NOT EXISTS idx_tiers_tenant
 
 -- ─── Member aggregate root ────────────────────────────────────────────────────
 -- pass_id is a cross-context reference (Pass Issuance) stored as a UUID ID only.
--- email and display_name are PII — nullable for anonymous enrolment (GDPR minimisation).
+-- email and display_name are PII - nullable for anonymous enrolment (GDPR minimisation).
 -- current_tier is a denormalised cache; source of truth is tier thresholds + ledger sum.
 CREATE TABLE IF NOT EXISTS loyalty.members (
   id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -81,6 +81,6 @@ CREATE RULE point_ledger_no_delete AS
 CREATE INDEX IF NOT EXISTS idx_ledger_member
   ON loyalty.point_ledger (member_id, recorded_at DESC);
 
--- Hot query: analytics — all ledger rows for a tenant in time order.
+-- Hot query: analytics - all ledger rows for a tenant in time order.
 CREATE INDEX IF NOT EXISTS idx_ledger_tenant
   ON loyalty.point_ledger (tenant_id, recorded_at DESC);

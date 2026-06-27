@@ -17,7 +17,7 @@ interface InvitationProps {
 }
 
 /**
- * Invitation entity (not an aggregate — lives inside identity context boundary).
+ * Invitation entity (not an aggregate - lives inside identity context boundary).
  * Created by InviteUserHandler; consumed by AcceptInvitationHandler.
  * Token is a single-use HMAC-SHA256 with 48h TTL.
  */
@@ -32,7 +32,7 @@ export class Invitation extends Entity<InvitationId> {
   }
 
   /**
-   * Factory — returns the invitation and the raw (unhashed) token.
+   * Factory - returns the invitation and the raw (unhashed) token.
    * Caller is responsible for delivering rawToken to the invitee (email etc.).
    */
   static create(params: {

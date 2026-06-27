@@ -92,7 +92,7 @@ export function registerCardDesignRoutes(
 ): void {
   const ownerManager = requireAuth(deps.config.SESSION_SECRET, ["owner", "manager"]);
 
-  /** POST /api/v1/card-templates — create a new draft template */
+  /** POST /api/v1/card-templates - create a new draft template */
   app.post("/api/v1/card-templates", { preHandler: ownerManager }, async (req, reply) => {
     const auth = getAuth(req);
     const body = parse(templateBodySchema, req.body);
@@ -117,7 +117,7 @@ export function registerCardDesignRoutes(
     return reply.status(201).send(r.value);
   });
 
-  /** GET /api/v1/card-templates — list templates for the authenticated tenant */
+  /** GET /api/v1/card-templates - list templates for the authenticated tenant */
   app.get("/api/v1/card-templates", { preHandler: ownerManager }, async (req, reply) => {
     const auth = getAuth(req);
     const query = parse(listQuerySchema, req.query);
@@ -126,7 +126,7 @@ export function registerCardDesignRoutes(
     return reply.status(200).send(r.value);
   });
 
-  /** GET /api/v1/card-templates/:id — fetch a single template */
+  /** GET /api/v1/card-templates/:id - fetch a single template */
   app.get("/api/v1/card-templates/:id", { preHandler: ownerManager }, async (req, reply) => {
     const auth = getAuth(req);
     const { id } = parse(idParamSchema, req.params);
@@ -135,7 +135,7 @@ export function registerCardDesignRoutes(
     return reply.status(200).send(r.value);
   });
 
-  /** PUT /api/v1/card-templates/:id — update a draft template's brand/reward config */
+  /** PUT /api/v1/card-templates/:id - update a draft template's brand/reward config */
   app.put("/api/v1/card-templates/:id", { preHandler: ownerManager }, async (req, reply) => {
     const auth = getAuth(req);
     const { id } = parse(idParamSchema, req.params);
@@ -162,7 +162,7 @@ export function registerCardDesignRoutes(
     return reply.status(200).send(r.value);
   });
 
-  /** POST /api/v1/card-templates/:id/publish — publish a draft template */
+  /** POST /api/v1/card-templates/:id/publish - publish a draft template */
   app.post(
     "/api/v1/card-templates/:id/publish",
     { preHandler: ownerManager },
@@ -199,7 +199,7 @@ export function registerCardDesignRoutes(
   );
 
   /**
-   * POST /api/v1/images — store a card image (uploaded file or rasterised Lucide
+   * POST /api/v1/images - store a card image (uploaded file or rasterised Lucide
    * icon) IN the database and return its public ref. Body is a base64 data URL.
    * Larger bodyLimit than the rest of the API; bytes are validated + magic-byte
    * checked in the domain before persisting.
@@ -224,7 +224,7 @@ export function registerCardDesignRoutes(
   );
 
   /**
-   * GET /api/v1/images/:id — public, unauthenticated serve of stored card art by
+   * GET /api/v1/images/:id - public, unauthenticated serve of stored card art by
    * unguessable UUID (devices/Apple Wallet fetch with no session). Hardened:
    * nosniff + immutable cache; SVG is sandboxed via CSP to neutralise scripts.
    */

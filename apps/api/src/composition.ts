@@ -8,7 +8,7 @@ import { registerDelivery } from "./contexts/delivery";
 import { registerAnalytics } from "./contexts/analytics";
 
 /** Composition root: the ordered set of bounded-context modules mounted on the API.
- *  Contexts never import each other — they integrate via deps.bus (DomainEventBus). */
+ *  Contexts never import each other - they integrate via deps.bus (DomainEventBus). */
 export const contextModules: ContextModule[] = [
   registerIdentity,
   registerCardDesign,

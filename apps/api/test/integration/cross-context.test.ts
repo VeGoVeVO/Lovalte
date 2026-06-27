@@ -10,7 +10,7 @@ import { systemClock } from "../../src/kernel";
 import type { Deps } from "../../src/shared/deps";
 
 /**
- * API integration tests — drive the real composed app via fastify.inject against
+ * API integration tests - drive the real composed app via fastify.inject against
  * the live Postgres + Redis (docker compose). No raw-SQL seeding; everything goes
  * through HTTP so the cross-context wiring + auth + tenant isolation are exercised
  * exactly as a client hits them.
@@ -60,7 +60,7 @@ const templateBody = {
   tierRules: [],
 };
 
-// success envelope is inconsistent across contexts ({data} vs bare) — unwrap either
+// success envelope is inconsistent across contexts ({data} vs bare) - unwrap either
 function body(res: { json: () => any }): any {
   const j = res.json();
   return j && typeof j === "object" && "data" in j ? j.data : j;

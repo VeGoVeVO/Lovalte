@@ -96,7 +96,7 @@ export class Pass extends AggregateRoot<PassId> {
     return pass;
   }
 
-  /** Reconstitute from persistence — no event emitted. */
+  /** Reconstitute from persistence - no event emitted. */
   static reconstitute(id: string, props: PassProps): Pass {
     return new Pass(PassId.from(id), props);
   }
@@ -107,7 +107,7 @@ export class Pass extends AggregateRoot<PassId> {
       throw new DomainError("Cannot update a voided pass", "PASS_VOIDED");
     }
     if (now <= this._lastUpdated) {
-      // Ensure monotonic — use at least one ms ahead.
+      // Ensure monotonic - use at least one ms ahead.
       now = new Date(this._lastUpdated.getTime() + 1);
     }
     this._fieldValues = [...fieldValues];
@@ -120,7 +120,7 @@ export class Pass extends AggregateRoot<PassId> {
     }));
   }
 
-  /** Void the pass — idempotent. */
+  /** Void the pass - idempotent. */
   voidPass(now: Date): void {
     if (this._voided) return;
     this._voided      = true;

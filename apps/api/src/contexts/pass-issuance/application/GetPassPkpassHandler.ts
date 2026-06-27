@@ -60,7 +60,7 @@ export class GetPassPkpassHandler {
       return err(new NotFoundError("Pass template not found"));
     }
 
-    // Wallet barcode = the bare passId (same as IssuePassHandler) — short → sparse
+    // Wallet barcode = the bare passId (same as IssuePassHandler) - short → sparse
     // QR that scans reliably; the staff-authed scan endpoint resolves it.
     const qrMessage = pass.id.value;
     const passJson  = this.builder.build(pass, template, qrMessage);

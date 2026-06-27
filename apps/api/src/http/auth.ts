@@ -11,7 +11,7 @@ export interface AuthContext {
 
 const COOKIE = "lovalte_session";
 
-/** HMAC-signed stateless session token (no JWT dep — node:crypto only). */
+/** HMAC-signed stateless session token (no JWT dep - node:crypto only). */
 export function signSession(ctx: AuthContext, secret: string): string {
   const body = Buffer.from(JSON.stringify(ctx)).toString("base64url");
   const mac = crypto.createHmac("sha256", secret).update(body).digest("base64url");

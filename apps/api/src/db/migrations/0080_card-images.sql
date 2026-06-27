@@ -1,6 +1,6 @@
 -- ============================================================
 -- Migration 0080: Card-Design image store
---   Table: card_images — binary card art (icon/logo/strip) held IN the database
+--   Table: card_images - binary card art (icon/logo/strip) held IN the database
 --   instead of an external S3/CDN URL. Lets merchants upload images or pick a
 --   premade Lucide icon (rasterised to PNG client-side) without any object store.
 --

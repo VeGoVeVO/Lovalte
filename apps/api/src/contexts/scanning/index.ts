@@ -9,12 +9,12 @@ import { registerScanningRoutes } from "./presentation/routes";
  * Scanning & Redemption context module.
  *
  * Wires up:
- *  - SqlPassLookup   — RLS-scoped resolve of a scanned passId → owning tenant
- *  - RedisCacheStore — idempotency window (30 s) for double-taps / retries
- *  - RedemptionEventRepository — append-only pg INSERT
- *  - RedeemScanHandler        — orchestrates the full scan flow
+ *  - SqlPassLookup   - RLS-scoped resolve of a scanned passId → owning tenant
+ *  - RedisCacheStore - idempotency window (30 s) for double-taps / retries
+ *  - RedemptionEventRepository - append-only pg INSERT
+ *  - RedeemScanHandler        - orchestrates the full scan flow
  *
- * Cross-context integration (event bus only — never direct imports):
+ * Cross-context integration (event bus only - never direct imports):
  *  Publishes: RedemptionApplied → consumed by the Membership context to
  *             award or redeem points on the member's balance.
  */

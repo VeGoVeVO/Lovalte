@@ -1,11 +1,11 @@
 import { Icon } from "../icons";
 
-/* landing feature content — verbatim from the original Halo component. */
+/* landing feature content - verbatim from the original Halo component. */
 export const features = [
   {
     icon: Icon.Sun,
     title: "Follows the sun",
-    body: "Halo warms toward amber at dusk and cools to daylight at dawn, so the room always reads the right time of day — no scenes to set.",
+    body: "Halo warms toward amber at dusk and cools to daylight at dawn, so the room always reads the right time of day - no scenes to set.",
   },
   {
     icon: Icon.Presence,
@@ -15,6 +15,6 @@ export const features = [
   {
     icon: Icon.Glass,
     title: "One piece of glass",
-    body: "A single hand-polished lens over a diffused core. Nothing to look at until it glows — then the whole surface lights from within.",
+    body: "A single hand-polished lens over a diffused core. Nothing to look at until it glows - then the whole surface lights from within.",
   },
 ];

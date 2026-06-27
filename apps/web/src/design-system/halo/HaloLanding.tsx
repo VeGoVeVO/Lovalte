@@ -10,10 +10,10 @@ import { Waitlist } from "./sections/Waitlist";
 import { Footer } from "./sections/Footer";
 
 /* ────────────────────────────────────────────────────────────────────────
-   Halo — ambient glass landing page (page composition).
+   Halo - ambient glass landing page (page composition).
    Verbatim logic from the original single-file component; only split into
    modules. This file owns the page-level state (email / joined), the hero
-   disc ref, the pointer-parallax effect, and the join() handler — then
+   disc ref, the pointer-parallax effect, and the join() handler - then
    composes the section modules under the same .halo wrapper + <style>.
    ──────────────────────────────────────────────────────────────────────── */
 export default function HaloLanding() {
@@ -21,7 +21,7 @@ export default function HaloLanding() {
   const [joined, setJoined] = useState(false);
   const discRef = useRef(null);
 
-  /* gentle pointer parallax on the hero disc — layers shift with motion */
+  /* gentle pointer parallax on the hero disc - layers shift with motion */
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     let raf = 0;

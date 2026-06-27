@@ -1,4 +1,4 @@
--- Scanning & Redemption context — append-only QR scan audit log.
+-- Scanning & Redemption context - append-only QR scan audit log.
 -- Depends on: 0000_init.sql (app_current_tenant function, gen_random_uuid).
 -- Ordering: runs after 0040_membership.sql.
 

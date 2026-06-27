@@ -44,7 +44,7 @@ export const registerPassIssuance: ContextModule = async (app, deps) => {
   // ── Cross-context event subscriptions ────────────────────────────────────
 
   /**
-   * CardTemplatePublished — snapshot the template data into pass_types so this
+   * CardTemplatePublished - snapshot the template data into pass_types so this
    * context can issue passes without importing the card-design domain.
    *
    * Expected payload: { templateId, tenantId, passTypeIdentifier, teamIdentifier,
@@ -56,7 +56,7 @@ export const registerPassIssuance: ContextModule = async (app, deps) => {
     const templateId = p.templateId as string;
     const tenantId = p.tenantId as string;
 
-    // Read the published template snapshot (cross-context read, by ID only — the
+    // Read the published template snapshot (cross-context read, by ID only - the
     // event carries IDs; brand/fields live in card_templates.config). Apple-level
     // identifiers (passType/team/webService) are infra config, never card-design data.
     const tpl = await deps.pool.query<{ name: string; config: Record<string, unknown> }>(
@@ -90,7 +90,7 @@ export const registerPassIssuance: ContextModule = async (app, deps) => {
   });
 
   /**
-   * PointsEarned — update the points/tier field values on the member's pass.
+   * PointsEarned - update the points/tier field values on the member's pass.
    * The bump to lastUpdated triggers PassFieldsUpdated, which the Delivery context
    * uses to send an APNs empty push, prompting the device to poll for the new version.
    *

@@ -17,7 +17,7 @@ export interface PublicEnrollDto {
 
 /**
  * Self-service enrollment: verifies the signed enrollment token, generates a
- * fresh unique member id (UUID — collision-free, never typed by a human), issues
+ * fresh unique member id (UUID - collision-free, never typed by a human), issues
  * the pass, and returns a download token so the customer can fetch their
  * .pkpass without an account.
  */

@@ -1,4 +1,4 @@
-/* Thin outline icons (hand-built, stroke 1.25) — verbatim from the original Halo component. */
+/* Thin outline icons (hand-built, stroke 1.25) - verbatim from the original Halo component. */
 export const Icon = {
   Sun: (p) => (
     <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor"

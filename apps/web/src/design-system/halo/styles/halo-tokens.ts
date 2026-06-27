@@ -1,6 +1,6 @@
-/* Halo design-token stylesheet — verbatim from the original Halo component.
+/* Halo design-token stylesheet - verbatim from the original Halo component.
    Token-driven frosted-glass system: depth from translucency, blur, soft layered
-   shadows and edge light — never from saturated color. Imported by HaloLanding. */
+   shadows and edge light - never from saturated color. Imported by HaloLanding. */
 export const css = `
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
 
@@ -15,7 +15,7 @@ export const css = `
   --border:rgba(255,255,255,.72);
   --text:#20242A;
   --muted:#6F7684;
-  /* refraction hints — reflections only, never primary UI color */
+  /* refraction hints - reflections only, never primary UI color */
   --ice:#C8EEFF;
   --cyan:#A9F5FF;
   --mint:#C8FFD8;
@@ -40,7 +40,7 @@ export const css = `
   --d-slow:480ms;
   --ease:cubic-bezier(.22,1,.36,1);
 
-  /* ── shadow tokens — extremely soft, layered, faint blue ── */
+  /* ── shadow tokens - extremely soft, layered, faint blue ── */
   --shadow-soft:
     0 1px 0 rgba(255,255,255,.7) inset,
     0 2px 6px -3px rgba(46,62,92,.10),
@@ -83,7 +83,14 @@ export const css = `
 /* ── glass primitive ────────────────────────────────────── */
 .halo .glass{
   position:relative;
-  background:var(--card);
+  /* Inherent frost: a faint translucent gradient + cool tint so the card reads
+     as glass even where backdrop-filter is unavailable (iOS Safari does not blur
+     a fixed negative-z backdrop, which otherwise made mobile cards flat white).
+     On capable browsers backdrop-filter blurs the ambient orbs on top of this. */
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.30), rgba(247,250,253,.14)),
+    radial-gradient(135% 135% at 0% 0%, rgba(200,238,255,.12), transparent 58%),
+    var(--card);
   -webkit-backdrop-filter:blur(var(--blur)) saturate(var(--sat));
   backdrop-filter:blur(var(--blur)) saturate(var(--sat));
   border:1px solid var(--border);
@@ -99,7 +106,7 @@ export const css = `
   background:linear-gradient(180deg, rgba(255,255,255,.55), rgba(255,255,255,0) 36%);
   opacity:.75;
 }
-/* faint iridescent edge reflection — almost invisible */
+/* faint iridescent edge reflection - almost invisible */
 .halo .glass::after{
   content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
   background:
@@ -109,7 +116,7 @@ export const css = `
   opacity:.6;
   transition:opacity var(--d) var(--ease);
 }
-/* pointer-tracked specular light — refraction changes with light */
+/* pointer-tracked specular light - refraction changes with light */
 .halo .glass-light::after{
   background:
     radial-gradient(340px 280px at var(--mx,50%) var(--my,50%),

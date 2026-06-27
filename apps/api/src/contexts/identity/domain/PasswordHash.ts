@@ -6,7 +6,7 @@ interface PasswordHashProps { encoded: string } // "saltHex:hashHex"
 /**
  * Scrypt-based password hash value object.
  * Format: "<16-byte-salt-hex>:<64-byte-hash-hex>"
- * Pure crypto — no I/O.
+ * Pure crypto - no I/O.
  */
 export class PasswordHash extends ValueObject<PasswordHashProps> {
   static readonly KEYLEN = 64;

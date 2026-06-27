@@ -38,7 +38,7 @@ interface PassFieldEntry {
 
 /**
  * Pure domain service: assembles the pass.json document from Pass aggregate data
- * and a frozen template snapshot. Zero I/O — returns a plain serialisable object.
+ * and a frozen template snapshot. Zero I/O - returns a plain serialisable object.
  *
  * The qrMessage is pre-computed by the application layer (HMAC-SHA256 token).
  */

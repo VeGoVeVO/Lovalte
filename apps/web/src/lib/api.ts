@@ -17,7 +17,7 @@ async function req<T>(path: string, opts: RequestInit = {}): Promise<T> {
   if (!res.ok) {
     throw (body?.error ?? { code: "INTERNAL", message: res.statusText }) as ApiError;
   }
-  // API success envelope is { data: ... } — unwrap it for callers.
+  // API success envelope is { data: ... } - unwrap it for callers.
   return (body && typeof body === "object" && "data" in body ? body.data : body) as T;
 }
 

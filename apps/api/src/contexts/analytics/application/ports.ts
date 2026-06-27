@@ -27,10 +27,10 @@ export interface TimeseriesDTO {
 /**
  * Port: all analytics read/write operations.
  * Implemented by AnalyticsRepository in the infrastructure layer.
- * Application handlers depend only on this interface — never on pg directly.
+ * Application handlers depend only on this interface - never on pg directly.
  */
 export interface IAnalyticsRepository {
-  /** Append a single analytics fact (idempotency not enforced here — events are naturally ordered). */
+  /** Append a single analytics fact (idempotency not enforced here - events are naturally ordered). */
   insertEvent(data: AnalyticsEventData): Promise<void>;
 
   /** Compute KPI aggregates for a tenant on-the-fly (GROUP BY, tenant-scoped). */

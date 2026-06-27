@@ -21,7 +21,7 @@ const makePass = (overrides?: { voided?: boolean }) => {
   return pass;
 };
 
-describe("Pass aggregate — authToken immutability", () => {
+describe("Pass aggregate - authToken immutability", () => {
   it("exposes the auth token but provides no public setter", () => {
     const pass = makePass();
     const token = pass.authToken.value;
@@ -79,7 +79,7 @@ describe("Pass.updateFields()", () => {
 });
 
 describe("Pass.voidPass()", () => {
-  it("is idempotent — second void does not add an extra event", () => {
+  it("is idempotent - second void does not add an extra event", () => {
     const pass = makePass();
     pass.pullEvents();
     const t1 = new Date("2026-06-01T00:00:00.000Z");

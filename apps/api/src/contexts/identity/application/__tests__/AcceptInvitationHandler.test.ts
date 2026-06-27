@@ -36,7 +36,7 @@ function makeBus(): DomainEventBus & { published: DomainEvent[] } {
 
 /**
  * Fake repo that returns the given invitation regardless of the tokenHash
- * (the handler looks it up by hash — for the "valid" and "expired/used" paths
+ * (the handler looks it up by hash - for the "valid" and "expired/used" paths
  * the invitation's own tokenHash will match or mismatch in verifyToken).
  */
 function makeInvitationRepo(invitation: Invitation | null): IInvitationRepository {

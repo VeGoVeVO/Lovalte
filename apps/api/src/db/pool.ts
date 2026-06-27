@@ -5,7 +5,7 @@ export function createPool(cfg: AppConfig): Pool {
   return new Pool({ connectionString: cfg.DATABASE_URL, max: 10 });
 }
 
-/** Run `fn` inside a single transaction — used for one-aggregate-per-tx writes. */
+/** Run `fn` inside a single transaction - used for one-aggregate-per-tx writes. */
 export async function withTransaction<T>(
   pool: Pool,
   fn: (client: PoolClient) => Promise<T>

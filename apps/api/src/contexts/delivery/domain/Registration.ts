@@ -15,7 +15,7 @@ export interface RegistrationProps {
   id: RegistrationId;
   tenantId: string;
   deviceId: DeviceId;
-  /** UUID of the issuance.passes row — cross-context reference by ID only. */
+  /** UUID of the issuance.passes row - cross-context reference by ID only. */
   passId: string;
   registeredAt: Date;
 }

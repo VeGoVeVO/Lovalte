@@ -74,7 +74,7 @@ export class User extends AggregateRoot<UserId> {
     return user;
   }
 
-  /** Reconstitute from persistence — no event emitted. */
+  /** Reconstitute from persistence - no event emitted. */
   static reconstitute(id: string, props: UserProps): User {
     return new User(UserId.from(id), props);
   }

@@ -31,7 +31,7 @@ export class UnregisterDeviceHandler {
 
     const device = await this.devices.findByLibId(cmd.deviceLibraryIdentifier);
     if (!device) {
-      // Nothing to unregister — treat as success (idempotent).
+      // Nothing to unregister - treat as success (idempotent).
       return ok(undefined);
     }
 
@@ -42,7 +42,7 @@ export class UnregisterDeviceHandler {
       await this.devices.delete(device.id.value);
     }
 
-    // The customer removed the card from their Wallet — surface it so Analytics
+    // The customer removed the card from their Wallet - surface it so Analytics
     // can track removals (cross-context via the bus; ids only).
     await this.bus.publish([{
       name: "PassRemoved",

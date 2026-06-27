@@ -4,7 +4,7 @@ interface EmailProps { value: string }
 
 /**
  * Email value object: RFC-5321 validated, lowercase-normalised.
- * Domain layer only — no I/O.
+ * Domain layer only - no I/O.
  */
 export class Email extends ValueObject<EmailProps> {
   private static readonly RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
