@@ -52,6 +52,13 @@ export class PassKitSigningAdapter implements IPassSigningPort {
       readFile(APPLE_WWDR_PATH),
     ]);
 
+    // teamIdentifier + passTypeIdentifier are Apple-account infra config, not
+    // card-design data. Always stamp the CURRENT configured values so a template
+    // published before the team id was set (stale pass_types snapshot with an
+    // empty teamIdentifier) can't produce an invalid pass.json.
+    if (this.config.APPLE_TEAM_ID) passJson.teamIdentifier = this.config.APPLE_TEAM_ID;
+    if (this.config.APPLE_PASS_TYPE_ID) passJson.passTypeIdentifier = this.config.APPLE_PASS_TYPE_ID;
+
     // ── Assemble the bundle ───────────────────────────────────────────────
     const buffers: Record<string, Buffer> = {
       "pass.json": Buffer.from(JSON.stringify(passJson)),
