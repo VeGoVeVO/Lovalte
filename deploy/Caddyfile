@@ -9,14 +9,22 @@
 {$DOMAIN:localhost} {
 	encode zstd gzip
 
-	# API + Apple Wallet web service → Fastify container.
-	@backend path /api/* /wallet/*
-	reverse_proxy @backend api:3001
+	# API + Apple Wallet web service → Fastify container. `handle` blocks are
+	# mutually exclusive and ordered, so these win BEFORE the SPA fallback (a bare
+	# try_files would otherwise rewrite /api/* → /index.html before proxying).
+	handle /api/* {
+		reverse_proxy api:3001
+	}
+	handle /wallet/* {
+		reverse_proxy api:3001
+	}
 
 	# Single-page app: serve files, fall back to index.html for client routes.
-	root * /srv
-	try_files {path} /index.html
-	file_server
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
 
 	header {
 		# HSTS (only sent over HTTPS). Drop or shorten max-age while testing.
