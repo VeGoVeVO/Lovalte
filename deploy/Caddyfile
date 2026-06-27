@@ -35,7 +35,7 @@
 		Permissions-Policy "camera=(self), geolocation=(), microphone=()"
 		# CSP: self scripts, inline + injected styles, images from self/data/https
 		# (card art), self API calls. Tighten as needed.
-		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self'; font-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; connect-src 'self'; font-src 'self' data: https://fonts.gstatic.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
 		-Server
 	}
 }
