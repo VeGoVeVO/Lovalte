@@ -1,0 +1,246 @@
+import type { FastifyInstance } from "fastify";
+import { z } from "zod";
+import type { Deps } from "../../../shared/deps";
+import { requireAuth, getAuth } from "../../../http/auth";
+import { parse } from "../../../http/validation";
+import type { CreateCardTemplateHandler } from "../application/CreateCardTemplateHandler";
+import type { UpdateCardTemplateHandler } from "../application/UpdateCardTemplateHandler";
+import type { PublishCardTemplateHandler } from "../application/PublishCardTemplateHandler";
+import type { GetCardTemplateHandler } from "../application/GetCardTemplateHandler";
+import type { ListCardTemplatesHandler } from "../application/ListCardTemplatesHandler";
+import type { RegisterAssetRefHandler } from "../application/RegisterAssetRefHandler";
+import type { StoreImageHandler } from "../application/StoreImageHandler";
+import type { GetImageHandler } from "../application/GetImageHandler";
+
+const rgbPattern = /^rgb\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*\)$/;
+
+const fieldDefSchema = z.object({
+  key: z.string().min(1).max(100),
+  label: z.string().min(1).max(100),
+  valueTemplate: z.string().min(1),
+  numberStyle: z.string().optional(),
+  changeMessage: z.string().optional(),
+});
+
+const templateBodySchema = z.object({
+  name: z.string().min(1).max(100),
+  organizationName: z.string().min(1).max(64),
+  logoText: z.string().max(24).optional(),
+  backgroundColor: z.string().regex(rgbPattern, "Must be rgb(r, g, b) format"),
+  foregroundColor: z.string().regex(rgbPattern, "Must be rgb(r, g, b) format"),
+  labelColor: z.string().regex(rgbPattern, "Must be rgb(r, g, b) format").optional(),
+  headerFields: z.array(fieldDefSchema).max(3).default([]),
+  primaryFields: z.array(fieldDefSchema).length(1),
+  secondaryFields: z.array(fieldDefSchema).max(4).default([]),
+  auxiliaryFields: z.array(fieldDefSchema).max(4).default([]),
+  backFields: z.array(fieldDefSchema).default([]),
+  pointsPerVisit: z.number().int().min(1),
+  rewardThreshold: z.number().int().min(1),
+  tierRules: z
+    .array(z.object({ label: z.string().min(1), minPoints: z.number().int().min(0) }))
+    .default([]),
+});
+
+const idParamSchema = z.object({ id: z.string().uuid() });
+
+const assetBodySchema = z.object({
+  kind: z.enum(["icon", "logo", "strip"]),
+  ref: z.string().min(1).max(2048),
+});
+
+const listQuerySchema = z.object({
+  status: z.enum(["draft", "published"]).optional(),
+});
+
+// 3 MB of base64 (~2 MB decoded, the domain cap). The route bodyLimit below
+// keeps the rest of the API at the default 1 MB.
+const IMAGE_ROUTE_BODY_LIMIT = 3 * 1024 * 1024;
+
+const imageUploadSchema = z.object({
+  kind: z.enum(["icon", "logo", "strip", "generic"]).default("generic"),
+  source: z.enum(["upload", "lucide"]).default("upload"),
+  // RFC 2397 data URL, e.g. "data:image/png;base64,iVBORw0KGgo..."
+  dataUrl: z.string().min(1).max(IMAGE_ROUTE_BODY_LIMIT),
+});
+
+/** Parse a base64 data URL into a MIME type + raw bytes. Throws ZodError-shaped 400s upstream. */
+function parseDataUrl(dataUrl: string): { contentType: string; bytes: Buffer } {
+  const m = /^data:([a-z0-9.+/-]+);base64,(.+)$/i.exec(dataUrl);
+  if (!m) {
+    throw Object.assign(new Error("Expected a base64 data URL"), { statusCode: 400, code: "VALIDATION" });
+  }
+  return { contentType: m[1].toLowerCase(), bytes: Buffer.from(m[2], "base64") };
+}
+
+const SVG_CSP = "default-src 'none'; style-src 'unsafe-inline'; sandbox";
+
+export interface CardDesignHandlers {
+  create: CreateCardTemplateHandler;
+  update: UpdateCardTemplateHandler;
+  publish: PublishCardTemplateHandler;
+  get: GetCardTemplateHandler;
+  list: ListCardTemplatesHandler;
+  registerAsset: RegisterAssetRefHandler;
+  storeImage: StoreImageHandler;
+  getImage: GetImageHandler;
+}
+
+export function registerCardDesignRoutes(
+  app: FastifyInstance,
+  deps: Deps,
+  h: CardDesignHandlers
+): void {
+  const ownerManager = requireAuth(deps.config.SESSION_SECRET, ["owner", "manager"]);
+
+  /** POST /api/v1/card-templates — create a new draft template */
+  app.post("/api/v1/card-templates", { preHandler: ownerManager }, async (req, reply) => {
+    const auth = getAuth(req);
+    const body = parse(templateBodySchema, req.body);
+    const r = await h.create.execute({
+      tenantId: auth.tenantId,
+      name: body.name,
+      organizationName: body.organizationName,
+      logoText: body.logoText,
+      backgroundColor: body.backgroundColor,
+      foregroundColor: body.foregroundColor,
+      labelColor: body.labelColor,
+      headerFields: body.headerFields ?? [],
+      primaryFields: body.primaryFields,
+      secondaryFields: body.secondaryFields ?? [],
+      auxiliaryFields: body.auxiliaryFields ?? [],
+      backFields: body.backFields ?? [],
+      pointsPerVisit: body.pointsPerVisit,
+      rewardThreshold: body.rewardThreshold,
+      tierRules: body.tierRules ?? [],
+    });
+    if (!r.ok) throw r.error;
+    return reply.status(201).send(r.value);
+  });
+
+  /** GET /api/v1/card-templates — list templates for the authenticated tenant */
+  app.get("/api/v1/card-templates", { preHandler: ownerManager }, async (req, reply) => {
+    const auth = getAuth(req);
+    const query = parse(listQuerySchema, req.query);
+    const r = await h.list.execute({ tenantId: auth.tenantId, status: query.status });
+    if (!r.ok) throw r.error;
+    return reply.status(200).send(r.value);
+  });
+
+  /** GET /api/v1/card-templates/:id — fetch a single template */
+  app.get("/api/v1/card-templates/:id", { preHandler: ownerManager }, async (req, reply) => {
+    const auth = getAuth(req);
+    const { id } = parse(idParamSchema, req.params);
+    const r = await h.get.execute({ templateId: id, tenantId: auth.tenantId });
+    if (!r.ok) throw r.error;
+    return reply.status(200).send(r.value);
+  });
+
+  /** PUT /api/v1/card-templates/:id — update a draft template's brand/reward config */
+  app.put("/api/v1/card-templates/:id", { preHandler: ownerManager }, async (req, reply) => {
+    const auth = getAuth(req);
+    const { id } = parse(idParamSchema, req.params);
+    const body = parse(templateBodySchema, req.body);
+    const r = await h.update.execute({
+      templateId: id,
+      tenantId: auth.tenantId,
+      name: body.name,
+      organizationName: body.organizationName,
+      logoText: body.logoText,
+      backgroundColor: body.backgroundColor,
+      foregroundColor: body.foregroundColor,
+      labelColor: body.labelColor,
+      headerFields: body.headerFields ?? [],
+      primaryFields: body.primaryFields,
+      secondaryFields: body.secondaryFields ?? [],
+      auxiliaryFields: body.auxiliaryFields ?? [],
+      backFields: body.backFields ?? [],
+      pointsPerVisit: body.pointsPerVisit,
+      rewardThreshold: body.rewardThreshold,
+      tierRules: body.tierRules ?? [],
+    });
+    if (!r.ok) throw r.error;
+    return reply.status(200).send(r.value);
+  });
+
+  /** POST /api/v1/card-templates/:id/publish — publish a draft template */
+  app.post(
+    "/api/v1/card-templates/:id/publish",
+    { preHandler: ownerManager },
+    async (req, reply) => {
+      const auth = getAuth(req);
+      const { id } = parse(idParamSchema, req.params);
+      const r = await h.publish.execute({ templateId: id, tenantId: auth.tenantId });
+      if (!r.ok) throw r.error;
+      return reply.status(200).send(r.value);
+    }
+  );
+
+  /**
+   * POST /api/v1/card-templates/:id/assets
+   * Register a previously-uploaded asset ref (icon, logo, strip).
+   * The actual S3 upload is performed by the client; this stores the key/URL.
+   */
+  app.post(
+    "/api/v1/card-templates/:id/assets",
+    { preHandler: ownerManager },
+    async (req, reply) => {
+      const auth = getAuth(req);
+      const { id } = parse(idParamSchema, req.params);
+      const body = parse(assetBodySchema, req.body);
+      const r = await h.registerAsset.execute({
+        templateId: id,
+        tenantId: auth.tenantId,
+        kind: body.kind,
+        ref: body.ref,
+      });
+      if (!r.ok) throw r.error;
+      return reply.status(201).send(r.value);
+    }
+  );
+
+  /**
+   * POST /api/v1/images — store a card image (uploaded file or rasterised Lucide
+   * icon) IN the database and return its public ref. Body is a base64 data URL.
+   * Larger bodyLimit than the rest of the API; bytes are validated + magic-byte
+   * checked in the domain before persisting.
+   */
+  app.post(
+    "/api/v1/images",
+    { preHandler: ownerManager, bodyLimit: IMAGE_ROUTE_BODY_LIMIT },
+    async (req, reply) => {
+      const auth = getAuth(req);
+      const body = parse(imageUploadSchema, req.body);
+      const { contentType, bytes } = parseDataUrl(body.dataUrl);
+      const r = await h.storeImage.execute({
+        tenantId: auth.tenantId,
+        kind: body.kind ?? "generic",
+        contentType,
+        bytes,
+        source: body.source ?? "upload",
+      });
+      if (!r.ok) throw r.error;
+      return reply.status(201).send(r.value);
+    }
+  );
+
+  /**
+   * GET /api/v1/images/:id — public, unauthenticated serve of stored card art by
+   * unguessable UUID (devices/Apple Wallet fetch with no session). Hardened:
+   * nosniff + immutable cache; SVG is sandboxed via CSP to neutralise scripts.
+   */
+  app.get("/api/v1/images/:id", async (req, reply) => {
+    const { id } = parse(idParamSchema, req.params);
+    const r = await h.getImage.execute(id);
+    if (!r.ok) throw r.error;
+    reply
+      .header("Content-Type", r.value.contentType)
+      .header("Content-Length", r.value.byteSize)
+      .header("Cache-Control", "public, max-age=31536000, immutable")
+      .header("X-Content-Type-Options", "nosniff")
+      .header("Content-Disposition", "inline");
+    if (r.value.contentType === "image/svg+xml") {
+      reply.header("Content-Security-Policy", SVG_CSP);
+    }
+    return reply.status(200).send(r.value.bytes);
+  });
+}
