@@ -2,8 +2,24 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- viewport-fit=cover is required for env(safe-area-inset-*) to resolve on notched iPhones -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="description" content="Lovalte — loyalty cards your customers keep, in Apple Wallet." />
+    <meta name="format-detection" content="telephone=no" />
+
+    <!-- PWA / installable -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#FCFCFD" />
+    <meta name="color-scheme" content="light" />
+
+    <!-- iOS standalone web app (Safari ignores the manifest; these drive it) -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Lovalte" />
+    <link rel="apple-touch-icon" href="/icons/icon-180.png" />
+
+    <link rel="icon" type="image/png" href="/icons/icon-192.png" />
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231a1a2e'/%3E%3Ctext x='16' y='22' font-size='18' text-anchor='middle' fill='%23e0e0f0' font-family='system-ui,sans-serif' font-weight='700'%3EL%3C/text%3E%3C/svg%3E" />
     <title>Lovalte</title>
   </head>
