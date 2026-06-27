@@ -8,6 +8,13 @@ export const globalCss = `
 /* ── Base canvas: soft dot grid behind the drifting AmbientBackground orbs ── */
 html { background-color: #FCFCFD; background-image: radial-gradient(rgba(32,36,42,.03) 1px, transparent 1px); background-size: 32px 32px; }
 body, #root { background: transparent; }
+html, body { overflow-x: hidden; }
+
+/* Mobile: collapse multi-column grids to a single column (beats inline
+   grid-template-columns via !important) so cards/forms never overflow. */
+@media (max-width: 767px) {
+  .halo .grid-2, .halo .grid-3 { grid-template-columns: 1fr !important; }
+}
 
 /* ── Custom scrollbar (Firefox + WebKit/Blink) ─────────────────────────── */
 * { scrollbar-width: thin; scrollbar-color: rgba(120,130,150,.42) transparent; }
