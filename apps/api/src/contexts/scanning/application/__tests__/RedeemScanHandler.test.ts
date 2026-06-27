@@ -121,36 +121,18 @@ describe("RedeemScanHandler", () => {
     });
   });
 
-  describe("nonce replay guard", () => {
-    it("returns ConflictError when the nonce was already consumed (setNx returns false)", async () => {
+  describe("reusable wallet QR (no single-use)", () => {
+    it("awards again on a repeat scan of the same token — the loyalty card is reusable", async () => {
       const verifier: IQrVerifier = { verify: vi.fn().mockResolvedValue(makeToken()) };
-      const cache = makeCacheStore({ nonceIsNew: false });
+      const cache = makeCacheStore({ cachedIdem: null }); // fresh visit (new idempotency key)
       const handler = new RedeemScanHandler(repo, verifier, cache, bus, fixedClock);
 
       const result = await handler.execute(baseCmd);
 
-      expect(result.ok).toBe(false);
-      if (result.ok) return;
-      expect(result.error).toBeInstanceOf(ConflictError);
-      expect(result.error.message).toMatch(/already redeemed/i);
-
-      // no side-effects after guard
-      expect(repo.save).not.toHaveBeenCalled();
-      expect(bus.publish).not.toHaveBeenCalled();
-    });
-
-    it("calls setNx with the nonce key and 90-day TTL", async () => {
-      const verifier: IQrVerifier = { verify: vi.fn().mockResolvedValue(makeToken()) };
-      const cache = makeCacheStore({ nonceIsNew: false });
-      const handler = new RedeemScanHandler(repo, verifier, cache, bus, fixedClock);
-
-      await handler.execute(baseCmd);
-
-      expect(cache.setNx).toHaveBeenCalledWith(
-        `qr:nonce:${NONCE}`,
-        "1",
-        7_776_000,
-      );
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(repo.save).toHaveBeenCalled();
+      expect(bus.publish).toHaveBeenCalled();
     });
   });
 

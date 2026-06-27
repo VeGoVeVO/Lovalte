@@ -1,5 +1,5 @@
 import type { DomainEventBus, Clock, Result } from "../../../kernel";
-import { ok, err, DomainError, ConflictError, ForbiddenError, ValidationError } from "../../../kernel";
+import { ok, err, DomainError, ForbiddenError, ValidationError } from "../../../kernel";
 import { RedemptionEvent, type ScanAction } from "../domain/RedemptionEvent";
 import type { IRedemptionEventRepository, IQrVerifier, ICacheStore } from "./ports";
 
@@ -22,22 +22,23 @@ export interface RedeemScanDTO {
   readonly delta: number;
 }
 
-const NONCE_TTL_SECONDS = 7_776_000; // 90 days — QR codes are single-use
 const IDEM_TTL_SECONDS = 30;         // 30 s window to absorb double-taps / network retries
-const NONCE_KEY_PREFIX = "qr:nonce:";
 const IDEM_KEY_PREFIX = "scan:idem:";
 
 /**
  * RedeemScanHandler — orchestrates the full scan-to-award/redeem flow.
  *
  * Guard order (per security threat model):
- *  1. JWT signature + exp verification
- *  2. Tenant isolation check (claims.tid must match caller session)
- *  3. Nonce replay guard (90-day Redis NX) — single-use QR enforcement
- *  4. Idempotency guard (30-second Redis NX) — double-tap / retry safety
- *  5. Persist RedemptionEvent
- *  6. Cache result for step-4 idempotency window
- *  7. Publish RedemptionApplied for Membership context
+ *  1. HMAC signature verification
+ *  2. Tenant isolation check (token.tenantId must match caller session)
+ *  3. Idempotency guard (30-second Redis NX) — double-tap / retry safety
+ *  4. Persist RedemptionEvent
+ *  5. Cache result for the idempotency window
+ *  6. Publish RedemptionApplied for Membership context
+ *
+ * The loyalty card's wallet QR is intentionally REUSABLE (scanned every visit),
+ * so there is no single-use nonce guard. ponytail: add a per-member per-visit
+ * cooldown here if point-farming becomes a concern (a business rule).
  */
 export class RedeemScanHandler {
   constructor(
@@ -68,14 +69,7 @@ export class RedeemScanHandler {
       return err(new ForbiddenError("QR token tenant mismatch"));
     }
 
-    // 3. Nonce replay guard — atomic single-use enforcement (90-day TTL)
-    const nonceKey = `${NONCE_KEY_PREFIX}${token.nonce}`;
-    const nonceIsNew = await this.cache.setNx(nonceKey, "1", NONCE_TTL_SECONDS);
-    if (!nonceIsNew) {
-      return err(new ConflictError("QR already redeemed"));
-    }
-
-    // 4. Idempotency guard — absorb double-taps / retries within 30 s
+    // 3. Idempotency guard — absorb double-taps / retries within 30 s
     const idemKey = `${IDEM_KEY_PREFIX}${cmd.idempotencyKey}`;
     const cached = await this.cache.get(idemKey);
     if (cached !== null) {
