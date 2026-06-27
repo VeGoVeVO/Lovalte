@@ -15,6 +15,28 @@ type RedeemResult = {
   delta: number;
 };
 
+const scanCss = `
+.scan-view { position: relative; margin-top: .75rem; border-radius: var(--r-card,16px); overflow: hidden; background:#0b0d12; }
+.scan-view video { width:100%; max-height:340px; object-fit:cover; display:block; }
+.scan-frame { position:absolute; inset:14%; border-radius:14px; border:2px solid rgba(255,255,255,.85);
+  box-shadow: 0 0 0 1000px rgba(8,10,16,.30); pointer-events:none; }
+.scan-line { position:absolute; left:14%; right:14%; height:2px; border-radius:2px;
+  background:linear-gradient(90deg,transparent,#A9F5FF,transparent); box-shadow:0 0 10px #A9F5FF;
+  animation: scanline 2.1s ease-in-out infinite; }
+@keyframes scanline { 0%,100%{ top:16%; } 50%{ top:82%; } }
+.scan-detected { text-align:center; margin-bottom:1rem; }
+.scan-crop-wrap { position:relative; width:128px; height:128px; margin:0 auto; }
+.scan-crop { width:128px; height:128px; border-radius:14px; object-fit:cover; background:#fff;
+  box-shadow:0 10px 26px -10px rgba(0,0,0,.4); animation: scanpop .35s cubic-bezier(.2,.8,.3,1.2) both; }
+.scan-ring { position:absolute; inset:-7px; border-radius:18px; border:3px solid rgb(0,180,120); animation: scanring .55s ease-out both; }
+.scan-check { position:absolute; right:-8px; bottom:-8px; width:34px; height:34px; border-radius:50%;
+  background:rgb(0,170,110); color:#fff; display:grid; place-items:center;
+  box-shadow:0 4px 12px -4px rgba(0,150,90,.6); animation: scanpop .4s .14s cubic-bezier(.2,.8,.3,1.4) both; }
+@keyframes scanpop { from{ opacity:0; transform:scale(.6); } to{ opacity:1; transform:scale(1); } }
+@keyframes scanring { from{ opacity:.85; transform:scale(.8);} to{ opacity:0; transform:scale(1.18);} }
+@media (prefers-reduced-motion: reduce){ .scan-line,.scan-crop,.scan-ring,.scan-check{ animation:none !important; } }
+`;
+
 /* ── Page ────────────────────────────────────────────────────────────────── */
 
 /**
@@ -24,7 +46,7 @@ type RedeemResult = {
  * per-request Idempotency-Key header.
  */
 export function ScanPage() {
-  const { videoRef, status, detectedToken, startCamera, stopCamera, clearToken } =
+  const { videoRef, status, detectedToken, capturedImage, startCamera, stopCamera, clearToken } =
     useBarcodeScanner();
   const [manualToken, setManualToken] = useState("");
 
@@ -80,6 +102,7 @@ export function ScanPage() {
   /* ── Render ─────────────────────────────────────────────────────────── */
   return (
     <AppShell title="Scan a card">
+      <style>{scanCss}</style>
       <GlassCard light className="waitlist" style={{ maxWidth: 480 }}>
         {/* Context line */}
         <p className="body" style={{ marginBottom: "1.25rem" }}>
@@ -113,26 +136,16 @@ export function ScanPage() {
               style={{ display: status === "scanning" ? "block" : "none" }}
               aria-hidden={status !== "scanning"}
             >
-              <video
-                ref={videoRef}
-                playsInline
-                muted
-                style={{
-                  width: "100%",
-                  borderRadius: "var(--r-card, 1rem)",
-                  maxHeight: 320,
-                  objectFit: "cover",
-                  display: "block",
-                  background: "#111",
-                  marginTop: "0.75rem",
-                }}
-              />
-              <div style={{ marginTop: "0.75rem" }}>
-                <GlassButton
-                  variant="ghost"
-                  onClick={stopCamera}
-                  aria-label="Stop the camera"
-                >
+              <div className="scan-view">
+                <video ref={videoRef} playsInline muted />
+                <div className="scan-frame" aria-hidden="true" />
+                <div className="scan-line" aria-hidden="true" />
+              </div>
+              <p className="meta" style={{ textAlign: "center", margin: "0.6rem 0 0", fontSize: "0.8rem" }}>
+                Hold the customer's card QR inside the frame
+              </p>
+              <div style={{ marginTop: "0.75rem", textAlign: "center" }}>
+                <GlassButton variant="ghost" onClick={stopCamera} aria-label="Stop the camera">
                   Stop Camera
                 </GlassButton>
               </div>
@@ -167,22 +180,19 @@ export function ScanPage() {
           </div>
         )}
 
-        {/* ── Detected token preview (camera path) */}
+        {/* ── Detected: auto-cropped QR + success animation (camera path) */}
         {detectedToken && (
-          <div
-            className="glass"
-            style={{
-              padding: "0.6rem 1rem",
-              borderRadius: "var(--r-input, 0.75rem)",
-              marginBottom: "1rem",
-              wordBreak: "break-all",
-            }}
-            aria-label="Detected QR token"
-          >
-            <p className="meta" style={{ marginBottom: "0.2rem" }}>
-              QR detected
-            </p>
-            <code style={{ fontSize: "0.7rem", opacity: 0.75 }}>{detectedToken}</code>
+          <div className="scan-detected" aria-label="QR detected">
+            <div className="scan-crop-wrap">
+              {capturedImage && (
+                <img className="scan-crop" src={capturedImage} alt="Scanned QR code" width={128} height={128} />
+              )}
+              <span className="scan-ring" aria-hidden="true" />
+              <span className="scan-check" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 7" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              </span>
+            </div>
+            <p className="meta" style={{ marginTop: "0.7rem" }}>Card detected — award or redeem below.</p>
           </div>
         )}
 

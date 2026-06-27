@@ -3,76 +3,124 @@ import QrScanner from "qr-scanner";
 // Let Vite emit + fingerprint the decoder worker and hand us its URL.
 import QrScannerWorkerPath from "qr-scanner/qr-scanner-worker.min.js?url";
 
-// qr-scanner loads its Web Worker from WORKER_PATH (it doesn't use import.meta.url).
 QrScanner.WORKER_PATH = QrScannerWorkerPath;
 
-export type ScannerStatus =
-  | "idle"        // ready to start
-  | "requesting"  // camera permission in-flight
-  | "scanning"    // camera live, decoding
-  | "denied"      // permission rejected
-  | "unsupported"; // no camera / non-secure origin
+export type ScannerStatus = "idle" | "requesting" | "scanning" | "denied" | "unsupported";
 
 export interface UseBarcodeScanner {
   videoRef: React.RefObject<HTMLVideoElement>;
   status: ScannerStatus;
   detectedToken: string | null;
+  /** Data URL of the auto-cropped QR (for the confirmation animation). */
+  capturedImage: string | null;
   startCamera: () => Promise<void>;
   stopCamera: () => void;
   clearToken: () => void;
 }
 
+/** Crop the detected QR (its corner points + padding) into a square thumbnail. */
+function cropQr(source: HTMLCanvasElement, corners: { x: number; y: number }[]): string {
+  const xs = corners.map((c) => c.x);
+  const ys = corners.map((c) => c.y);
+  let minX = Math.min(...xs), maxX = Math.max(...xs);
+  let minY = Math.min(...ys), maxY = Math.max(...ys);
+  const padX = (maxX - minX) * 0.18;
+  const padY = (maxY - minY) * 0.18;
+  minX = Math.max(0, minX - padX); minY = Math.max(0, minY - padY);
+  maxX = Math.min(source.width, maxX + padX); maxY = Math.min(source.height, maxY + padY);
+  const w = Math.max(1, maxX - minX), h = Math.max(1, maxY - minY);
+  const out = document.createElement("canvas");
+  const size = 224;
+  out.width = size; out.height = size;
+  const ctx = out.getContext("2d");
+  if (ctx) {
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, size, size);
+    ctx.drawImage(source, minX, minY, w, h, 0, 0, size, size);
+  }
+  return out.toDataURL("image/png");
+}
+
 /**
- * Cross-browser QR scanner built on nimiq qr-scanner (Web-Worker decode, high
- * detection rate). Works on Safari/iOS, Firefox and Chrome over HTTPS — unlike
- * the old BarcodeDetector path that was unsupported almost everywhere.
+ * Reliable cross-browser QR scanner. Owns the camera at high resolution (so dense
+ * pass QRs resolve) and decodes the FULL frame each tick with nimiq qr-scanner's
+ * Web Worker. On a hit it auto-crops the QR for a confirmation thumbnail.
  */
 export function useBarcodeScanner(): UseBarcodeScanner {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const scannerRef = useRef<QrScanner | null>(null);
-  const [status, setStatus] = useState<ScannerStatus>("idle");
+  const streamRef = useRef<MediaStream | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const activeRef = useRef(false);
+  const timerRef = useRef<number>(0);
+
+  const [status, setStatus] = useState<ScannerStatus>(() =>
+    typeof navigator !== "undefined" && typeof navigator.mediaDevices?.getUserMedia === "function" ? "idle" : "unsupported",
+  );
   const [detectedToken, setDetectedToken] = useState<string | null>(null);
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
 
-  // Destroy the scanner (releases the camera + worker) on unmount.
-  useEffect(() => () => { scannerRef.current?.destroy(); scannerRef.current = null; }, []);
-
-  const stopCamera = useCallback(() => {
-    scannerRef.current?.stop();
-    setStatus("idle");
+  const stop = useCallback(() => {
+    activeRef.current = false;
+    window.clearTimeout(timerRef.current);
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+    const video = videoRef.current;
+    if (video) video.srcObject = null;
   }, []);
 
+  useEffect(() => () => stop(), [stop]);
+
+  const stopCamera = useCallback(() => { stop(); setStatus("idle"); }, [stop]);
+
   const startCamera = useCallback(async () => {
-    const video = videoRef.current;
-    if (!video) return;
+    if (typeof navigator.mediaDevices?.getUserMedia !== "function") { setStatus("unsupported"); return; }
     setStatus("requesting");
     try {
-      if (!scannerRef.current) {
-        scannerRef.current = new QrScanner(
-          video,
-          (result) => {
-            setDetectedToken(result.data);
-            scannerRef.current?.stop();
-            setStatus("idle");
-          },
-          {
-            preferredCamera: "environment",
-            highlightScanRegion: true,
-            highlightCodeOutline: true,
-            maxScansPerSecond: 5,
-            returnDetailedScanResult: true,
-          },
-        );
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+      });
+      streamRef.current = stream;
+      const video = videoRef.current;
+      if (video) {
+        video.srcObject = stream;
+        video.setAttribute("playsinline", "true");
+        video.muted = true;
+        await video.play();
       }
-      await scannerRef.current.start();
+      const canvas = canvasRef.current ?? (canvasRef.current = document.createElement("canvas"));
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      activeRef.current = true;
       setStatus("scanning");
+
+      const tick = async () => {
+        if (!activeRef.current) return;
+        const v = videoRef.current;
+        if (v && v.readyState >= 2 && ctx && v.videoWidth) {
+          canvas.width = v.videoWidth;
+          canvas.height = v.videoHeight;
+          ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
+          try {
+            const res = await QrScanner.scanImage(canvas, { returnDetailedScanResult: true });
+            setCapturedImage(cropQr(canvas, res.cornerPoints));
+            setDetectedToken(res.data);
+            stop();
+            setStatus("idle");
+            return;
+          } catch {
+            /* no QR in this frame — keep scanning */
+          }
+        }
+        timerRef.current = window.setTimeout(tick, 110); // ~9 scans/sec
+      };
+      void tick();
     } catch (err) {
-      scannerRef.current?.stop();
+      stop();
       const msg = err instanceof Error ? `${err.name} ${err.message}` : String(err);
       setStatus(/denied|notallowed|permission/i.test(msg) ? "denied" : "unsupported");
     }
-  }, []);
+  }, [stop]);
 
-  const clearToken = useCallback(() => setDetectedToken(null), []);
+  const clearToken = useCallback(() => { setDetectedToken(null); setCapturedImage(null); }, []);
 
-  return { videoRef, status, detectedToken, startCamera, stopCamera, clearToken };
+  return { videoRef, status, detectedToken, capturedImage, startCamera, stopCamera, clearToken };
 }
