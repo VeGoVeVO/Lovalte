@@ -29,7 +29,9 @@ function makeBus(): DomainEventBus & { published: DomainEvent[] } {
   const published: DomainEvent[] = [];
   return {
     published,
-    async publish(events) { published.push(...events); },
+    async publish(events) {
+      published.push(...events);
+    },
     subscribe() {},
   };
 }
@@ -41,8 +43,12 @@ function makeBus(): DomainEventBus & { published: DomainEvent[] } {
  */
 function makeInvitationRepo(invitation: Invitation | null): IInvitationRepository {
   return {
-    async findByTokenHash() { return invitation; },
-    async findPendingByEmail() { return null; },
+    async findByTokenHash() {
+      return invitation;
+    },
+    async findPendingByEmail() {
+      return null;
+    },
     async save() {},
     async markUsed() {},
   };
@@ -66,7 +72,7 @@ describe("AcceptInvitationHandler", () => {
     const handler = new AcceptInvitationHandler(
       makeInvitationRepo(invitation),
       makeTxRunner(),
-      bus
+      bus,
     );
 
     const result = await handler.execute({
@@ -82,7 +88,7 @@ describe("AcceptInvitationHandler", () => {
     expect(result.value.tenantId).toBe(TENANT_ID);
     expect(result.value.userId).toBeTruthy();
 
-    const activated = bus.published.find(e => e.name === "UserActivated");
+    const activated = bus.published.find((e) => e.name === "UserActivated");
     expect(activated).toBeDefined();
     expect(activated?.payload.role).toBe("staff");
   });
@@ -110,7 +116,7 @@ describe("AcceptInvitationHandler", () => {
     const handler = new AcceptInvitationHandler(
       makeInvitationRepo(invitation),
       makeTxRunner(),
-      bus
+      bus,
     );
 
     const result = await handler.execute({
@@ -140,11 +146,7 @@ describe("AcceptInvitationHandler", () => {
       createdAt: new Date(),
     });
     const bus = makeBus();
-    const handler = new AcceptInvitationHandler(
-      makeInvitationRepo(expired),
-      makeTxRunner(),
-      bus
-    );
+    const handler = new AcceptInvitationHandler(makeInvitationRepo(expired), makeTxRunner(), bus);
 
     const result = await handler.execute({
       token: rawToken,
@@ -173,11 +175,7 @@ describe("AcceptInvitationHandler", () => {
       createdAt: new Date(),
     });
     const bus = makeBus();
-    const handler = new AcceptInvitationHandler(
-      makeInvitationRepo(used),
-      makeTxRunner(),
-      bus
-    );
+    const handler = new AcceptInvitationHandler(makeInvitationRepo(used), makeTxRunner(), bus);
 
     const result = await handler.execute({
       token: rawToken,

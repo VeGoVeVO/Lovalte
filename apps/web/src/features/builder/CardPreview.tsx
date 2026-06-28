@@ -36,12 +36,20 @@ function Qr({ size = 120, fg = "#0b0b0b" }: { size?: number; fg?: string }) {
     for (let c = 0; c < N; c++) {
       if (isFinder(r, c)) continue;
       if ((r * 31 + c * 17 + (r ^ c) * 7) % 5 < 2)
-        rects.push(<rect key={`${r}-${c}`} x={c * cell} y={r * cell} width={cell} height={cell} fill={fg} />);
+        rects.push(
+          <rect key={`${r}-${c}`} x={c * cell} y={r * cell} width={cell} height={cell} fill={fg} />,
+        );
     }
   const finder = (ox: number, oy: number) => (
     <g key={`${ox}_${oy}`}>
       <rect x={ox * cell} y={oy * cell} width={7 * cell} height={7 * cell} fill={fg} />
-      <rect x={(ox + 1) * cell} y={(oy + 1) * cell} width={5 * cell} height={5 * cell} fill="#fff" />
+      <rect
+        x={(ox + 1) * cell}
+        y={(oy + 1) * cell}
+        width={5 * cell}
+        height={5 * cell}
+        fill="#fff"
+      />
       <rect x={(ox + 2) * cell} y={(oy + 2) * cell} width={3 * cell} height={3 * cell} fill={fg} />
     </g>
   );
@@ -77,7 +85,9 @@ export function CardPreview({
   return (
     <div
       role="img"
-      aria-label={t("Loyalty card preview for {name}", { name: organizationName || t("your business") })}
+      aria-label={t("Loyalty card preview for {name}", {
+        name: organizationName || t("your business"),
+      })}
       style={{
         width: "100%",
         maxWidth: 320,
@@ -92,10 +102,29 @@ export function CardPreview({
       }}
     >
       {/* ── Header: logo / brand top-left (header fields would sit top-right) ── */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "13px 16px 11px" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: 12,
+          padding: "13px 16px 11px",
+        }}
+      >
         <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-          {logoUrl && <img src={logoUrl} alt="" style={{ height: 26, width: "auto", objectFit: "contain" }} />}
-          <span style={{ fontSize: "0.95rem", fontWeight: 600, letterSpacing: "-0.01em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          {logoUrl && (
+            <img src={logoUrl} alt="" style={{ height: 26, width: "auto", objectFit: "contain" }} />
+          )}
+          <span
+            style={{
+              fontSize: "0.95rem",
+              fontWeight: 600,
+              letterSpacing: "-0.01em",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
             {brand}
           </span>
         </div>
@@ -103,31 +132,117 @@ export function CardPreview({
 
       {/* ── Strip band + primary overlaid, OR primary on the background ── */}
       {stripUrl ? (
-        <div style={{ position: "relative", width: "100%", aspectRatio: "375 / 123", overflow: "hidden" }}>
-          <img src={stripUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(0,0,0,0) 40%, rgba(0,0,0,.42))" }} />
-          <div style={{ position: "absolute", left: 16, bottom: 10, textShadow: "0 1px 3px rgba(0,0,0,.5)" }}>
-            <div style={{ fontSize: "0.58rem", letterSpacing: "0.18em", textTransform: "uppercase", color: "#fff", opacity: 0.92, fontWeight: 600 }}>
+        <div
+          style={{
+            position: "relative",
+            width: "100%",
+            aspectRatio: "375 / 123",
+            overflow: "hidden",
+          }}
+        >
+          <img
+            src={stripUrl}
+            alt=""
+            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: "linear-gradient(180deg, rgba(0,0,0,0) 40%, rgba(0,0,0,.42))",
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              left: 16,
+              bottom: 10,
+              textShadow: "0 1px 3px rgba(0,0,0,.5)",
+            }}
+          >
+            <div
+              style={{
+                fontSize: "0.58rem",
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                color: "#fff",
+                opacity: 0.92,
+                fontWeight: 600,
+              }}
+            >
               {primaryLabel || "POINTS"}
             </div>
-            <div style={{ fontSize: "1.7rem", fontWeight: 700, lineHeight: 1, color: "#fff", letterSpacing: "-0.03em" }}>{value}</div>
+            <div
+              style={{
+                fontSize: "1.7rem",
+                fontWeight: 700,
+                lineHeight: 1,
+                color: "#fff",
+                letterSpacing: "-0.03em",
+              }}
+            >
+              {value}
+            </div>
           </div>
         </div>
       ) : (
         <div style={{ padding: "4px 16px 14px" }}>
-          <div style={{ fontSize: "0.58rem", letterSpacing: "0.18em", textTransform: "uppercase", color: lbl, fontWeight: 600, marginBottom: 5 }}>
+          <div
+            style={{
+              fontSize: "0.58rem",
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+              color: lbl,
+              fontWeight: 600,
+              marginBottom: 5,
+            }}
+          >
             {primaryLabel || "POINTS"}
           </div>
-          <div style={{ fontSize: "2.1rem", fontWeight: 700, lineHeight: 1, letterSpacing: "-0.035em" }}>{value}</div>
+          <div
+            style={{
+              fontSize: "2.1rem",
+              fontWeight: 700,
+              lineHeight: 1,
+              letterSpacing: "-0.035em",
+            }}
+          >
+            {value}
+          </div>
         </div>
       )}
 
       {/* ── Barcode centered at the bottom on a white quiet-zone ── */}
-      <div style={{ padding: "14px 16px 18px", display: "flex", flexDirection: "column", alignItems: "center", gap: 7 }}>
-        <div style={{ background: "#fff", borderRadius: 10, padding: 11, lineHeight: 0, boxShadow: "0 2px 8px -4px rgba(0,0,0,.4)" }}>
+      <div
+        style={{
+          padding: "14px 16px 18px",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 7,
+        }}
+      >
+        <div
+          style={{
+            background: "#fff",
+            borderRadius: 10,
+            padding: 11,
+            lineHeight: 0,
+            boxShadow: "0 2px 8px -4px rgba(0,0,0,.4)",
+          }}
+        >
           <Qr size={120} />
         </div>
-        <div style={{ fontSize: "0.62rem", letterSpacing: "0.04em", color: foregroundColor, opacity: 0.62 }}>{brand}</div>
+        <div
+          style={{
+            fontSize: "0.62rem",
+            letterSpacing: "0.04em",
+            color: foregroundColor,
+            opacity: 0.62,
+          }}
+        >
+          {brand}
+        </div>
       </div>
     </div>
   );

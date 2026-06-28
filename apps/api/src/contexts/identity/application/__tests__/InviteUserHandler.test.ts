@@ -21,24 +21,36 @@ function makeBus(): DomainEventBus & { published: DomainEvent[] } {
   const published: DomainEvent[] = [];
   return {
     published,
-    async publish(events) { published.push(...events); },
+    async publish(events) {
+      published.push(...events);
+    },
     subscribe() {},
   };
 }
 
 function makeUserRepo(existing: User | null = null): IUserRepository {
   return {
-    async findByEmail() { return existing; },
-    async findById() { return null; },
-    async findAllByTenant() { return []; },
+    async findByEmail() {
+      return existing;
+    },
+    async findById() {
+      return null;
+    },
+    async findAllByTenant() {
+      return [];
+    },
     async save() {},
   };
 }
 
 function makeInvitationRepo(pending: Invitation | null = null): IInvitationRepository {
   return {
-    async findByTokenHash() { return null; },
-    async findPendingByEmail() { return pending; },
+    async findByTokenHash() {
+      return null;
+    },
+    async findPendingByEmail() {
+      return pending;
+    },
     async save() {},
     async markUsed() {},
   };
@@ -71,7 +83,7 @@ describe("InviteUserHandler", () => {
     expect(result.value.invitationId).toBeTruthy();
     expect(result.value.expiresAt).toBeTruthy();
 
-    const event = bus.published.find(e => e.name === "UserInvited");
+    const event = bus.published.find((e) => e.name === "UserInvited");
     expect(event).toBeDefined();
     expect(event?.payload.email).toBe(INVITE_EMAIL);
     expect(event?.payload.tenantId).toBe(TENANT_ID);
@@ -100,7 +112,11 @@ describe("InviteUserHandler", () => {
       updatedAt: new Date(),
     });
     const bus = makeBus();
-    const handler = new InviteUserHandler(makeUserRepo(existingUser), makeInvitationRepo(null), bus);
+    const handler = new InviteUserHandler(
+      makeUserRepo(existingUser),
+      makeInvitationRepo(null),
+      bus,
+    );
 
     const result = await handler.execute(BASE_INPUT);
 

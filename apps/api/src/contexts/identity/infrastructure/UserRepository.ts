@@ -30,7 +30,7 @@ export class UserRepository implements IUserRepository {
       `SELECT ${SELECT_COLS} FROM iam.users
         WHERE tenant_id = $1 AND email = $2
         LIMIT 1`,
-      [tenantId, email.toLowerCase()]
+      [tenantId, email.toLowerCase()],
     );
     return r.rows.length > 0 ? this.toAggregate(r.rows[0]) : null;
   }
@@ -41,7 +41,7 @@ export class UserRepository implements IUserRepository {
         WHERE email = $1
         ORDER BY created_at ASC
         LIMIT 1`,
-      [email.toLowerCase()]
+      [email.toLowerCase()],
     );
     return r.rows.length > 0 ? this.toAggregate(r.rows[0]) : null;
   }
@@ -51,7 +51,7 @@ export class UserRepository implements IUserRepository {
       `SELECT ${SELECT_COLS} FROM iam.users
         WHERE id = $1 AND tenant_id = $2
         LIMIT 1`,
-      [userId, tenantId]
+      [userId, tenantId],
     );
     return r.rows.length > 0 ? this.toAggregate(r.rows[0]) : null;
   }
@@ -61,7 +61,7 @@ export class UserRepository implements IUserRepository {
       `SELECT ${SELECT_COLS} FROM iam.users
         WHERE tenant_id = $1
         ORDER BY created_at ASC`,
-      [tenantId]
+      [tenantId],
     );
     return r.rows.map((row) => this.toAggregate(row));
   }
@@ -86,7 +86,7 @@ export class UserRepository implements IUserRepository {
         user.status,
         user.createdAt,
         user.updatedAt,
-      ]
+      ],
     );
   }
 
@@ -105,7 +105,7 @@ export class UserRepository implements IUserRepository {
         user.status,
         user.createdAt,
         user.updatedAt,
-      ]
+      ],
     );
   }
 

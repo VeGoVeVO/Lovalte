@@ -30,7 +30,7 @@ export class InviteUserHandler {
   constructor(
     private readonly users: IUserRepository,
     private readonly invitations: IInvitationRepository,
-    private readonly bus: DomainEventBus
+    private readonly bus: DomainEventBus,
   ) {}
 
   async execute(input: InviteUserInput): Promise<Result<InviteUserOutput>> {
@@ -46,7 +46,7 @@ export class InviteUserHandler {
       // Prevent duplicate pending invite
       const pendingInvite = await this.invitations.findPendingByEmail(
         input.tenantId,
-        normalisedEmail
+        normalisedEmail,
       );
       if (pendingInvite) {
         return err(new ConflictError("A pending invitation for this email already exists"));

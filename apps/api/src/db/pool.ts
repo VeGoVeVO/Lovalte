@@ -8,7 +8,7 @@ export function createPool(cfg: AppConfig): Pool {
 /** Run `fn` inside a single transaction - used for one-aggregate-per-tx writes. */
 export async function withTransaction<T>(
   pool: Pool,
-  fn: (client: PoolClient) => Promise<T>
+  fn: (client: PoolClient) => Promise<T>,
 ): Promise<T> {
   const client = await pool.connect();
   try {

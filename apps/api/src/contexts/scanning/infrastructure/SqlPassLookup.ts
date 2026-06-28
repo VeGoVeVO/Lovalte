@@ -21,10 +21,7 @@ export class SqlPassLookup implements IPassLookup {
     const client = await this.pool.connect();
     try {
       await client.query("BEGIN");
-      await client.query(
-        "SELECT set_config('app.current_tenant', $1, true)",
-        [tenantId],
-      );
+      await client.query("SELECT set_config('app.current_tenant', $1, true)", [tenantId]);
       const res = await client.query(
         `SELECT 1 FROM passes
           WHERE id = $1 AND tenant_id = $2 AND voided = false

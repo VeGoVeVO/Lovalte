@@ -1,7 +1,9 @@
 import crypto from "node:crypto";
 import { ValueObject, ValidationError } from "../../../kernel";
 
-interface PasswordHashProps { encoded: string } // "saltHex:hashHex"
+interface PasswordHashProps {
+  encoded: string;
+} // "saltHex:hashHex"
 
 /**
  * Scrypt-based password hash value object.
@@ -42,14 +44,13 @@ export class PasswordHash extends ValueObject<PasswordHashProps> {
         .scryptSync(plaintext, salt, PasswordHash.KEYLEN, PasswordHash.SCRYPT_PARAMS)
         .toString("hex");
       if (candidate.length !== stored.length) return false;
-      return crypto.timingSafeEqual(
-        Buffer.from(candidate, "hex"),
-        Buffer.from(stored, "hex")
-      );
+      return crypto.timingSafeEqual(Buffer.from(candidate, "hex"), Buffer.from(stored, "hex"));
     } catch {
       return false;
     }
   }
 
-  get encoded(): string { return this.props.encoded; }
+  get encoded(): string {
+    return this.props.encoded;
+  }
 }

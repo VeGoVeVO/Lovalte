@@ -39,7 +39,10 @@ export function verifyToken(
   if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
 
   try {
-    const claims = JSON.parse(Buffer.from(body, "base64url").toString("utf8")) as Record<string, string>;
+    const claims = JSON.parse(Buffer.from(body, "base64url").toString("utf8")) as Record<
+      string,
+      string
+    >;
     if (claims.typ !== expectedType) return null;
     return claims;
   } catch {

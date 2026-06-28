@@ -1,6 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { GetAnalyticsOverviewHandler } from "../GetAnalyticsOverviewHandler";
-import { GetAnalyticsTimeseriesHandler, type TimeseriesInput } from "../GetAnalyticsTimeseriesHandler";
+import {
+  GetAnalyticsTimeseriesHandler,
+  type TimeseriesInput,
+} from "../GetAnalyticsTimeseriesHandler";
 import type { IAnalyticsRepository, OverviewDTO, TimeseriesPoint } from "../ports";
 import type { AnalyticsEventData, EventType } from "../../domain/AnalyticsEvent";
 import { createAnalyticsEvent, EVENT_TYPES } from "../../domain/AnalyticsEvent";
@@ -11,10 +14,12 @@ import { ValidationError } from "../../../../kernel";
 
 const TENANT_ID = "tenant-uuid-1";
 
-function makeRepoFake(opts: {
-  overview?: OverviewDTO;
-  series?: TimeseriesPoint[];
-} = {}): IAnalyticsRepository & { inserted: AnalyticsEventData[] } {
+function makeRepoFake(
+  opts: {
+    overview?: OverviewDTO;
+    series?: TimeseriesPoint[];
+  } = {},
+): IAnalyticsRepository & { inserted: AnalyticsEventData[] } {
   const inserted: AnalyticsEventData[] = [];
   const overview: OverviewDTO = opts.overview ?? {
     totalMembers: 42,
@@ -51,10 +56,7 @@ function makeInMemoryBus(): DomainEventBus {
   };
 }
 
-function makeEvent(
-  name: string,
-  payload: Record<string, unknown>,
-): DomainEvent {
+function makeEvent(name: string, payload: Record<string, unknown>): DomainEvent {
   return { name, occurredAt: new Date("2026-06-01T12:00:00Z"), aggregateId: "agg-1", payload };
 }
 
@@ -63,10 +65,7 @@ function makeEvent(
 // These mirror the subscription closures registered in analytics/index.ts so we
 // can test them in isolation without spinning up the full Fastify app.
 
-function registerAnalyticsSubscriptions(
-  bus: DomainEventBus,
-  repo: IAnalyticsRepository,
-): void {
+function registerAnalyticsSubscriptions(bus: DomainEventBus, repo: IAnalyticsRepository): void {
   function extractTenantId(payload: Record<string, unknown>): string | null {
     const tid = payload["tenantId"];
     if (typeof tid === "string" && tid.trim().length > 0) return tid.trim();
@@ -230,9 +229,7 @@ describe("Analytics ACL subscriptions", () => {
   });
 
   it("falls back to aggregateId for templateId when missing from payload", async () => {
-    await bus.publish([
-      makeEvent("CardTemplatePublished", { tenantId: TENANT_ID }),
-    ]);
+    await bus.publish([makeEvent("CardTemplatePublished", { tenantId: TENANT_ID })]);
 
     expect(repo.inserted).toHaveLength(1);
     expect(repo.inserted[0].payload.templateId).toBe("agg-1");

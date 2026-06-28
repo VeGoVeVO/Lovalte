@@ -22,10 +22,7 @@ export class RedemptionEventRepository implements IRedemptionEventRepository {
   async save(event: RedemptionEvent): Promise<void> {
     await withTransaction(this.pool, async (client) => {
       // Set tenant context so RLS policy (tenant_id = app_current_tenant()) applies
-      await client.query(
-        "SELECT set_config('app.current_tenant', $1, true)",
-        [event.tenantId],
-      );
+      await client.query("SELECT set_config('app.current_tenant', $1, true)", [event.tenantId]);
 
       try {
         await client.query(
@@ -44,10 +41,7 @@ export class RedemptionEventRepository implements IRedemptionEventRepository {
         );
       } catch (e: unknown) {
         // Unique violation on idempotency_key: already persisted - treat as success
-        if (
-          e instanceof Error &&
-          (e as Error & { code?: string }).code === PG_UNIQUE_VIOLATION
-        ) {
+        if (e instanceof Error && (e as Error & { code?: string }).code === PG_UNIQUE_VIOLATION) {
           return;
         }
         throw e;

@@ -13,9 +13,7 @@ export class LogDeviceDiagnosticsHandler {
   async execute(cmd: LogDeviceDiagnosticsCommand): Promise<Result<void, never>> {
     for (const line of cmd.logs) {
       // Structured log - no PII expected here; still sanitised to a single field.
-      process.stdout.write(
-        JSON.stringify({ source: "apple-wallet-log", message: line }) + "\n",
-      );
+      process.stdout.write(JSON.stringify({ source: "apple-wallet-log", message: line }) + "\n");
     }
     return ok(undefined);
   }

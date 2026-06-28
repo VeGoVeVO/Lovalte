@@ -11,9 +11,7 @@ export interface GetLatestPassQuery {
 }
 
 export type GetLatestPassResult =
-  | { status: 304 }
-  | { status: 401 }
-  | { status: 200; lastModified: string; buffer: Buffer | null };
+  { status: 304 } | { status: 401 } | { status: 200; lastModified: string; buffer: Buffer | null };
 
 /**
  * Apple PassKit web-service endpoint 9.3.

@@ -21,22 +21,18 @@ export async function buildApp(deps: Deps, modules: ContextModule[]): Promise<Fa
   // Tolerate empty-body POSTs that still carry `Content-Type: application/json`
   // (e.g. POST .../publish with no payload). Fastify's default JSON parser throws
   // FST_ERR_CTP_EMPTY_JSON_BODY → treat an empty body as "no body" (undefined).
-  app.addContentTypeParser(
-    "application/json",
-    { parseAs: "string" },
-    (_req, body, done) => {
-      const s = body as string;
-      if (s === "" || s == null) return done(null, undefined);
-      try {
-        done(null, JSON.parse(s));
-      } catch {
-        const e = new Error("Invalid JSON body") as Error & { statusCode?: number; code?: string };
-        e.statusCode = 400;
-        e.code = "VALIDATION";
-        done(e, undefined);
-      }
+  app.addContentTypeParser("application/json", { parseAs: "string" }, (_req, body, done) => {
+    const s = body as string;
+    if (s === "" || s == null) return done(null, undefined);
+    try {
+      done(null, JSON.parse(s));
+    } catch {
+      const e = new Error("Invalid JSON body") as Error & { statusCode?: number; code?: string };
+      e.statusCode = 400;
+      e.code = "VALIDATION";
+      done(e, undefined);
     }
-  );
+  });
 
   await app.register(cors, { origin: deps.config.APP_BASE_URL, credentials: true });
   await app.register(cookie, { secret: deps.config.SESSION_SECRET });

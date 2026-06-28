@@ -24,9 +24,7 @@ export class GetAnalyticsTimeseriesHandler {
   async execute(input: TimeseriesInput): Promise<Result<TimeseriesDTO>> {
     if (!(EVENT_TYPES as readonly string[]).includes(input.metric)) {
       return err(
-        new ValidationError(
-          `Invalid metric "${input.metric}". Allowed: ${EVENT_TYPES.join(", ")}`,
-        ),
+        new ValidationError(`Invalid metric "${input.metric}". Allowed: ${EVENT_TYPES.join(", ")}`),
       );
     }
 

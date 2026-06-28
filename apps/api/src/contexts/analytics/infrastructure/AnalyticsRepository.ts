@@ -27,10 +27,7 @@ export class AnalyticsRepository implements IAnalyticsRepository {
     const client = await this.pool.connect();
     try {
       await client.query("BEGIN");
-      await client.query(
-        "SELECT set_config('app.current_tenant', $1, true)",
-        [tenantId],
-      );
+      await client.query("SELECT set_config('app.current_tenant', $1, true)", [tenantId]);
       const result = await fn(client);
       await client.query("COMMIT");
       return result;
@@ -51,12 +48,7 @@ export class AnalyticsRepository implements IAnalyticsRepository {
       await client.query(
         `INSERT INTO analytics_events (tenant_id, type, occurred_at, payload)
          VALUES ($1, $2, $3, $4)`,
-        [
-          data.tenantId,
-          data.type,
-          data.occurredAt,
-          JSON.stringify(data.payload),
-        ],
+        [data.tenantId, data.type, data.occurredAt, JSON.stringify(data.payload)],
       );
     });
   }

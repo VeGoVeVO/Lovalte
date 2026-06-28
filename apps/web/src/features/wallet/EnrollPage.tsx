@@ -47,7 +47,10 @@ export function EnrollPage() {
     publicEnroll(token)
       .then((pass) => setState({ phase: "done", pass }))
       .catch((e: { message?: string }) =>
-        setState({ phase: "error", message: e?.message ?? t("This enrollment link is invalid or expired.") }),
+        setState({
+          phase: "error",
+          message: e?.message ?? t("This enrollment link is invalid or expired."),
+        }),
       );
   }, [t]);
 
@@ -61,31 +64,80 @@ export function EnrollPage() {
           display: "grid",
           placeItems: "center",
           padding: "1.5rem",
-          background: "radial-gradient(1100px 560px at 50% -8%, rgba(169,245,255,.20), transparent 62%), var(--bg, #FCFCFD)",
+          background:
+            "radial-gradient(1100px 560px at 50% -8%, rgba(169,245,255,.20), transparent 62%), var(--bg, #FCFCFD)",
         }}
       >
         <div className="lvt-rise" style={{ width: "100%", maxWidth: 420 }}>
           {/* Brand */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: ".55rem", marginBottom: "1.25rem" }}>
-            <span aria-hidden="true" style={{ width: 13, height: 13, borderRadius: "50%", background: "linear-gradient(135deg,#A9F5FF,#5BA7C9)", boxShadow: "0 0 0 3px rgba(169,245,255,.28)" }} />
-            <span style={{ fontWeight: 600, fontSize: "1.1rem", color: "var(--text, #20242A)", letterSpacing: "-.01em" }}>Lovalte</span>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: ".55rem",
+              marginBottom: "1.25rem",
+            }}
+          >
+            <span
+              aria-hidden="true"
+              style={{
+                width: 13,
+                height: 13,
+                borderRadius: "50%",
+                background: "linear-gradient(135deg,#A9F5FF,#5BA7C9)",
+                boxShadow: "0 0 0 3px rgba(169,245,255,.28)",
+              }}
+            />
+            <span
+              style={{
+                fontWeight: 600,
+                fontSize: "1.1rem",
+                color: "var(--text, #20242A)",
+                letterSpacing: "-.01em",
+              }}
+            >
+              Lovalte
+            </span>
           </div>
 
-          <GlassCard light className="feature" style={{ textAlign: "center", padding: "2rem 1.5rem" }}>
+          <GlassCard
+            light
+            className="feature"
+            style={{ textAlign: "center", padding: "2rem 1.5rem" }}
+          >
             {state.phase === "loading" && (
               <div role="status" aria-live="polite">
                 <div className="enroll-spin" aria-hidden="true" />
-                <p className="body" style={{ margin: "1.1rem 0 0" }}>{t("Setting up your loyalty card…")}</p>
+                <p className="body" style={{ margin: "1.1rem 0 0" }}>
+                  {t("Setting up your loyalty card…")}
+                </p>
               </div>
             )}
 
             {state.phase === "done" && (
               <div role="status" aria-live="polite">
                 <div className="enroll-badge" aria-hidden="true">
-                  <svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 7" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M5 12l5 5L20 7"
+                      stroke="currentColor"
+                      strokeWidth="2.6"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
                 </div>
-                <h1 className="cardt" style={{ margin: "0 0 .4rem", fontSize: "clamp(1.3rem,5vw,1.6rem)" }}>{t("You're in! 🎉")}</h1>
-                <p className="body" style={{ margin: "0 0 1.5rem", color: "var(--muted, #6F7684)" }}>
+                <h1
+                  className="cardt"
+                  style={{ margin: "0 0 .4rem", fontSize: "clamp(1.3rem,5vw,1.6rem)" }}
+                >
+                  {t("You're in! 🎉")}
+                </h1>
+                <p
+                  className="body"
+                  style={{ margin: "0 0 1.5rem", color: "var(--muted, #6F7684)" }}
+                >
                   {t("Your loyalty card is ready. Add it to Apple Wallet:")}
                 </p>
                 <a
@@ -94,14 +146,31 @@ export function EnrollPage() {
                   aria-label={t("Add to Apple Wallet - downloads your pass")}
                 >
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <rect x="2.5" y="5.5" width="19" height="14" rx="3" stroke="currentColor" strokeWidth="1.7" />
+                    <rect
+                      x="2.5"
+                      y="5.5"
+                      width="19"
+                      height="14"
+                      rx="3"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                    />
                     <path d="M2.5 10h19" stroke="currentColor" strokeWidth="1.7" />
                     <circle cx="17.5" cy="14.5" r="1.4" fill="currentColor" />
                   </svg>
                   {t("Add to Apple Wallet")}
                 </a>
-                <p className="meta" style={{ marginTop: "1.25rem", fontSize: ".75rem", color: "var(--muted, #6F7684)" }}>
-                  {t("On iPhone this opens straight in Wallet. If nothing happens, open this page in Safari.")}
+                <p
+                  className="meta"
+                  style={{
+                    marginTop: "1.25rem",
+                    fontSize: ".75rem",
+                    color: "var(--muted, #6F7684)",
+                  }}
+                >
+                  {t(
+                    "On iPhone this opens straight in Wallet. If nothing happens, open this page in Safari.",
+                  )}
                 </p>
               </div>
             )}
@@ -109,16 +178,44 @@ export function EnrollPage() {
             {state.phase === "error" && (
               <div role="alert">
                 <div className="enroll-badge err" aria-hidden="true">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M12 8v5M12 16.5h.01" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" /><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" /></svg>
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M12 8v5M12 16.5h.01"
+                      stroke="currentColor"
+                      strokeWidth="2.4"
+                      strokeLinecap="round"
+                    />
+                    <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
+                  </svg>
                 </div>
-                <h1 className="cardt" style={{ margin: "0 0 .4rem", fontSize: "clamp(1.2rem,5vw,1.5rem)" }}>{t("Couldn't set up your card")}</h1>
-                <p className="body" style={{ margin: "0 0 1.25rem", color: "var(--muted, #6F7684)" }}>{state.message}</p>
-                <GlassButton type="button" onClick={() => window.location.reload()}>{t("Try again")}</GlassButton>
+                <h1
+                  className="cardt"
+                  style={{ margin: "0 0 .4rem", fontSize: "clamp(1.2rem,5vw,1.5rem)" }}
+                >
+                  {t("Couldn't set up your card")}
+                </h1>
+                <p
+                  className="body"
+                  style={{ margin: "0 0 1.25rem", color: "var(--muted, #6F7684)" }}
+                >
+                  {state.message}
+                </p>
+                <GlassButton type="button" onClick={() => window.location.reload()}>
+                  {t("Try again")}
+                </GlassButton>
               </div>
             )}
           </GlassCard>
 
-          <p className="meta" style={{ textAlign: "center", marginTop: "1rem", fontSize: ".72rem", color: "var(--muted, #6F7684)" }}>
+          <p
+            className="meta"
+            style={{
+              textAlign: "center",
+              marginTop: "1rem",
+              fontSize: ".72rem",
+              color: "var(--muted, #6F7684)",
+            }}
+          >
             {t("Loyalty cards in Apple Wallet · lovalte.com")}
           </p>
         </div>

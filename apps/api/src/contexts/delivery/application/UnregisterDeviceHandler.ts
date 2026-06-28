@@ -44,12 +44,14 @@ export class UnregisterDeviceHandler {
 
     // The customer removed the card from their Wallet - surface it so Analytics
     // can track removals (cross-context via the bus; ids only).
-    await this.bus.publish([{
-      name: "PassRemoved",
-      occurredAt: new Date(),
-      aggregateId: pass.id,
-      payload: { passId: pass.id, tenantId: pass.tenantId, serial: cmd.serialNumber },
-    }]);
+    await this.bus.publish([
+      {
+        name: "PassRemoved",
+        occurredAt: new Date(),
+        aggregateId: pass.id,
+        payload: { passId: pass.id, tenantId: pass.tenantId, serial: cmd.serialNumber },
+      },
+    ]);
 
     return ok(undefined);
   }

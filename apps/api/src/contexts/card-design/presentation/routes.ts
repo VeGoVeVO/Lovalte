@@ -68,7 +68,10 @@ const imageUploadSchema = z.object({
 function parseDataUrl(dataUrl: string): { contentType: string; bytes: Buffer } {
   const m = /^data:([a-z0-9.+/-]+);base64,(.+)$/i.exec(dataUrl);
   if (!m) {
-    throw Object.assign(new Error("Expected a base64 data URL"), { statusCode: 400, code: "VALIDATION" });
+    throw Object.assign(new Error("Expected a base64 data URL"), {
+      statusCode: 400,
+      code: "VALIDATION",
+    });
   }
   return { contentType: m[1].toLowerCase(), bytes: Buffer.from(m[2], "base64") };
 }
@@ -90,7 +93,7 @@ export interface CardDesignHandlers {
 export function registerCardDesignRoutes(
   app: FastifyInstance,
   deps: Deps,
-  h: CardDesignHandlers
+  h: CardDesignHandlers,
 ): void {
   const ownerManager = requireAuth(deps.config.SESSION_SECRET, ["owner", "manager"]);
 
@@ -174,7 +177,7 @@ export function registerCardDesignRoutes(
       const r = await h.publish.execute({ templateId: id, tenantId: auth.tenantId });
       if (!r.ok) throw r.error;
       return reply.status(200).send(r.value);
-    }
+    },
   );
 
   /**
@@ -197,7 +200,7 @@ export function registerCardDesignRoutes(
       });
       if (!r.ok) throw r.error;
       return reply.status(201).send(r.value);
-    }
+    },
   );
 
   /**
@@ -222,7 +225,7 @@ export function registerCardDesignRoutes(
       });
       if (!r.ok) throw r.error;
       return reply.status(201).send(r.value);
-    }
+    },
   );
 
   /**

@@ -14,14 +14,18 @@ function makeBus(): DomainEventBus & { published: DomainEvent[] } {
   const published: DomainEvent[] = [];
   return {
     published,
-    async publish(events) { published.push(...events); },
+    async publish(events) {
+      published.push(...events);
+    },
     subscribe() {},
   };
 }
 
 function makeTenantsRepo(existing: Tenant | null = null): ITenantRepository {
   return {
-    async findBySlug() { return existing; },
+    async findBySlug() {
+      return existing;
+    },
     async save() {},
   };
 }
@@ -56,7 +60,7 @@ describe("SignUpTenantHandler", () => {
     expect(result.value.tenantId).toBeTruthy();
     expect(result.value.userId).toBeTruthy();
 
-    const tenantCreated = bus.published.find(e => e.name === "TenantCreated");
+    const tenantCreated = bus.published.find((e) => e.name === "TenantCreated");
     expect(tenantCreated).toBeDefined();
     expect(tenantCreated?.payload.name).toBe("Acme Corp");
     expect(tenantCreated?.payload.slug).toBe("acme-corp");
@@ -95,7 +99,9 @@ describe("SignUpTenantHandler", () => {
   it("txRunner.signUpTx is called with the new tenant and owner on success", async () => {
     let capturedTenant: Tenant | undefined;
     const txRunner: IIdentityTxRunner = {
-      async signUpTx(tenant) { capturedTenant = tenant; },
+      async signUpTx(tenant) {
+        capturedTenant = tenant;
+      },
       async acceptInvitationTx() {},
     };
     const handler = new SignUpTenantHandler(makeTenantsRepo(null), txRunner, makeBus());

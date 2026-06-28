@@ -53,7 +53,12 @@ function TierBadge({ tier }: { tier: string }) {
 // ── MemberListView ────────────────────────────────────────────────────────────
 function MemberListView({ onSelect }: { onSelect: (id: string) => void }) {
   const { t } = useT();
-  const { data: members, isLoading, isError, error } = useQuery<Member[], ApiError>({
+  const {
+    data: members,
+    isLoading,
+    isError,
+    error,
+  } = useQuery<Member[], ApiError>({
     queryKey: ["members"],
     queryFn: () => api.get<Member[]>("/api/v1/members"),
   });
@@ -62,7 +67,9 @@ function MemberListView({ onSelect }: { onSelect: (id: string) => void }) {
     return (
       <GlassCard className="feature">
         <p role="alert" style={{ margin: 0, color: "var(--muted)" }}>
-          {t("Failed to load members: {message}", { message: (error as ApiError)?.message ?? t("Unknown error") })}
+          {t("Failed to load members: {message}", {
+            message: (error as ApiError)?.message ?? t("Unknown error"),
+          })}
         </p>
       </GlassCard>
     );
@@ -71,7 +78,11 @@ function MemberListView({ onSelect }: { onSelect: (id: string) => void }) {
   if (isLoading) {
     return (
       <GlassCard className="feature">
-        <p aria-live="polite" aria-label={t("Loading members")} style={{ margin: 0, color: "var(--muted)" }}>
+        <p
+          aria-live="polite"
+          aria-label={t("Loading members")}
+          style={{ margin: 0, color: "var(--muted)" }}
+        >
           {t("Loading…")}
         </p>
       </GlassCard>
@@ -100,16 +111,33 @@ function MemberListView({ onSelect }: { onSelect: (id: string) => void }) {
         >
           <thead>
             <tr style={{ borderBottom: "1px solid rgba(32,36,42,0.08)" }}>
-              <th scope="col" style={TH}>{t("Name")}</th>
-              <th scope="col" style={TH}>{t("Email")}</th>
-              <th scope="col" style={{ ...TH, textAlign: "right" }}>{t("Balance")}</th>
-              <th scope="col" style={TH}>{t("Tier")}</th>
+              <th scope="col" style={TH}>
+                {t("Name")}
+              </th>
+              <th scope="col" style={TH}>
+                {t("Email")}
+              </th>
+              <th scope="col" style={{ ...TH, textAlign: "right" }}>
+                {t("Balance")}
+              </th>
+              <th scope="col" style={TH}>
+                {t("Tier")}
+              </th>
               <th scope="col" style={{ ...TH, width: "3.5rem", textAlign: "center" }}>
                 {/* icon-only column - label provided on each action button */}
-                <span style={{
-                  position: "absolute", width: 1, height: 1, padding: 0, margin: -1,
-                  overflow: "hidden", clip: "rect(0,0,0,0)", whiteSpace: "nowrap", border: 0,
-                }}>
+                <span
+                  style={{
+                    position: "absolute",
+                    width: 1,
+                    height: 1,
+                    padding: 0,
+                    margin: -1,
+                    overflow: "hidden",
+                    clip: "rect(0,0,0,0)",
+                    whiteSpace: "nowrap",
+                    border: 0,
+                  }}
+                >
                   {t("Actions")}
                 </span>
               </th>
@@ -117,10 +145,7 @@ function MemberListView({ onSelect }: { onSelect: (id: string) => void }) {
           </thead>
           <tbody>
             {members.map((m) => (
-              <tr
-                key={m.id}
-                style={{ borderBottom: "1px solid rgba(32,36,42,0.05)" }}
-              >
+              <tr key={m.id} style={{ borderBottom: "1px solid rgba(32,36,42,0.05)" }}>
                 <td style={{ ...TD, fontWeight: 500 }}>
                   {m.displayName ?? <span style={{ color: "var(--muted)" }}>-</span>}
                 </td>
@@ -139,7 +164,9 @@ function MemberListView({ onSelect }: { onSelect: (id: string) => void }) {
                 <td style={{ ...TD, textAlign: "center" }}>
                   <button
                     className="btn ghost"
-                    aria-label={t("View details for {name}", { name: m.displayName ?? m.email ?? t("member") })}
+                    aria-label={t("View details for {name}", {
+                      name: m.displayName ?? m.email ?? t("member"),
+                    })}
                     onClick={() => onSelect(m.id)}
                     style={{ padding: "0.4rem 0.55rem", lineHeight: 1, display: "inline-flex" }}
                   >

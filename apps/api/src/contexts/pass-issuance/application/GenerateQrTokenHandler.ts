@@ -37,22 +37,20 @@ export class GenerateQrTokenHandler {
     const pass = await this.passes.findById(cmd.passId, cmd.tenantId);
     if (!pass) return err(new NotFoundError("Pass not found"));
 
-    const ttl   = cmd.ttlSeconds ?? DEFAULT_TTL_SECONDS;
+    const ttl = cmd.ttlSeconds ?? DEFAULT_TTL_SECONDS;
     const nonce = randomBytes(16).toString("hex");
-    const iat   = Math.floor(Date.now() / 1000);
-    const exp   = iat + ttl;
+    const iat = Math.floor(Date.now() / 1000);
+    const exp = iat + ttl;
 
     const payload = JSON.stringify({
-      passId:   pass.id.value,
+      passId: pass.id.value,
       tenantId: cmd.tenantId,
       nonce,
       iat,
     });
 
-    const body  = Buffer.from(payload).toString("base64url");
-    const sig   = createHmac("sha256", this.config.QR_TOKEN_SECRET)
-      .update(body)
-      .digest("base64url");
+    const body = Buffer.from(payload).toString("base64url");
+    const sig = createHmac("sha256", this.config.QR_TOKEN_SECRET).update(body).digest("base64url");
     const token = `${body}.${sig}`;
 
     // Store nonce in Redis - single-use guard for the scanning context

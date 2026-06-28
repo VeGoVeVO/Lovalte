@@ -32,12 +32,7 @@ export const registerMembership: ContextModule = async (app, deps) => {
   const getMember = new GetMemberHandler(memberRepo);
   const getMemberActivity = new GetMemberActivityHandler(memberRepo, ledgerRepo);
   const listMembers = new ListMembersHandler(memberRepo);
-  const applyPoints = new ApplyPointsHandler(
-    memberRepo,
-    ledgerRepo,
-    tierRepo,
-    deps.bus,
-  );
+  const applyPoints = new ApplyPointsHandler(memberRepo, ledgerRepo, tierRepo, deps.bus);
 
   // ── Cross-context subscriptions ────────────────────────────────────────────
 
@@ -80,7 +75,10 @@ export const registerMembership: ContextModule = async (app, deps) => {
       referenceId: payload.passId,
     });
     if (!r.ok) {
-      app.log.error({ err: r.error, passId: payload.passId }, "ApplyPoints failed after RedemptionApplied");
+      app.log.error(
+        { err: r.error, passId: payload.passId },
+        "ApplyPoints failed after RedemptionApplied",
+      );
     }
   });
 

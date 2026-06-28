@@ -28,7 +28,7 @@ export class InvitationRepository implements IInvitationRepository {
          FROM iam.invitations
         WHERE token_hash = $1
         LIMIT 1`,
-      [tokenHash]
+      [tokenHash],
     );
     return r.rows.length > 0 ? this.toEntity(r.rows[0]) : null;
   }
@@ -42,7 +42,7 @@ export class InvitationRepository implements IInvitationRepository {
           AND used_at IS NULL
           AND expires_at > NOW()
         LIMIT 1`,
-      [tenantId, email.toLowerCase()]
+      [tenantId, email.toLowerCase()],
     );
     return r.rows.length > 0 ? this.toEntity(r.rows[0]) : null;
   }
@@ -63,23 +63,23 @@ export class InvitationRepository implements IInvitationRepository {
         invitation.invitedBy,
         invitation.usedAt,
         invitation.createdAt,
-      ]
+      ],
     );
   }
 
   async markUsed(invitationId: string, usedAt: Date): Promise<void> {
-    await this.pool.query(
-      `UPDATE iam.invitations SET used_at = $1 WHERE id = $2`,
-      [usedAt, invitationId]
-    );
+    await this.pool.query(`UPDATE iam.invitations SET used_at = $1 WHERE id = $2`, [
+      usedAt,
+      invitationId,
+    ]);
   }
 
   /** Used by IdentityTxRunner inside a transaction. */
   async markUsedWithClient(client: PoolClient, invitationId: string, usedAt: Date): Promise<void> {
-    await client.query(
-      `UPDATE iam.invitations SET used_at = $1 WHERE id = $2`,
-      [usedAt, invitationId]
-    );
+    await client.query(`UPDATE iam.invitations SET used_at = $1 WHERE id = $2`, [
+      usedAt,
+      invitationId,
+    ]);
   }
 
   private toEntity(row: InvitationRow): Invitation {

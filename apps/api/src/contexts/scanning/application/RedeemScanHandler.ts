@@ -22,7 +22,7 @@ export interface RedeemScanDTO {
   readonly delta: number;
 }
 
-const IDEM_TTL_SECONDS = 30;         // 30 s window to absorb double-taps / network retries
+const IDEM_TTL_SECONDS = 30; // 30 s window to absorb double-taps / network retries
 const IDEM_KEY_PREFIX = "scan:idem:";
 
 /** A wallet barcode is a passId (UUID). Reject anything that can't be one. */

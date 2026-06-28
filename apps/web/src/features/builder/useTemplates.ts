@@ -110,7 +110,11 @@ export function usePublishTemplate() {
 
 export function useRegisterAsset() {
   const qc = useQueryClient();
-  return useMutation<unknown, ApiError, { id: string; kind: "icon" | "logo" | "strip"; ref: string }>({
+  return useMutation<
+    unknown,
+    ApiError,
+    { id: string; kind: "icon" | "logo" | "strip"; ref: string }
+  >({
     mutationFn: ({ id, ...body }) => api.post(`/api/v1/card-templates/${id}/assets`, body),
     onSuccess: () => qc.invalidateQueries({ queryKey: QK }),
   });

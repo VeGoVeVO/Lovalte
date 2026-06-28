@@ -1,6 +1,8 @@
 import { ValueObject, ValidationError } from "../../../kernel";
 
-interface SlugProps { value: string }
+interface SlugProps {
+  value: string;
+}
 
 /**
  * URL-safe tenant subdomain slug.
@@ -14,7 +16,7 @@ export class Slug extends ValueObject<SlugProps> {
     const s = raw.trim().toLowerCase();
     if (!s || !Slug.RE.test(s)) {
       throw new ValidationError(
-        `Invalid slug '${s}': must be 2-63 lowercase alphanumeric chars or hyphens`
+        `Invalid slug '${s}': must be 2-63 lowercase alphanumeric chars or hyphens`,
       );
     }
     return new Slug({ value: s });
@@ -36,5 +38,7 @@ export class Slug extends ValueObject<SlugProps> {
     return new Slug({ value });
   }
 
-  get value(): string { return this.props.value; }
+  get value(): string {
+    return this.props.value;
+  }
 }

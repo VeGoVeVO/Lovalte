@@ -9,7 +9,9 @@ const PASSWORD = "hunter2hunter2";
 
 test("marketing landing renders", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: /Loyalty cards your customers actually keep/i })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: /Loyalty cards your customers actually keep/i }),
+  ).toBeVisible();
   await page.screenshot({ path: "e2e/__screenshots__/landing.png" });
 });
 

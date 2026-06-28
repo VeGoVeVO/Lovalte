@@ -27,7 +27,7 @@ export class TenantRepository implements ITenantRepository {
          FROM iam.tenants
         WHERE slug = $1
         LIMIT 1`,
-      [slug]
+      [slug],
     );
     if (result.rows.length === 0) return null;
     return this.toAggregate(result.rows[0]);
@@ -39,7 +39,7 @@ export class TenantRepository implements ITenantRepository {
          FROM iam.tenants
         WHERE id = $1
         LIMIT 1`,
-      [tenantId]
+      [tenantId],
     );
     if (result.rows.length === 0) return null;
     return this.toAggregate(result.rows[0]);
@@ -61,7 +61,7 @@ export class TenantRepository implements ITenantRepository {
         tenant.plan,
         tenant.createdAt,
         tenant.updatedAt,
-      ]
+      ],
     );
   }
 

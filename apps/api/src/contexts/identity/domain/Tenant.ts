@@ -19,7 +19,10 @@ interface TenantProps {
  * Emits: TenantCreated
  */
 export class Tenant extends AggregateRoot<TenantId> {
-  private constructor(id: TenantId, private readonly props: TenantProps) {
+  private constructor(
+    id: TenantId,
+    private readonly props: TenantProps,
+  ) {
     super(id);
   }
 
@@ -44,7 +47,7 @@ export class Tenant extends AggregateRoot<TenantId> {
         tenantId: id.value,
         name,
         slug: params.slug.value,
-      })
+      }),
     );
     return tenant;
   }
@@ -54,10 +57,22 @@ export class Tenant extends AggregateRoot<TenantId> {
     return new Tenant(TenantId.from(id), props);
   }
 
-  get name(): string { return this.props.name; }
-  get slug(): Slug { return this.props.slug; }
-  get status(): TenantStatus { return this.props.status; }
-  get plan(): string { return this.props.plan; }
-  get createdAt(): Date { return this.props.createdAt; }
-  get updatedAt(): Date { return this.props.updatedAt; }
+  get name(): string {
+    return this.props.name;
+  }
+  get slug(): Slug {
+    return this.props.slug;
+  }
+  get status(): TenantStatus {
+    return this.props.status;
+  }
+  get plan(): string {
+    return this.props.plan;
+  }
+  get createdAt(): Date {
+    return this.props.createdAt;
+  }
+  get updatedAt(): Date {
+    return this.props.updatedAt;
+  }
 }

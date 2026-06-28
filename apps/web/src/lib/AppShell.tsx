@@ -18,10 +18,24 @@ const NAV: { to: string; label: string }[] = [
 // Mobile: a 5-item native-style bottom tab bar (the daily-driver sections).
 const ICONS: Record<string, ReactNode> = {
   home: <path d="M3 10.5 12 3l9 7.5M5 9.5V20h14V9.5" />,
-  card: <><rect x="3" y="5.5" width="18" height="13" rx="2.5" /><path d="M3 9.5h18" /></>,
-  users: <><circle cx="9" cy="8" r="3" /><path d="M3.5 19a5.5 5.5 0 0 1 11 0M16 6.5a3 3 0 0 1 0 5.8M20.5 19a5 5 0 0 0-3-4.5" /></>,
-  ticket: <path d="M4 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2 2 2 0 0 0 0 4 2 2 0 0 1-2 2H6a2 2 0 0 1-2-2 2 2 0 0 0 0-4ZM14 6v12" />,
-  scan: <path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2M4 12h16" />,
+  card: (
+    <>
+      <rect x="3" y="5.5" width="18" height="13" rx="2.5" />
+      <path d="M3 9.5h18" />
+    </>
+  ),
+  users: (
+    <>
+      <circle cx="9" cy="8" r="3" />
+      <path d="M3.5 19a5.5 5.5 0 0 1 11 0M16 6.5a3 3 0 0 1 0 5.8M20.5 19a5 5 0 0 0-3-4.5" />
+    </>
+  ),
+  ticket: (
+    <path d="M4 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2 2 2 0 0 0 0 4 2 2 0 0 1-2 2H6a2 2 0 0 1-2-2 2 2 0 0 0 0-4ZM14 6v12" />
+  ),
+  scan: (
+    <path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2M4 12h16" />
+  ),
 };
 const TABS = [
   { to: "/app", label: "Home", icon: "home" },
@@ -88,9 +102,13 @@ export function AppShell({ title, children }: { title?: string; children: ReactN
   const [moreOpen, setMoreOpen] = useState(false);
   const logout = useMutation({
     mutationFn: () => api.post("/api/v1/auth/logout"),
-    onSettled: () => { qc.clear(); nav("/login"); },
+    onSettled: () => {
+      qc.clear();
+      nav("/login");
+    },
   });
-  const active = (to: string) => (to === "/app" ? loc.pathname === "/app" : loc.pathname.startsWith(to));
+  const active = (to: string) =>
+    to === "/app" ? loc.pathname === "/app" : loc.pathname.startsWith(to);
 
   return (
     <div className="halo" style={{ minHeight: "100vh" }}>
@@ -105,11 +123,21 @@ export function AppShell({ title, children }: { title?: string; children: ReactN
                 <span className="dot" aria-hidden="true" /> Lovalte
               </Link>
               <div className="navlinks">
-                {NAV.map((n) => <Link key={n.to} to={n.to}>{t(n.label)}</Link>)}
+                {NAV.map((n) => (
+                  <Link key={n.to} to={n.to}>
+                    {t(n.label)}
+                  </Link>
+                ))}
               </div>
               <div className="navcta" style={{ gap: ".6rem" }}>
                 <LanguageSwitcher />
-                <button className="btn ghost" onClick={() => logout.mutate()} aria-label={t("Log out")}>{t("Log out")}</button>
+                <button
+                  className="btn ghost"
+                  onClick={() => logout.mutate()}
+                  aria-label={t("Log out")}
+                >
+                  {t("Log out")}
+                </button>
               </div>
             </nav>
           </div>
@@ -117,38 +145,116 @@ export function AppShell({ title, children }: { title?: string; children: ReactN
 
         {/* Mobile slim header */}
         <header className="lvt-mobilehead">
-          <Link to="/app" className="brand" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: ".5rem" }}>
-            <span aria-hidden="true" style={{ width: 12, height: 12, borderRadius: "50%", background: "linear-gradient(135deg,#A9F5FF,#5BA7C9)" }} />
+          <Link
+            to="/app"
+            className="brand"
+            style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: ".5rem" }}
+          >
+            <span
+              aria-hidden="true"
+              style={{
+                width: 12,
+                height: 12,
+                borderRadius: "50%",
+                background: "linear-gradient(135deg,#A9F5FF,#5BA7C9)",
+              }}
+            />
             <span style={{ fontWeight: 600, color: "var(--text)" }}>Lovalte</span>
           </Link>
           <div style={{ position: "relative" }}>
-            <button type="button" aria-label={t("More")} aria-expanded={moreOpen} onClick={() => setMoreOpen((o) => !o)}
-              style={{ width: 40, height: 40, borderRadius: 10, border: "1px solid rgba(255,255,255,.55)", background: "rgba(255,255,255,.5)", WebkitBackdropFilter: "blur(14px) saturate(170%)", backdropFilter: "blur(14px) saturate(170%)", color: "var(--text)", display: "grid", placeItems: "center", cursor: "pointer" }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8" /><circle cx="12" cy="12" r="1.8" /><circle cx="19" cy="12" r="1.8" /></svg>
+            <button
+              type="button"
+              aria-label={t("More")}
+              aria-expanded={moreOpen}
+              onClick={() => setMoreOpen((o) => !o)}
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 10,
+                border: "1px solid rgba(255,255,255,.55)",
+                background: "rgba(255,255,255,.5)",
+                WebkitBackdropFilter: "blur(14px) saturate(170%)",
+                backdropFilter: "blur(14px) saturate(170%)",
+                color: "var(--text)",
+                display: "grid",
+                placeItems: "center",
+                cursor: "pointer",
+              }}
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <circle cx="5" cy="12" r="1.8" />
+                <circle cx="12" cy="12" r="1.8" />
+                <circle cx="19" cy="12" r="1.8" />
+              </svg>
             </button>
             {moreOpen && (
               <>
-                <div onClick={() => setMoreOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 55 }} />
+                <div
+                  onClick={() => setMoreOpen(false)}
+                  style={{ position: "fixed", inset: 0, zIndex: 55 }}
+                />
                 <div className="lvt-more-menu" role="menu">
-                  {MORE.map((m) => <Link key={m.to} role="menuitem" to={m.to} onClick={() => setMoreOpen(false)}>{t(m.label)}</Link>)}
-                  <div style={{ padding: ".45rem .6rem" }}><LanguageSwitcher /></div>
-                  <button role="menuitem" onClick={() => { setMoreOpen(false); logout.mutate(); }}>{t("Log out")}</button>
+                  {MORE.map((m) => (
+                    <Link key={m.to} role="menuitem" to={m.to} onClick={() => setMoreOpen(false)}>
+                      {t(m.label)}
+                    </Link>
+                  ))}
+                  <div style={{ padding: ".45rem .6rem" }}>
+                    <LanguageSwitcher />
+                  </div>
+                  <button
+                    role="menuitem"
+                    onClick={() => {
+                      setMoreOpen(false);
+                      logout.mutate();
+                    }}
+                  >
+                    {t("Log out")}
+                  </button>
                 </div>
               </>
             )}
           </div>
         </header>
 
-        <main className="container lvt-rise lvt-main" style={{ paddingTop: "2.5rem", paddingBottom: "5rem" }}>
-          {title ? <h1 className="section" style={{ marginBottom: "2rem", textAlign: "center" }}>{title}</h1> : null}
+        <main
+          className="container lvt-rise lvt-main"
+          style={{ paddingTop: "2.5rem", paddingBottom: "5rem" }}
+        >
+          {title ? (
+            <h1 className="section" style={{ marginBottom: "2rem", textAlign: "center" }}>
+              {title}
+            </h1>
+          ) : null}
           {children}
         </main>
 
         {/* Mobile bottom tab bar */}
         <nav className="lvt-tabbar" aria-label="Primary">
           {TABS.map((tab) => (
-            <Link key={tab.to} to={tab.to} className={`lvt-tab${active(tab.to) ? " active" : ""}`} aria-current={active(tab.to) ? "page" : undefined}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{ICONS[tab.icon]}</svg>
+            <Link
+              key={tab.to}
+              to={tab.to}
+              className={`lvt-tab${active(tab.to) ? " active" : ""}`}
+              aria-current={active(tab.to) ? "page" : undefined}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                {ICONS[tab.icon]}
+              </svg>
               {t(tab.label)}
             </Link>
           ))}

@@ -22,16 +22,22 @@ export interface UseBarcodeScanner {
 function cropQr(source: HTMLCanvasElement, corners: { x: number; y: number }[]): string {
   const xs = corners.map((c) => c.x);
   const ys = corners.map((c) => c.y);
-  let minX = Math.min(...xs), maxX = Math.max(...xs);
-  let minY = Math.min(...ys), maxY = Math.max(...ys);
+  let minX = Math.min(...xs),
+    maxX = Math.max(...xs);
+  let minY = Math.min(...ys),
+    maxY = Math.max(...ys);
   const padX = (maxX - minX) * 0.18;
   const padY = (maxY - minY) * 0.18;
-  minX = Math.max(0, minX - padX); minY = Math.max(0, minY - padY);
-  maxX = Math.min(source.width, maxX + padX); maxY = Math.min(source.height, maxY + padY);
-  const w = Math.max(1, maxX - minX), h = Math.max(1, maxY - minY);
+  minX = Math.max(0, minX - padX);
+  minY = Math.max(0, minY - padY);
+  maxX = Math.min(source.width, maxX + padX);
+  maxY = Math.min(source.height, maxY + padY);
+  const w = Math.max(1, maxX - minX),
+    h = Math.max(1, maxY - minY);
   const out = document.createElement("canvas");
   const size = 224;
-  out.width = size; out.height = size;
+  out.width = size;
+  out.height = size;
   const ctx = out.getContext("2d");
   if (ctx) {
     ctx.fillStyle = "#fff";
@@ -54,7 +60,9 @@ export function useBarcodeScanner(): UseBarcodeScanner {
   const timerRef = useRef<number>(0);
 
   const [status, setStatus] = useState<ScannerStatus>(() =>
-    typeof navigator !== "undefined" && typeof navigator.mediaDevices?.getUserMedia === "function" ? "idle" : "unsupported",
+    typeof navigator !== "undefined" && typeof navigator.mediaDevices?.getUserMedia === "function"
+      ? "idle"
+      : "unsupported",
   );
   const [detectedToken, setDetectedToken] = useState<string | null>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
@@ -70,14 +78,24 @@ export function useBarcodeScanner(): UseBarcodeScanner {
 
   useEffect(() => () => stop(), [stop]);
 
-  const stopCamera = useCallback(() => { stop(); setStatus("idle"); }, [stop]);
+  const stopCamera = useCallback(() => {
+    stop();
+    setStatus("idle");
+  }, [stop]);
 
   const startCamera = useCallback(async () => {
-    if (typeof navigator.mediaDevices?.getUserMedia !== "function") { setStatus("unsupported"); return; }
+    if (typeof navigator.mediaDevices?.getUserMedia !== "function") {
+      setStatus("unsupported");
+      return;
+    }
     setStatus("requesting");
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+        video: {
+          facingMode: { ideal: "environment" },
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+        },
       });
       streamRef.current = stream;
       const video = videoRef.current;
@@ -120,7 +138,10 @@ export function useBarcodeScanner(): UseBarcodeScanner {
     }
   }, [stop]);
 
-  const clearToken = useCallback(() => { setDetectedToken(null); setCapturedImage(null); }, []);
+  const clearToken = useCallback(() => {
+    setDetectedToken(null);
+    setCapturedImage(null);
+  }, []);
 
   return { videoRef, status, detectedToken, capturedImage, startCamera, stopCamera, clearToken };
 }

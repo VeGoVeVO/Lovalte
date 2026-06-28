@@ -11,8 +11,12 @@ function makeRepo(): IImageRepository & { saved: { image: CardImage; bytes: Buff
   const saved: { image: CardImage; bytes: Buffer }[] = [];
   return {
     saved,
-    async save(image, bytes) { saved.push({ image, bytes }); },
-    async load(): Promise<StoredImage | null> { return null; },
+    async save(image, bytes) {
+      saved.push({ image, bytes });
+    },
+    async load(): Promise<StoredImage | null> {
+      return null;
+    },
   };
 }
 
@@ -21,7 +25,13 @@ describe("StoreImageHandler", () => {
     const repo = makeRepo();
     const handler = new StoreImageHandler(repo);
 
-    const r = await handler.execute({ tenantId: TENANT, kind: "icon", contentType: "image/png", bytes: PNG, source: "lucide" });
+    const r = await handler.execute({
+      tenantId: TENANT,
+      kind: "icon",
+      contentType: "image/png",
+      bytes: PNG,
+      source: "lucide",
+    });
 
     expect(r.ok).toBe(true);
     if (!r.ok) return;
@@ -38,7 +48,12 @@ describe("StoreImageHandler", () => {
     const handler = new StoreImageHandler(repo);
 
     // Declares PNG but supplies non-PNG bytes → domain rejects.
-    const r = await handler.execute({ tenantId: TENANT, kind: "icon", contentType: "image/png", bytes: Buffer.from("not a png") });
+    const r = await handler.execute({
+      tenantId: TENANT,
+      kind: "icon",
+      contentType: "image/png",
+      bytes: Buffer.from("not a png"),
+    });
 
     expect(r.ok).toBe(false);
     if (r.ok) return;

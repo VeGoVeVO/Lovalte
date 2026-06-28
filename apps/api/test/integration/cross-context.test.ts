@@ -159,7 +159,7 @@ describe("staff invitations", () => {
     const users = await app.inject({ method: "GET", url: "/api/v1/users", headers: { cookie } });
     expect(users.statusCode).toBe(200);
     const list = body(users);
-    expect(Array.isArray(Array.isArray(list) ? list : list.items ?? [])).toBe(true);
+    expect(Array.isArray(Array.isArray(list) ? list : (list.items ?? []))).toBe(true);
   });
 });
 

@@ -14,10 +14,7 @@ export class TierRepository implements ITierRepository {
   async findByTenant(tenantId: string): Promise<TierRule[]> {
     const client = await this.pool.connect();
     try {
-      await client.query(
-        "SELECT set_config('app.current_tenant', $1, true)",
-        [tenantId],
-      );
+      await client.query("SELECT set_config('app.current_tenant', $1, true)", [tenantId]);
       const result = await client.query<TierRow>(
         `SELECT name, min_points
          FROM loyalty.tiers

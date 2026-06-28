@@ -97,7 +97,8 @@ export function ScanPage() {
       liveText = n === 1 ? t("Redeemed 1 point!") : t("Redeemed {n} points!", { n });
     }
   } else if (mutation.isError) {
-    liveText = (mutation.error as unknown as ApiError)?.message ?? t("Scan failed. Please try again.");
+    liveText =
+      (mutation.error as unknown as ApiError)?.message ?? t("Scan failed. Please try again.");
   } else if (status === "requesting") {
     liveText = t("Requesting camera permission…");
   } else if (status === "scanning") {
@@ -122,10 +123,7 @@ export function ScanPage() {
         {!showManualFallback && !detectedToken && (
           <div>
             {status === "idle" && (
-              <GlassButton
-                onClick={startCamera}
-                aria-label={t("Start camera to scan a QR code")}
-              >
+              <GlassButton onClick={startCamera} aria-label={t("Start camera to scan a QR code")}>
                 {t("Start Camera")}
               </GlassButton>
             )}
@@ -146,7 +144,10 @@ export function ScanPage() {
                 <div className="scan-frame" aria-hidden="true" />
                 <div className="scan-line" aria-hidden="true" />
               </div>
-              <p className="meta" style={{ textAlign: "center", margin: "0.6rem 0 0", fontSize: "0.8rem" }}>
+              <p
+                className="meta"
+                style={{ textAlign: "center", margin: "0.6rem 0 0", fontSize: "0.8rem" }}
+              >
                 {t("Hold the customer's card QR inside the frame")}
               </p>
               <div style={{ marginTop: "0.75rem", textAlign: "center" }}>
@@ -190,14 +191,30 @@ export function ScanPage() {
           <div className="scan-detected" aria-label={t("QR detected")}>
             <div className="scan-crop-wrap">
               {capturedImage && (
-                <img className="scan-crop" src={capturedImage} alt={t("Scanned QR code")} width={128} height={128} />
+                <img
+                  className="scan-crop"
+                  src={capturedImage}
+                  alt={t("Scanned QR code")}
+                  width={128}
+                  height={128}
+                />
               )}
               <span className="scan-ring" aria-hidden="true" />
               <span className="scan-check" aria-hidden="true">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 7" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M5 12l5 5L20 7"
+                    stroke="currentColor"
+                    strokeWidth="2.6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
               </span>
             </div>
-            <p className="meta" style={{ marginTop: "0.7rem" }}>{t("Card detected - award or redeem below.")}</p>
+            <p className="meta" style={{ marginTop: "0.7rem" }}>
+              {t("Card detected - award or redeem below.")}
+            </p>
           </div>
         )}
 

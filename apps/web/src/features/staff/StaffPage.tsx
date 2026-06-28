@@ -84,7 +84,11 @@ export function StaffPage() {
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const { data: users, isLoading, isError } = useQuery({
+  const {
+    data: users,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ["staff-users"],
     queryFn: () => api.get<UserDTO[]>("/api/v1/users"),
   });
@@ -121,7 +125,6 @@ export function StaffPage() {
   return (
     <AppShell title={t("Staff")}>
       <div style={{ display: "flex", flexDirection: "column", gap: "2rem", maxWidth: "720px" }}>
-
         {/* ── Invite form ──────────────────────────────────────── */}
         <GlassCard light className="feature" aria-label={t("Invite team member")}>
           <h2 className="section" style={{ fontSize: "1.15rem" }}>
@@ -139,7 +142,13 @@ export function StaffPage() {
             <div>
               <label
                 htmlFor="invite-email"
-                style={{ display: "block", fontSize: "0.85rem", color: "var(--muted)", marginBottom: "0.35rem", fontWeight: 500 }}
+                style={{
+                  display: "block",
+                  fontSize: "0.85rem",
+                  color: "var(--muted)",
+                  marginBottom: "0.35rem",
+                  fontWeight: 500,
+                }}
               >
                 {t("Email address")}
               </label>
@@ -158,7 +167,13 @@ export function StaffPage() {
             <div>
               <label
                 htmlFor="invite-role"
-                style={{ display: "block", fontSize: "0.85rem", color: "var(--muted)", marginBottom: "0.35rem", fontWeight: 500 }}
+                style={{
+                  display: "block",
+                  fontSize: "0.85rem",
+                  color: "var(--muted)",
+                  marginBottom: "0.35rem",
+                  fontWeight: 500,
+                }}
               >
                 {t("Role")}
               </label>
@@ -192,7 +207,14 @@ export function StaffPage() {
               aria-live="polite"
               style={{ padding: "1rem 1.25rem", borderRadius: "var(--r-card)" }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  marginBottom: "0.5rem",
+                }}
+              >
                 <Icon.Check aria-hidden="true" />
                 <span style={{ fontWeight: 500 }}>
                   {t("Invite sent to {email}", { email: inviteResult.email })}
@@ -200,7 +222,9 @@ export function StaffPage() {
                 <RoleBadge role={inviteResult.role} />
               </div>
               <p style={{ margin: "0 0 0.5rem", fontSize: "0.82rem", color: "var(--muted)" }}>
-                {t("Share this token with the invitee - expires {date}.", { date: new Date(inviteResult.expiresAt).toLocaleDateString() })}
+                {t("Share this token with the invitee - expires {date}.", {
+                  date: new Date(inviteResult.expiresAt).toLocaleDateString(),
+                })}
               </p>
               <div style={{ display: "flex", gap: "0.5rem", alignItems: "flex-start" }}>
                 <code
@@ -251,13 +275,26 @@ export function StaffPage() {
             <ul
               role="list"
               aria-label={t("Team members")}
-              style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: "0.5rem" }}
+              style={{
+                listStyle: "none",
+                margin: 0,
+                padding: 0,
+                display: "flex",
+                flexDirection: "column",
+                gap: "0.5rem",
+              }}
             >
               {users.map((user) => (
                 <li key={user.userId}>
                   <div
                     className="glass"
-                    style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", padding: "0.9rem 1.15rem" }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: "0.75rem",
+                      padding: "0.9rem 1.15rem",
+                    }}
                   >
                     <div>
                       <span style={{ fontWeight: 500, fontSize: "0.95rem" }}>{user.email}</span>
@@ -265,10 +302,19 @@ export function StaffPage() {
                         className="body"
                         style={{ display: "block", fontSize: "0.75rem", marginTop: "0.1rem" }}
                       >
-                        {t("Joined {date}", { date: new Date(user.createdAt).toLocaleDateString() })}
+                        {t("Joined {date}", {
+                          date: new Date(user.createdAt).toLocaleDateString(),
+                        })}
                       </span>
                     </div>
-                    <div style={{ display: "flex", gap: "0.4rem", alignItems: "center", flexShrink: 0 }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "0.4rem",
+                        alignItems: "center",
+                        flexShrink: 0,
+                      }}
+                    >
                       <RoleBadge role={user.role} />
                       <StatusBadge status={user.status} />
                     </div>
@@ -278,7 +324,6 @@ export function StaffPage() {
             </ul>
           )}
         </GlassCard>
-
       </div>
     </AppShell>
   );

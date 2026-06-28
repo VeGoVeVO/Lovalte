@@ -52,13 +52,13 @@ export class ApnsAdapter implements IPushNotificationPort {
     }
 
     const keyPath = process.env["APNS_KEY_PATH"]!;
-    const keyId   = process.env["APNS_KEY_ID"]!;
-    const teamId  = process.env["APNS_TEAM_ID"]!;
+    const keyId = process.env["APNS_KEY_ID"]!;
+    const teamId = process.env["APNS_TEAM_ID"]!;
 
     const pem = fs.readFileSync(keyPath, "utf8");
     const iat = Math.floor(now / 1_000);
 
-    const header  = Buffer.from(JSON.stringify({ alg: "ES256", kid: keyId })).toString("base64url");
+    const header = Buffer.from(JSON.stringify({ alg: "ES256", kid: keyId })).toString("base64url");
     const payload = Buffer.from(JSON.stringify({ iss: teamId, iat })).toString("base64url");
     const signing = `${header}.${payload}`;
 
@@ -78,7 +78,9 @@ export class ApnsAdapter implements IPushNotificationPort {
       return this.session;
     }
     const sess = http2.connect(APNS_HOST);
-    const clear = (): void => { this.session = null; };
+    const clear = (): void => {
+      this.session = null;
+    };
     sess.once("error", clear);
     sess.once("close", clear);
     this.session = sess;
@@ -154,7 +156,7 @@ export class ApnsAdapter implements IPushNotificationPort {
       return;
     }
 
-    const jwt  = this.buildJwt();
+    const jwt = this.buildJwt();
     const sess = this.getSession();
 
     await Promise.all(

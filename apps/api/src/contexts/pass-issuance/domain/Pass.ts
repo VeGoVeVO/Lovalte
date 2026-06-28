@@ -4,8 +4,12 @@ import type { SerialNumber } from "./SerialNumber";
 import type { AuthenticationToken } from "./AuthenticationToken";
 
 export class PassId extends UniqueId {
-  static override create(): PassId { return new PassId(randomUUID()); }
-  static override from(v: string): PassId { return new PassId(v); }
+  static override create(): PassId {
+    return new PassId(randomUUID());
+  }
+  static override from(v: string): PassId {
+    return new PassId(v);
+  }
 }
 
 export interface PassFieldValue {
@@ -53,15 +57,15 @@ export class Pass extends AggregateRoot<PassId> {
   private constructor(id: PassId, props: PassProps) {
     super(id);
     this._serialNumber = props.serialNumber;
-    this._passTypeId   = props.passTypeId;
-    this._memberId     = props.memberId;
-    this._tenantId     = props.tenantId;
-    this._authToken    = props.authToken;
-    this._fieldValues  = props.fieldValues;
-    this._voided       = props.voided;
-    this._lastUpdated  = props.lastUpdated;
-    this._version      = props.version;
-    this.createdAt     = props.createdAt;
+    this._passTypeId = props.passTypeId;
+    this._memberId = props.memberId;
+    this._tenantId = props.tenantId;
+    this._authToken = props.authToken;
+    this._fieldValues = props.fieldValues;
+    this._voided = props.voided;
+    this._lastUpdated = props.lastUpdated;
+    this._version = props.version;
+    this.createdAt = props.createdAt;
   }
 
   /** Factory: mint a brand-new pass. Emits PassIssued. */
@@ -77,22 +81,24 @@ export class Pass extends AggregateRoot<PassId> {
     const id = PassId.create();
     const pass = new Pass(id, {
       serialNumber: params.serialNumber,
-      passTypeId:   params.passTypeId,
-      memberId:     params.memberId,
-      tenantId:     params.tenantId,
-      authToken:    params.authToken,
-      fieldValues:  params.fieldValues,
-      voided:       false,
-      lastUpdated:  params.now,
-      version:      1,
-      createdAt:    params.now,
+      passTypeId: params.passTypeId,
+      memberId: params.memberId,
+      tenantId: params.tenantId,
+      authToken: params.authToken,
+      fieldValues: params.fieldValues,
+      voided: false,
+      lastUpdated: params.now,
+      version: 1,
+      createdAt: params.now,
     });
-    pass.addEvent(pass.makeEvent("PassIssued", {
-      passId:    id.value,
-      memberId:  params.memberId,
-      tenantId:  params.tenantId,
-      serial:    params.serialNumber.value,
-    }));
+    pass.addEvent(
+      pass.makeEvent("PassIssued", {
+        passId: id.value,
+        memberId: params.memberId,
+        tenantId: params.tenantId,
+        serial: params.serialNumber.value,
+      }),
+    );
     return pass;
   }
 
@@ -112,35 +118,57 @@ export class Pass extends AggregateRoot<PassId> {
     }
     this._fieldValues = [...fieldValues];
     this._lastUpdated = now;
-    this._version    += 1;
-    this.addEvent(this.makeEvent("PassFieldsUpdated", {
-      passId:   this.id.value,
-      serial:   this._serialNumber.value,
-      tenantId: this._tenantId,
-      version:  this._version,
-    }));
+    this._version += 1;
+    this.addEvent(
+      this.makeEvent("PassFieldsUpdated", {
+        passId: this.id.value,
+        serial: this._serialNumber.value,
+        tenantId: this._tenantId,
+        version: this._version,
+      }),
+    );
   }
 
   /** Void the pass - idempotent. */
   voidPass(now: Date): void {
     if (this._voided) return;
-    this._voided      = true;
+    this._voided = true;
     this._lastUpdated = now;
-    this._version    += 1;
-    this.addEvent(this.makeEvent("PassVoided", {
-      passId:  this.id.value,
-      serial:  this._serialNumber.value,
-      tenantId: this._tenantId,
-    }));
+    this._version += 1;
+    this.addEvent(
+      this.makeEvent("PassVoided", {
+        passId: this.id.value,
+        serial: this._serialNumber.value,
+        tenantId: this._tenantId,
+      }),
+    );
   }
 
-  get serialNumber(): SerialNumber  { return this._serialNumber; }
-  get passTypeId(): string          { return this._passTypeId; }
-  get memberId(): string            { return this._memberId; }
-  get tenantId(): string            { return this._tenantId; }
-  get authToken(): AuthenticationToken { return this._authToken; }
-  get fieldValues(): PassFieldValue[] { return [...this._fieldValues]; }
-  get voided(): boolean             { return this._voided; }
-  get lastUpdated(): Date           { return this._lastUpdated; }
-  get version(): number             { return this._version; }
+  get serialNumber(): SerialNumber {
+    return this._serialNumber;
+  }
+  get passTypeId(): string {
+    return this._passTypeId;
+  }
+  get memberId(): string {
+    return this._memberId;
+  }
+  get tenantId(): string {
+    return this._tenantId;
+  }
+  get authToken(): AuthenticationToken {
+    return this._authToken;
+  }
+  get fieldValues(): PassFieldValue[] {
+    return [...this._fieldValues];
+  }
+  get voided(): boolean {
+    return this._voided;
+  }
+  get lastUpdated(): Date {
+    return this._lastUpdated;
+  }
+  get version(): number {
+    return this._version;
+  }
 }

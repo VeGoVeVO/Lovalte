@@ -5,13 +5,13 @@ import { AuthenticationToken } from "./AuthenticationToken";
 import { DomainError } from "../../../kernel";
 
 const makePass = (overrides?: { voided?: boolean }) => {
-  const serial    = SerialNumber.mint();
+  const serial = SerialNumber.mint();
   const authToken = AuthenticationToken.fromRaw("a".repeat(32));
-  const now       = new Date("2026-01-01T00:00:00.000Z");
+  const now = new Date("2026-01-01T00:00:00.000Z");
   const pass = Pass.issue({
-    passTypeId:  "template-uuid",
-    memberId:    "member-uuid",
-    tenantId:    "tenant-uuid",
+    passTypeId: "template-uuid",
+    memberId: "member-uuid",
+    tenantId: "tenant-uuid",
     serialNumber: serial,
     authToken,
     fieldValues: [{ key: "points", label: "Points", value: 0 }],
@@ -33,7 +33,7 @@ describe("Pass aggregate - authToken immutability", () => {
 
 describe("Pass.issue()", () => {
   it("emits a PassIssued event with correct payload", () => {
-    const pass   = makePass();
+    const pass = makePass();
     const events = pass.pullEvents();
     expect(events).toHaveLength(1);
     expect(events[0].name).toBe("PassIssued");
@@ -51,9 +51,9 @@ describe("Pass.issue()", () => {
 
 describe("Pass.updateFields()", () => {
   it("bumps version and lastUpdated, emits PassFieldsUpdated", () => {
-    const pass  = makePass();
+    const pass = makePass();
     pass.pullEvents(); // clear issuance event
-    const now   = new Date(pass.lastUpdated.getTime() + 1000);
+    const now = new Date(pass.lastUpdated.getTime() + 1000);
     pass.updateFields([{ key: "points", label: "Points", value: 100 }], now);
     expect(pass.version).toBe(2);
     expect(pass.lastUpdated).toEqual(now);
@@ -64,13 +64,13 @@ describe("Pass.updateFields()", () => {
   it("throws PASS_VOIDED when pass is already voided", () => {
     const pass = makePass({ voided: true });
     pass.pullEvents(); // clear
-    expect(() =>
-      pass.updateFields([{ key: "points", label: "P", value: 1 }], new Date()),
-    ).toThrow(DomainError);
+    expect(() => pass.updateFields([{ key: "points", label: "P", value: 1 }], new Date())).toThrow(
+      DomainError,
+    );
   });
 
   it("enforces monotonic lastUpdated even when caller passes stale date", () => {
-    const pass      = makePass();
+    const pass = makePass();
     const staleDate = new Date(pass.lastUpdated.getTime() - 1000); // in the past
     pass.pullEvents();
     pass.updateFields([{ key: "points", label: "Points", value: 1 }], staleDate);

@@ -78,10 +78,22 @@ export class RedemptionEvent extends AggregateRoot<RedemptionEventId> {
     });
   }
 
-  get tenantId(): string { return this.props.tenantId; }
-  get passId(): string { return this.props.passId; }
-  get action(): ScanAction { return this.props.action; }
-  get delta(): number { return this.props.delta; }
-  get idempotencyKey(): string { return this.props.idempotencyKey; }
-  get createdAt(): Date { return this.props.createdAt; }
+  get tenantId(): string {
+    return this.props.tenantId;
+  }
+  get passId(): string {
+    return this.props.passId;
+  }
+  get action(): ScanAction {
+    return this.props.action;
+  }
+  get delta(): number {
+    return this.props.delta;
+  }
+  get idempotencyKey(): string {
+    return this.props.idempotencyKey;
+  }
+  get createdAt(): Date {
+    return this.props.createdAt;
+  }
 }

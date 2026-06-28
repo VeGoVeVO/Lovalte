@@ -124,12 +124,28 @@ export class Member extends AggregateRoot<MemberId> {
     );
   }
 
-  get tenantId(): string { return this._tenantId; }
-  get passId(): string { return this._passId; }
-  get displayName(): string | null { return this._displayName; }
-  get email(): string | null { return this._email; }
-  get balance(): number { return this._balance.amount; }
-  get currentTier(): string { return this._currentTier; }
-  get enrolledAt(): Date { return this._enrolledAt; }
-  get status(): MemberStatus { return this._status; }
+  get tenantId(): string {
+    return this._tenantId;
+  }
+  get passId(): string {
+    return this._passId;
+  }
+  get displayName(): string | null {
+    return this._displayName;
+  }
+  get email(): string | null {
+    return this._email;
+  }
+  get balance(): number {
+    return this._balance.amount;
+  }
+  get currentTier(): string {
+    return this._currentTier;
+  }
+  get enrolledAt(): Date {
+    return this._enrolledAt;
+  }
+  get status(): MemberStatus {
+    return this._status;
+  }
 }

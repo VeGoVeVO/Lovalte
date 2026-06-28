@@ -90,9 +90,7 @@ describe("Invitation invariants", () => {
       invitedBy: "owner-id",
       hmacSecret: SECRET,
     });
-    expect(
-      Invitation.verifyToken(rawToken, invitation.tokenHash, SECRET)
-    ).toBe(true);
+    expect(Invitation.verifyToken(rawToken, invitation.tokenHash, SECRET)).toBe(true);
   });
 
   it("rejects a tampered token", () => {
@@ -103,9 +101,7 @@ describe("Invitation invariants", () => {
       invitedBy: "owner-id",
       hmacSecret: SECRET,
     });
-    expect(
-      Invitation.verifyToken("tampered-token", invitation.tokenHash, SECRET)
-    ).toBe(false);
+    expect(Invitation.verifyToken("tampered-token", invitation.tokenHash, SECRET)).toBe(false);
   });
 
   it("throws when consumed twice", () => {

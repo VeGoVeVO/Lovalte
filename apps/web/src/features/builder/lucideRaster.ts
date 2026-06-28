@@ -9,7 +9,7 @@
 export async function svgToPngDataUrl(
   svg: SVGSVGElement,
   size = 87,
-  color = "#111111"
+  color = "#111111",
 ): Promise<string> {
   const clone = svg.cloneNode(true) as SVGSVGElement;
   clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");

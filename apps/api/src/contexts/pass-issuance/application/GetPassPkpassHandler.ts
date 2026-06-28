@@ -1,4 +1,4 @@
-import { NotFoundError, UnauthorizedError, type Result, ok, err } from "../../../kernel";
+import { NotFoundError, type Result, ok, err } from "../../../kernel";
 import { PassDocumentBuilder } from "../domain/PassDocumentBuilder";
 import type {
   IPassRepository,
@@ -15,8 +15,7 @@ export interface GetPassPkpassCommand {
 }
 
 export type GetPassPkpassResult =
-  | { status: 200; buffer: Buffer; lastModified: string }
-  | { status: 304 };
+  { status: 200; buffer: Buffer; lastModified: string } | { status: 304 };
 
 /**
  * Returns the signed .pkpass buffer for a given pass.
@@ -63,8 +62,8 @@ export class GetPassPkpassHandler {
     // Wallet barcode = the bare passId (same as IssuePassHandler) - short → sparse
     // QR that scans reliably; the staff-authed scan endpoint resolves it.
     const qrMessage = pass.id.value;
-    const passJson  = this.builder.build(pass, template, qrMessage);
-    const buffer    = await this.signer.sign(
+    const passJson = this.builder.build(pass, template, qrMessage);
+    const buffer = await this.signer.sign(
       passJson as unknown as Record<string, unknown>,
       template.imageAssetRefs,
     );

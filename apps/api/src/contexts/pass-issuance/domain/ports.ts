@@ -47,10 +47,7 @@ export interface IPassTemplateRepository {
 // Throws DomainError("Pass signing not configured","DOMAIN_ERROR") if certs absent.
 
 export interface IPassSigningPort {
-  sign(
-    passJson: Record<string, unknown>,
-    imageAssetRefs: Record<string, string>,
-  ): Promise<Buffer>;
+  sign(passJson: Record<string, unknown>, imageAssetRefs: Record<string, string>): Promise<Buffer>;
 }
 
 // ── Buffer cache port ─────────────────────────────────────────────────────
@@ -72,5 +69,5 @@ export interface PassFieldValueInput {
 
 /** Maps PassFieldValueInput → domain PassFieldValue (structural alias). */
 export function toPassFieldValues(inputs: PassFieldValueInput[]): PassFieldValue[] {
-  return inputs.map(i => ({ ...i }));
+  return inputs.map((i) => ({ ...i }));
 }

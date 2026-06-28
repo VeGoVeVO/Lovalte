@@ -29,7 +29,7 @@ export class IdentityTxRunner implements IIdentityTxRunner {
           tenant.plan,
           tenant.createdAt,
           tenant.updatedAt,
-        ]
+        ],
       );
 
       await client.query(
@@ -45,7 +45,7 @@ export class IdentityTxRunner implements IIdentityTxRunner {
           user.status,
           user.createdAt,
           user.updatedAt,
-        ]
+        ],
       );
     });
   }
@@ -60,7 +60,7 @@ export class IdentityTxRunner implements IIdentityTxRunner {
     await withTransaction(this.pool, async (client) => {
       await client.query(
         `UPDATE iam.invitations SET used_at = $1 WHERE id = $2 AND used_at IS NULL`,
-        [usedAt, invitation.id.value]
+        [usedAt, invitation.id.value],
       );
 
       await client.query(
@@ -76,7 +76,7 @@ export class IdentityTxRunner implements IIdentityTxRunner {
           user.status,
           user.createdAt,
           user.updatedAt,
-        ]
+        ],
       );
     });
   }

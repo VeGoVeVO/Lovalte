@@ -37,16 +37,12 @@ export function registerMemberRoutes(
    * GET /api/v1/members
    * Returns a summary list of all active members for the tenant.
    */
-  app.get(
-    "/api/v1/members",
-    authHook,
-    async (req, reply) => {
-      const auth = getAuth(req);
-      const r = await handlers.listMembers.execute({ tenantId: auth.tenantId });
-      if (!r.ok) throw r.error;
-      return reply.status(200).send({ data: r.value });
-    },
-  );
+  app.get("/api/v1/members", authHook, async (req, reply) => {
+    const auth = getAuth(req);
+    const r = await handlers.listMembers.execute({ tenantId: auth.tenantId });
+    if (!r.ok) throw r.error;
+    return reply.status(200).send({ data: r.value });
+  });
 
   /**
    * GET /api/v1/members/:memberId

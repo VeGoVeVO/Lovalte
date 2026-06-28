@@ -28,7 +28,9 @@ function makeRepo(): IRedemptionEventRepository & { saved: unknown[] } {
   const saved: unknown[] = [];
   return {
     saved,
-    save: vi.fn().mockImplementation(async (evt) => { saved.push(evt); }),
+    save: vi.fn().mockImplementation(async (evt) => {
+      saved.push(evt);
+    }),
   };
 }
 
@@ -36,7 +38,9 @@ function makeBus(): DomainEventBus & { published: DomainEvent[] } {
   const published: DomainEvent[] = [];
   return {
     published,
-    publish: vi.fn().mockImplementation(async (events: DomainEvent[]) => { published.push(...events); }),
+    publish: vi.fn().mockImplementation(async (events: DomainEvent[]) => {
+      published.push(...events);
+    }),
     subscribe: vi.fn(),
   };
 }
@@ -97,7 +101,13 @@ describe("RedeemScanHandler", () => {
     });
 
     it("stores negative delta for a 'redeem' action", async () => {
-      const handler = new RedeemScanHandler(repo, makePassLookup(true), makeCacheStore(), bus, fixedClock);
+      const handler = new RedeemScanHandler(
+        repo,
+        makePassLookup(true),
+        makeCacheStore(),
+        bus,
+        fixedClock,
+      );
 
       const result = await handler.execute({ ...baseCmd, action: "redeem", amount: 25 });
 
@@ -191,7 +201,13 @@ describe("RedeemScanHandler", () => {
     });
 
     it("returns ValidationError when amount is negative", async () => {
-      const handler = new RedeemScanHandler(repo, makePassLookup(true), makeCacheStore(), bus, fixedClock);
+      const handler = new RedeemScanHandler(
+        repo,
+        makePassLookup(true),
+        makeCacheStore(),
+        bus,
+        fixedClock,
+      );
 
       const result = await handler.execute({ ...baseCmd, amount: -5 });
 

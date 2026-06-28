@@ -22,11 +22,6 @@ export class RedisPassBufferCache implements IPassBufferCache {
   }
 
   async put(serial: string, version: number, buffer: Buffer): Promise<void> {
-    await this.redis.set(
-      `pkpass:${serial}:${version}`,
-      buffer,
-      "EX",
-      CACHE_TTL_SECONDS,
-    );
+    await this.redis.set(`pkpass:${serial}:${version}`, buffer, "EX", CACHE_TTL_SECONDS);
   }
 }

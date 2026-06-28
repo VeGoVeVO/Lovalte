@@ -19,7 +19,9 @@ function makeBus(): DomainEventBus & { published: DomainEvent[] } {
   const published: DomainEvent[] = [];
   return {
     published,
-    async publish(events) { published.push(...events); },
+    async publish(events) {
+      published.push(...events);
+    },
     subscribe() {},
   };
 }
@@ -81,7 +83,7 @@ function makeTemplateWithNoPrimaryFields(): CardTemplate {
       backgroundColor: RgbColor.create(0, 0, 0),
       foregroundColor: RgbColor.create(255, 255, 255),
       headerFields: [],
-      primaryFields: [],   // violates: exactly 1 required
+      primaryFields: [], // violates: exactly 1 required
       secondaryFields: [],
       auxiliaryFields: [],
       backFields: [],
@@ -92,8 +94,10 @@ function makeTemplateWithNoPrimaryFields(): CardTemplate {
 
 /** Draft with 4 headerFields - validate() enforces ≤ 3. */
 function makeTemplateWithTooManyHeaders(): CardTemplate {
-  const fields = [1, 2, 3, 4].map(n => ({
-    key: `h${n}`, label: `H${n}`, valueTemplate: `{{h${n}}}`,
+  const fields = [1, 2, 3, 4].map((n) => ({
+    key: `h${n}`,
+    label: `H${n}`,
+    valueTemplate: `{{h${n}}}`,
   }));
   return CardTemplate.reconstitute(CardTemplateId.of(TEMPLATE_ID), {
     ...makeBaseProps(),
@@ -101,7 +105,7 @@ function makeTemplateWithTooManyHeaders(): CardTemplate {
       organizationName: "Acme",
       backgroundColor: RgbColor.create(0, 0, 0),
       foregroundColor: RgbColor.create(255, 255, 255),
-      headerFields: fields,  // 4 - violates Apple Wallet ≤ 3
+      headerFields: fields, // 4 - violates Apple Wallet ≤ 3
       primaryFields: [{ key: "pts", label: "Pts", valueTemplate: "{{points}}" }],
       secondaryFields: [],
       auxiliaryFields: [],
@@ -113,11 +117,19 @@ function makeTemplateWithTooManyHeaders(): CardTemplate {
 
 function makeRepo(template: CardTemplate | null): ICardTemplateRepository {
   return {
-    async findById() { return template; },
-    async findAllByTenant() { return template ? [template] : []; },
+    async findById() {
+      return template;
+    },
+    async findAllByTenant() {
+      return template ? [template] : [];
+    },
     async save() {},
-    async registerAsset(a) { return { ...a, id: "asset-id", createdAt: new Date() }; },
-    async findAssetsByTemplate() { return []; },
+    async registerAsset(a) {
+      return { ...a, id: "asset-id", createdAt: new Date() };
+    },
+    async findAssetsByTemplate() {
+      return [];
+    },
   };
 }
 
@@ -138,7 +150,7 @@ describe("PublishCardTemplateHandler", () => {
     expect(result.value.version).toBe(1);
     expect(result.value.id).toBe(TEMPLATE_ID);
 
-    const event = bus.published.find(e => e.name === "CardTemplatePublished");
+    const event = bus.published.find((e) => e.name === "CardTemplatePublished");
     expect(event).toBeDefined();
     expect(event?.payload.version).toBe(1);
     expect(event?.payload.tenantId).toBe(TENANT_ID);
@@ -171,7 +183,10 @@ describe("PublishCardTemplateHandler", () => {
 
   it("publish gate: rejects when primaryFields is empty (must be exactly 1)", async () => {
     const bus = makeBus();
-    const handler = new PublishCardTemplateHandler(makeRepo(makeTemplateWithNoPrimaryFields()), bus);
+    const handler = new PublishCardTemplateHandler(
+      makeRepo(makeTemplateWithNoPrimaryFields()),
+      bus,
+    );
 
     const result = await handler.execute({ templateId: TEMPLATE_ID, tenantId: TENANT_ID });
 

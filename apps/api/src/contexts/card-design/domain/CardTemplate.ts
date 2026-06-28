@@ -58,7 +58,7 @@ export class CardTemplate extends AggregateRoot<CardTemplateId> {
     tenantId: string,
     name: string,
     brand: BrandConfig,
-    rewardRule: RewardRule
+    rewardRule: RewardRule,
   ): CardTemplate {
     const now = new Date();
     const t = new CardTemplate(id, {
@@ -93,7 +93,7 @@ export class CardTemplate extends AggregateRoot<CardTemplateId> {
     if (name !== undefined) this._name = name;
     this._updatedAt = new Date();
     this.addEvent(
-      this.makeEvent("CardTemplateSaved", { templateId: this.id.value, tenantId: this._tenantId })
+      this.makeEvent("CardTemplateSaved", { templateId: this.id.value, tenantId: this._tenantId }),
     );
   }
 
@@ -103,10 +103,7 @@ export class CardTemplate extends AggregateRoot<CardTemplateId> {
    */
   applyAssetRef(kind: "icon" | "logo" | "strip", ref: string): void {
     if (this._status !== "draft") {
-      throw new DomainError(
-        "Only draft templates can have assets updated",
-        "TEMPLATE_NOT_DRAFT"
-      );
+      throw new DomainError("Only draft templates can have assets updated", "TEMPLATE_NOT_DRAFT");
     }
     const params = this._brand.toParams();
     if (kind === "icon") params.iconRef = ref;
@@ -125,7 +122,10 @@ export class CardTemplate extends AggregateRoot<CardTemplateId> {
       throw new DomainError("Only draft templates can be deleted", "TEMPLATE_NOT_DRAFT");
     }
     this.addEvent(
-      this.makeEvent("CardTemplateDeleted", { templateId: this.id.value, tenantId: this._tenantId })
+      this.makeEvent("CardTemplateDeleted", {
+        templateId: this.id.value,
+        tenantId: this._tenantId,
+      }),
     );
   }
 
@@ -146,7 +146,7 @@ export class CardTemplate extends AggregateRoot<CardTemplateId> {
         templateId: this.id.value,
         tenantId: this._tenantId,
         version: this._version,
-      })
+      }),
     );
   }
 

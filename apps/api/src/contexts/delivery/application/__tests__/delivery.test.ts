@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { RegisterDeviceHandler, type RegisterDeviceCommand } from "../RegisterDeviceHandler";
 import { UnregisterDeviceHandler, type UnregisterDeviceCommand } from "../UnregisterDeviceHandler";
 import type {
@@ -58,15 +58,19 @@ function makeDeviceRepo(existing: Device | null = null): IDeviceRepository & { d
     deleted,
     findByLibId: vi.fn().mockResolvedValue(existing),
     upsert: vi.fn().mockResolvedValue({ device, isNew: existing === null }),
-    delete: vi.fn().mockImplementation(async (id: string) => { deleted.push(id); }),
+    delete: vi.fn().mockImplementation(async (id: string) => {
+      deleted.push(id);
+    }),
   };
 }
 
-function makeRegRepo(opts: {
-  existing?: Registration | null;
-  pushTokens?: string[];
-  count?: number;
-} = {}): IRegistrationRepository {
+function makeRegRepo(
+  opts: {
+    existing?: Registration | null;
+    pushTokens?: string[];
+    count?: number;
+  } = {},
+): IRegistrationRepository {
   return {
     findByDeviceAndPass: vi.fn().mockResolvedValue(opts.existing ?? null),
     save: vi.fn().mockResolvedValue(undefined),
@@ -176,15 +180,15 @@ describe("UnregisterDeviceHandler", () => {
     const passes = makePassRead();
     const devices = makeDeviceRepo(device);
     const registrations = makeRegRepo({ count: 0 });
-    const handler = new UnregisterDeviceHandler(passes, devices, registrations, { publish: async () => {}, subscribe: () => {} } as DomainEventBus);
+    const handler = new UnregisterDeviceHandler(passes, devices, registrations, {
+      publish: async () => {},
+      subscribe: () => {},
+    } as DomainEventBus);
 
     const result = await handler.execute(baseCmd);
 
     expect(result.ok).toBe(true);
-    expect(registrations.deleteByDeviceAndSerial).toHaveBeenCalledWith(
-      device.id.value,
-      SERIAL,
-    );
+    expect(registrations.deleteByDeviceAndSerial).toHaveBeenCalledWith(device.id.value, SERIAL);
   });
 
   it("deletes the device row when no registrations remain after unregister", async () => {
@@ -192,7 +196,10 @@ describe("UnregisterDeviceHandler", () => {
     const passes = makePassRead();
     const devices = makeDeviceRepo(device);
     const registrations = makeRegRepo({ count: 0 });
-    const handler = new UnregisterDeviceHandler(passes, devices, registrations, { publish: async () => {}, subscribe: () => {} } as DomainEventBus);
+    const handler = new UnregisterDeviceHandler(passes, devices, registrations, {
+      publish: async () => {},
+      subscribe: () => {},
+    } as DomainEventBus);
 
     await handler.execute(baseCmd);
 
@@ -204,7 +211,10 @@ describe("UnregisterDeviceHandler", () => {
     const passes = makePassRead();
     const devices = makeDeviceRepo(device);
     const registrations = makeRegRepo({ count: 2 });
-    const handler = new UnregisterDeviceHandler(passes, devices, registrations, { publish: async () => {}, subscribe: () => {} } as DomainEventBus);
+    const handler = new UnregisterDeviceHandler(passes, devices, registrations, {
+      publish: async () => {},
+      subscribe: () => {},
+    } as DomainEventBus);
 
     await handler.execute(baseCmd);
 
@@ -215,7 +225,10 @@ describe("UnregisterDeviceHandler", () => {
     const passes = makePassRead();
     const devices = makeDeviceRepo(null); // findByLibId returns null
     const registrations = makeRegRepo();
-    const handler = new UnregisterDeviceHandler(passes, devices, registrations, { publish: async () => {}, subscribe: () => {} } as DomainEventBus);
+    const handler = new UnregisterDeviceHandler(passes, devices, registrations, {
+      publish: async () => {},
+      subscribe: () => {},
+    } as DomainEventBus);
 
     const result = await handler.execute(baseCmd);
 
@@ -227,7 +240,10 @@ describe("UnregisterDeviceHandler", () => {
     const passes = makePassRead();
     const devices = makeDeviceRepo(null);
     const registrations = makeRegRepo();
-    const handler = new UnregisterDeviceHandler(passes, devices, registrations, { publish: async () => {}, subscribe: () => {} } as DomainEventBus);
+    const handler = new UnregisterDeviceHandler(passes, devices, registrations, {
+      publish: async () => {},
+      subscribe: () => {},
+    } as DomainEventBus);
 
     const result = await handler.execute({ ...baseCmd, authToken: "bad-token" });
 
@@ -266,10 +282,7 @@ describe("PassFieldsUpdated subscription behaviour", () => {
     };
   }
 
-  function makeEvent(
-    name: string,
-    payload: Record<string, unknown>,
-  ): DomainEvent {
+  function makeEvent(name: string, payload: Record<string, unknown>): DomainEvent {
     return { name, occurredAt: new Date(), aggregateId: "agg-id", payload };
   }
 
@@ -294,10 +307,7 @@ describe("PassFieldsUpdated subscription behaviour", () => {
     await bus.publish([makeEvent("PassFieldsUpdated", { passId: PASS_ID })]);
 
     expect(apns.notify).toHaveBeenCalledOnce();
-    expect(apns.notify).toHaveBeenCalledWith(
-      [PUSH_TOKEN, "second-token"],
-      PASS_TYPE_ID,
-    );
+    expect(apns.notify).toHaveBeenCalledWith([PUSH_TOKEN, "second-token"], PASS_TYPE_ID);
   });
 
   it("does not call notify() when no devices are registered for the pass", async () => {

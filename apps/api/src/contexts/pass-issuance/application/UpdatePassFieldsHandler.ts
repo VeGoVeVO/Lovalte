@@ -1,4 +1,11 @@
-import { NotFoundError, type Result, ok, err, type DomainEventBus, type Clock } from "../../../kernel";
+import {
+  NotFoundError,
+  type Result,
+  ok,
+  err,
+  type DomainEventBus,
+  type Clock,
+} from "../../../kernel";
 import type { PassFieldValue } from "../domain/Pass";
 import type { IPassRepository } from "../domain/ports";
 
@@ -48,7 +55,7 @@ export function applyEarnedPoints(
   newBalance: number,
   newTier?: string,
 ): PassFieldValue[] {
-  return existing.map(fv => {
+  return existing.map((fv) => {
     if (fv.key === "points" || fv.key === "balance") {
       return { ...fv, value: newBalance };
     }

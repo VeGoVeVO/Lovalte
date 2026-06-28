@@ -38,25 +38,40 @@ function makeUser(status: "active" | "invited"): User {
 
 function tenantRepo(tenant: Tenant | null): ITenantRepository {
   return {
-    async findBySlug() { return tenant; },
-    async findById() { return tenant; },
+    async findBySlug() {
+      return tenant;
+    },
+    async findById() {
+      return tenant;
+    },
     async save() {},
   };
 }
 
 function userRepo(user: User | null): IUserRepository {
   return {
-    async findByEmail() { return user; },
-    async findByEmailGlobal() { return user; },
-    async findById() { return user; },
-    async findAllByTenant() { return user ? [user] : []; },
+    async findByEmail() {
+      return user;
+    },
+    async findByEmailGlobal() {
+      return user;
+    },
+    async findById() {
+      return user;
+    },
+    async findAllByTenant() {
+      return user ? [user] : [];
+    },
     async save() {},
   };
 }
 
 describe("LoginHandler", () => {
   it("happy path by email only (no slug)", async () => {
-    const handler = new LoginHandler(tenantRepo(makeTenant("active")), userRepo(makeUser("active")));
+    const handler = new LoginHandler(
+      tenantRepo(makeTenant("active")),
+      userRepo(makeUser("active")),
+    );
     const r = await handler.execute({ email: EMAIL, password: PASSWORD });
     expect(r.ok).toBe(true);
     if (!r.ok) return;
@@ -66,7 +81,10 @@ describe("LoginHandler", () => {
   });
 
   it("happy path with an explicit slug", async () => {
-    const handler = new LoginHandler(tenantRepo(makeTenant("active")), userRepo(makeUser("active")));
+    const handler = new LoginHandler(
+      tenantRepo(makeTenant("active")),
+      userRepo(makeUser("active")),
+    );
     const r = await handler.execute({ email: EMAIL, password: PASSWORD, slug: SLUG });
     expect(r.ok).toBe(true);
   });
@@ -81,7 +99,10 @@ describe("LoginHandler", () => {
   });
 
   it("wrong password -> Invalid credentials", async () => {
-    const handler = new LoginHandler(tenantRepo(makeTenant("active")), userRepo(makeUser("active")));
+    const handler = new LoginHandler(
+      tenantRepo(makeTenant("active")),
+      userRepo(makeUser("active")),
+    );
     const r = await handler.execute({ email: EMAIL, password: "wrong-password!" });
     expect(r.ok).toBe(false);
     if (r.ok) return;
@@ -90,7 +111,10 @@ describe("LoginHandler", () => {
   });
 
   it("suspended tenant -> not active", async () => {
-    const handler = new LoginHandler(tenantRepo(makeTenant("suspended")), userRepo(makeUser("active")));
+    const handler = new LoginHandler(
+      tenantRepo(makeTenant("suspended")),
+      userRepo(makeUser("active")),
+    );
     const r = await handler.execute({ email: EMAIL, password: PASSWORD });
     expect(r.ok).toBe(false);
     if (r.ok) return;
@@ -99,7 +123,10 @@ describe("LoginHandler", () => {
   });
 
   it("inactive (invited) user -> not active", async () => {
-    const handler = new LoginHandler(tenantRepo(makeTenant("active")), userRepo(makeUser("invited")));
+    const handler = new LoginHandler(
+      tenantRepo(makeTenant("active")),
+      userRepo(makeUser("invited")),
+    );
     const r = await handler.execute({ email: EMAIL, password: PASSWORD });
     expect(r.ok).toBe(false);
     if (r.ok) return;

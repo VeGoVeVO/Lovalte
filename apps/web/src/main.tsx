@@ -22,5 +22,5 @@ createRoot(rootEl).render(
         </LocaleProvider>
       </BrowserRouter>
     </QueryClientProvider>
-  </StrictMode>
+  </StrictMode>,
 );

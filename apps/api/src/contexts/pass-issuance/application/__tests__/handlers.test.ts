@@ -18,37 +18,37 @@ import type { AppConfig } from "../../../../config/env";
 
 // ── Shared constants ────────────────────────────────────────────────────────
 
-const TENANT_ID   = "tenant-1";
-const MEMBER_ID   = "member-1";
+const TENANT_ID = "tenant-1";
+const MEMBER_ID = "member-1";
 const PASS_TYPE_ID = "template-1";
-const FIXED_NOW   = new Date("2026-06-27T12:00:00.000Z");
+const FIXED_NOW = new Date("2026-06-27T12:00:00.000Z");
 
 const FAKE_CONFIG = { QR_TOKEN_SECRET: "super-secret-at-least-16" } as AppConfig;
 
 const TEMPLATE: PassTemplateDto = {
-  id:                  PASS_TYPE_ID,
-  tenantId:            TENANT_ID,
-  passTypeIdentifier:  "pass.com.example",
-  teamIdentifier:      "TEAM123",
-  organizationName:    "Example Org",
-  description:         "Test Pass",
-  backgroundColor:     "#ffffff",
-  foregroundColor:     "#000000",
-  webServiceUrl:       "https://example.com/wallet",
-  fieldDefinitions:    [],
-  imageAssetRefs:      {},
+  id: PASS_TYPE_ID,
+  tenantId: TENANT_ID,
+  passTypeIdentifier: "pass.com.example",
+  teamIdentifier: "TEAM123",
+  organizationName: "Example Org",
+  description: "Test Pass",
+  backgroundColor: "#ffffff",
+  foregroundColor: "#000000",
+  webServiceUrl: "https://example.com/wallet",
+  fieldDefinitions: [],
+  imageAssetRefs: {},
 };
 
 // ── Factory helpers ─────────────────────────────────────────────────────────
 
 function makePass(now = FIXED_NOW): Pass {
   const p = Pass.issue({
-    passTypeId:   PASS_TYPE_ID,
-    memberId:     MEMBER_ID,
-    tenantId:     TENANT_ID,
+    passTypeId: PASS_TYPE_ID,
+    memberId: MEMBER_ID,
+    tenantId: TENANT_ID,
     serialNumber: SerialNumber.mint(),
-    authToken:    AuthenticationToken.fromRaw("a".repeat(32)),
-    fieldValues:  [{ key: "points", label: "Points", value: 0 }],
+    authToken: AuthenticationToken.fromRaw("a".repeat(32)),
+    fieldValues: [{ key: "points", label: "Points", value: 0 }],
     now,
   });
   p.pullEvents(); // clear issuance event so aggregate starts clean
@@ -57,11 +57,11 @@ function makePass(now = FIXED_NOW): Pass {
 
 function makePassRepo(overrides?: Partial<IPassRepository>): IPassRepository {
   return {
-    findById:          vi.fn().mockResolvedValue(null),
-    findBySerial:      vi.fn().mockResolvedValue(null),
-    findByMemberId:    vi.fn().mockResolvedValue([]),
+    findById: vi.fn().mockResolvedValue(null),
+    findBySerial: vi.fn().mockResolvedValue(null),
+    findByMemberId: vi.fn().mockResolvedValue([]),
     findByMemberAndType: vi.fn().mockResolvedValue(null),
-    save:              vi.fn().mockResolvedValue(undefined),
+    save: vi.fn().mockResolvedValue(undefined),
     ...overrides,
   };
 }
@@ -69,15 +69,13 @@ function makePassRepo(overrides?: Partial<IPassRepository>): IPassRepository {
 function makeTemplateRepo(tpl: PassTemplateDto | null = TEMPLATE): IPassTemplateRepository {
   return {
     findById: vi.fn().mockResolvedValue(tpl),
-    upsert:   vi.fn().mockResolvedValue(undefined),
+    upsert: vi.fn().mockResolvedValue(undefined),
   };
 }
 
 function makeSigner(reject = false): IPassSigningPort {
   const sign = reject
-    ? vi.fn().mockRejectedValue(
-        new DomainError("Pass signing not configured", "DOMAIN_ERROR"),
-      )
+    ? vi.fn().mockRejectedValue(new DomainError("Pass signing not configured", "DOMAIN_ERROR"))
     : vi.fn().mockResolvedValue(Buffer.from("fake-pkpass"));
   return { sign };
 }
@@ -97,7 +95,9 @@ function makeBus(): DomainEventBus & { captured: DomainEvent[] } {
   const captured: DomainEvent[] = [];
   return {
     captured,
-    publish:   vi.fn().mockImplementation(async (evts: DomainEvent[]) => { captured.push(...evts); }),
+    publish: vi.fn().mockImplementation(async (evts: DomainEvent[]) => {
+      captured.push(...evts);
+    }),
     subscribe: vi.fn(),
   };
 }
@@ -117,23 +117,23 @@ describe("IssuePassHandler", () => {
   let bus: ReturnType<typeof makeBus>;
 
   beforeEach(() => {
-    passes    = makePassRepo();
+    passes = makePassRepo();
     templates = makeTemplateRepo();
-    signer    = makeSigner();
-    cache     = makeCache();
-    clock     = makeClock();
-    bus       = makeBus();
+    signer = makeSigner();
+    cache = makeCache();
+    clock = makeClock();
+    bus = makeBus();
   });
 
   function handler() {
-    return new IssuePassHandler(
-      passes, templates, signer, cache, clock, bus,
-    );
+    return new IssuePassHandler(passes, templates, signer, cache, clock, bus);
   }
 
   it("mints a new pass: result ok, serial non-empty, memberId matches", async () => {
     const result = await handler().execute({
-      memberId: MEMBER_ID, passTypeId: PASS_TYPE_ID, tenantId: TENANT_ID,
+      memberId: MEMBER_ID,
+      passTypeId: PASS_TYPE_ID,
+      tenantId: TENANT_ID,
     });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -146,10 +146,12 @@ describe("IssuePassHandler", () => {
 
   it("publishes PassIssued via the bus after persisting", async () => {
     await handler().execute({
-      memberId: MEMBER_ID, passTypeId: PASS_TYPE_ID, tenantId: TENANT_ID,
+      memberId: MEMBER_ID,
+      passTypeId: PASS_TYPE_ID,
+      tenantId: TENANT_ID,
     });
 
-    const issued = bus.captured.find(e => e.name === "PassIssued");
+    const issued = bus.captured.find((e) => e.name === "PassIssued");
     expect(issued).toBeDefined();
     expect(issued!.payload.memberId).toBe(MEMBER_ID);
     expect(issued!.payload.tenantId).toBe(TENANT_ID);
@@ -157,7 +159,9 @@ describe("IssuePassHandler", () => {
 
   it("caches the signed buffer and encodes the bare passId as the wallet barcode", async () => {
     const result = await handler().execute({
-      memberId: MEMBER_ID, passTypeId: PASS_TYPE_ID, tenantId: TENANT_ID,
+      memberId: MEMBER_ID,
+      passTypeId: PASS_TYPE_ID,
+      tenantId: TENANT_ID,
     });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -176,7 +180,9 @@ describe("IssuePassHandler", () => {
     passes.findByMemberAndType = vi.fn().mockResolvedValue(existing);
 
     const result = await handler().execute({
-      memberId: MEMBER_ID, passTypeId: PASS_TYPE_ID, tenantId: TENANT_ID,
+      memberId: MEMBER_ID,
+      passTypeId: PASS_TYPE_ID,
+      tenantId: TENANT_ID,
     });
 
     expect(result.ok).toBe(true);
@@ -190,7 +196,9 @@ describe("IssuePassHandler", () => {
     templates.findById = vi.fn().mockResolvedValue(null);
 
     const result = await handler().execute({
-      memberId: MEMBER_ID, passTypeId: PASS_TYPE_ID, tenantId: TENANT_ID,
+      memberId: MEMBER_ID,
+      passTypeId: PASS_TYPE_ID,
+      tenantId: TENANT_ID,
     });
 
     expect(result.ok).toBe(false);
@@ -214,11 +222,11 @@ describe("IssuePassHandler", () => {
 
 describe("GenerateQrTokenHandler", () => {
   it("returns a compact HMAC token and stores nonce in Redis", async () => {
-    const pass  = makePass();
+    const pass = makePass();
     const redis = makeRedis();
-    const repo  = makePassRepo({ findById: vi.fn().mockResolvedValue(pass) });
+    const repo = makePassRepo({ findById: vi.fn().mockResolvedValue(pass) });
 
-    const h      = new GenerateQrTokenHandler(repo, redis as never, FAKE_CONFIG);
+    const h = new GenerateQrTokenHandler(repo, redis as never, FAKE_CONFIG);
     const result = await h.execute({ passId: pass.id.value, tenantId: TENANT_ID });
 
     expect(result.ok).toBe(true);
@@ -232,9 +240,9 @@ describe("GenerateQrTokenHandler", () => {
   });
 
   it("respects custom ttlSeconds in Redis EX argument", async () => {
-    const pass  = makePass();
+    const pass = makePass();
     const redis = makeRedis();
-    const repo  = makePassRepo({ findById: vi.fn().mockResolvedValue(pass) });
+    const repo = makePassRepo({ findById: vi.fn().mockResolvedValue(pass) });
 
     const h = new GenerateQrTokenHandler(repo, redis as never, FAKE_CONFIG);
     await h.execute({ passId: pass.id.value, tenantId: TENANT_ID, ttlSeconds: 60 });
@@ -245,9 +253,9 @@ describe("GenerateQrTokenHandler", () => {
 
   it("returns NotFoundError when pass does not exist", async () => {
     const redis = makeRedis();
-    const repo  = makePassRepo({ findById: vi.fn().mockResolvedValue(null) });
+    const repo = makePassRepo({ findById: vi.fn().mockResolvedValue(null) });
 
-    const h      = new GenerateQrTokenHandler(repo, redis as never, FAKE_CONFIG);
+    const h = new GenerateQrTokenHandler(repo, redis as never, FAKE_CONFIG);
     const result = await h.execute({ passId: "no-such-pass", tenantId: TENANT_ID });
 
     expect(result.ok).toBe(false);
@@ -263,15 +271,19 @@ describe("UpdatePassFieldsHandler", () => {
   const NEW_FIELDS = [{ key: "points", label: "Points", value: 200 }];
 
   it("bumps lastUpdated monotonically and emits PassFieldsUpdated", async () => {
-    const pass    = makePass(new Date("2026-01-01T00:00:00.000Z"));
-    const origTs  = pass.lastUpdated.getTime();
-    const passes  = makePassRepo({ findById: vi.fn().mockResolvedValue(pass) });
-    const bus     = makeBus();
+    const pass = makePass(new Date("2026-01-01T00:00:00.000Z"));
+    const origTs = pass.lastUpdated.getTime();
+    const passes = makePassRepo({ findById: vi.fn().mockResolvedValue(pass) });
+    const bus = makeBus();
     // clock returns the same time as pass.lastUpdated → aggregate must advance by 1ms
-    const clock   = makeClock(new Date("2026-01-01T00:00:00.000Z"));
+    const clock = makeClock(new Date("2026-01-01T00:00:00.000Z"));
 
-    const h      = new UpdatePassFieldsHandler(passes, bus, clock);
-    const result = await h.execute({ passId: pass.id.value, tenantId: TENANT_ID, fieldValues: NEW_FIELDS });
+    const h = new UpdatePassFieldsHandler(passes, bus, clock);
+    const result = await h.execute({
+      passId: pass.id.value,
+      tenantId: TENANT_ID,
+      fieldValues: NEW_FIELDS,
+    });
 
     expect(result.ok).toBe(true);
     expect(pass.lastUpdated.getTime()).toBeGreaterThan(origTs);
@@ -279,14 +291,14 @@ describe("UpdatePassFieldsHandler", () => {
   });
 
   it("publishes PassFieldsUpdated via bus with correct serial", async () => {
-    const pass   = makePass();
+    const pass = makePass();
     const passes = makePassRepo({ findById: vi.fn().mockResolvedValue(pass) });
-    const bus    = makeBus();
+    const bus = makeBus();
 
     const h = new UpdatePassFieldsHandler(passes, bus, makeClock());
     await h.execute({ passId: pass.id.value, tenantId: TENANT_ID, fieldValues: NEW_FIELDS });
 
-    const evt = bus.captured.find(e => e.name === "PassFieldsUpdated");
+    const evt = bus.captured.find((e) => e.name === "PassFieldsUpdated");
     expect(evt).toBeDefined();
     expect(evt!.payload.serial).toBe(pass.serialNumber.value);
     expect(evt!.payload.tenantId).toBe(TENANT_ID);
@@ -294,12 +306,14 @@ describe("UpdatePassFieldsHandler", () => {
   });
 
   it("persists the pass after updating fields", async () => {
-    const pass   = makePass();
+    const pass = makePass();
     const passes = makePassRepo({ findById: vi.fn().mockResolvedValue(pass) });
-    const bus    = makeBus();
+    const bus = makeBus();
 
     await new UpdatePassFieldsHandler(passes, bus, makeClock()).execute({
-      passId: pass.id.value, tenantId: TENANT_ID, fieldValues: NEW_FIELDS,
+      passId: pass.id.value,
+      tenantId: TENANT_ID,
+      fieldValues: NEW_FIELDS,
     });
 
     expect(passes.save).toHaveBeenCalledWith(pass);
@@ -307,10 +321,12 @@ describe("UpdatePassFieldsHandler", () => {
 
   it("returns NotFoundError when pass does not exist", async () => {
     const passes = makePassRepo({ findById: vi.fn().mockResolvedValue(null) });
-    const bus    = makeBus();
+    const bus = makeBus();
 
     const result = await new UpdatePassFieldsHandler(passes, bus, makeClock()).execute({
-      passId: "no-such-pass", tenantId: TENANT_ID, fieldValues: NEW_FIELDS,
+      passId: "no-such-pass",
+      tenantId: TENANT_ID,
+      fieldValues: NEW_FIELDS,
     });
 
     expect(result.ok).toBe(false);

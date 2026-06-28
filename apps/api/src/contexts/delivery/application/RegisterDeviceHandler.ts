@@ -36,10 +36,7 @@ export class RegisterDeviceHandler {
       return err(new UnauthorizedError("Invalid authentication token"));
     }
 
-    const { device } = await this.devices.upsert(
-      cmd.deviceLibraryIdentifier,
-      cmd.pushToken,
-    );
+    const { device } = await this.devices.upsert(cmd.deviceLibraryIdentifier, cmd.pushToken);
 
     const existing = await this.registrations.findByDeviceAndPass(device.id.value, pass.id);
     if (existing) {

@@ -23,16 +23,15 @@ interface UserProps {
  * Emits: UserActivated (when created from an invitation)
  */
 export class User extends AggregateRoot<UserId> {
-  private constructor(id: UserId, private readonly props: UserProps) {
+  private constructor(
+    id: UserId,
+    private readonly props: UserProps,
+  ) {
     super(id);
   }
 
   /** Create the first owner of a new tenant. */
-  static createOwner(params: {
-    tenantId: string;
-    email: Email;
-    passwordHash: PasswordHash;
-  }): User {
+  static createOwner(params: { tenantId: string; email: Email; passwordHash: PasswordHash }): User {
     const id = UserId.create();
     const now = new Date();
     return new User(id, {
@@ -69,7 +68,7 @@ export class User extends AggregateRoot<UserId> {
         userId: id.value,
         tenantId: params.tenantId,
         role: params.role,
-      })
+      }),
     );
     return user;
   }
@@ -84,11 +83,25 @@ export class User extends AggregateRoot<UserId> {
     return this.props.passwordHash.verify(plaintext);
   }
 
-  get tenantId(): string { return this.props.tenantId; }
-  get email(): Email { return this.props.email; }
-  get role(): UserRole { return this.props.role; }
-  get status(): UserStatus { return this.props.status; }
-  get passwordHash(): PasswordHash { return this.props.passwordHash; }
-  get createdAt(): Date { return this.props.createdAt; }
-  get updatedAt(): Date { return this.props.updatedAt; }
+  get tenantId(): string {
+    return this.props.tenantId;
+  }
+  get email(): Email {
+    return this.props.email;
+  }
+  get role(): UserRole {
+    return this.props.role;
+  }
+  get status(): UserStatus {
+    return this.props.status;
+  }
+  get passwordHash(): PasswordHash {
+    return this.props.passwordHash;
+  }
+  get createdAt(): Date {
+    return this.props.createdAt;
+  }
+  get updatedAt(): Date {
+    return this.props.updatedAt;
+  }
 }

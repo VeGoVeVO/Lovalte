@@ -29,7 +29,13 @@ export class StoreImageHandler {
   async execute(input: StoreImageInput): Promise<Result<StoredImageDTO>> {
     let image: CardImage;
     try {
-      image = CardImage.create(input.tenantId, input.kind, input.contentType, input.bytes, input.source);
+      image = CardImage.create(
+        input.tenantId,
+        input.kind,
+        input.contentType,
+        input.bytes,
+        input.source,
+      );
     } catch (e) {
       if (e instanceof DomainError) return err(e);
       throw e;

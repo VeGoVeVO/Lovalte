@@ -11,10 +11,30 @@ interface ColorPickerProps {
 
 /** Curated palette - loyalty-card friendly darks, brand hues, and accents. */
 const PALETTE = [
-  "#1a1a2e", "#16213e", "#0f3460", "#1b2430", "#222831", "#2d3142",
-  "#5BA7C9", "#3a86ff", "#4361ee", "#7209b7", "#9d4edd", "#b5179e",
-  "#06d6a0", "#2a9d8f", "#43aa8b", "#f4a261", "#f3722c", "#e76f51",
-  "#ef476f", "#d62828", "#ffd166", "#e0e0f0", "#f4f4f7", "#ffffff",
+  "#1a1a2e",
+  "#16213e",
+  "#0f3460",
+  "#1b2430",
+  "#222831",
+  "#2d3142",
+  "#5BA7C9",
+  "#3a86ff",
+  "#4361ee",
+  "#7209b7",
+  "#9d4edd",
+  "#b5179e",
+  "#06d6a0",
+  "#2a9d8f",
+  "#43aa8b",
+  "#f4a261",
+  "#f3722c",
+  "#e76f51",
+  "#ef476f",
+  "#d62828",
+  "#ffd166",
+  "#e0e0f0",
+  "#f4f4f7",
+  "#ffffff",
 ];
 
 const STYLE_ID = "lvt-cp-style";
@@ -69,12 +89,18 @@ export function ColorPicker({ value, onChange, id, ariaLabel }: ColorPickerProps
     const r = triggerRef.current?.getBoundingClientRect();
     if (r) setRect({ left: r.left, top: r.bottom + 6 });
   };
-  useLayoutEffect(() => { if (open) place(); }, [open]);
+  useLayoutEffect(() => {
+    if (open) place();
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
     const onDoc = (e: MouseEvent) => {
-      if (!popRef.current?.contains(e.target as Node) && !triggerRef.current?.contains(e.target as Node)) setOpen(false);
+      if (
+        !popRef.current?.contains(e.target as Node) &&
+        !triggerRef.current?.contains(e.target as Node)
+      )
+        setOpen(false);
     };
     const close = () => setOpen(false);
     document.addEventListener("mousedown", onDoc);
@@ -94,31 +120,69 @@ export function ColorPicker({ value, onChange, id, ariaLabel }: ColorPickerProps
 
   return (
     <>
-      <button ref={triggerRef} id={id} type="button" className="lvt-cp-trigger" aria-label={ariaLabel}
-        aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+      <button
+        ref={triggerRef}
+        id={id}
+        type="button"
+        className="lvt-cp-trigger"
+        aria-label={ariaLabel}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+      >
         <span className="lvt-cp-sw" style={{ background: value }} aria-hidden="true" />
         <span className="lvt-cp-hex">{value.toUpperCase()}</span>
       </button>
 
-      {open && rect && createPortal(
-        <div ref={popRef} className="lvt-cp-pop" role="dialog" aria-label="Choose a color"
-          style={{ left: rect.left, top: rect.top }}>
-          <div className="lvt-cp-grid">
-            {PALETTE.map((c) => (
-              <button key={c} type="button" className="lvt-cp-cell" aria-label={c} title={c}
-                aria-pressed={c.toLowerCase() === value.toLowerCase()}
-                style={{ background: c }} onClick={() => { commit(c); setOpen(false); }} />
-            ))}
-          </div>
-          <div className="lvt-cp-foot">
-            <input className="lvt-cp-native" type="color" aria-label="Custom color"
-              value={isHex(hex) ? hex : "#000000"} onChange={(e) => commit(e.target.value)} />
-            <input className="lvt-cp-input" type="text" aria-label="Hex color" maxLength={7}
-              value={hex} onChange={(e) => commit(e.target.value.startsWith("#") ? e.target.value : `#${e.target.value}`)} />
-          </div>
-        </div>,
-        document.body
-      )}
+      {open &&
+        rect &&
+        createPortal(
+          <div
+            ref={popRef}
+            className="lvt-cp-pop"
+            role="dialog"
+            aria-label="Choose a color"
+            style={{ left: rect.left, top: rect.top }}
+          >
+            <div className="lvt-cp-grid">
+              {PALETTE.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  className="lvt-cp-cell"
+                  aria-label={c}
+                  title={c}
+                  aria-pressed={c.toLowerCase() === value.toLowerCase()}
+                  style={{ background: c }}
+                  onClick={() => {
+                    commit(c);
+                    setOpen(false);
+                  }}
+                />
+              ))}
+            </div>
+            <div className="lvt-cp-foot">
+              <input
+                className="lvt-cp-native"
+                type="color"
+                aria-label="Custom color"
+                value={isHex(hex) ? hex : "#000000"}
+                onChange={(e) => commit(e.target.value)}
+              />
+              <input
+                className="lvt-cp-input"
+                type="text"
+                aria-label="Hex color"
+                maxLength={7}
+                value={hex}
+                onChange={(e) =>
+                  commit(e.target.value.startsWith("#") ? e.target.value : `#${e.target.value}`)
+                }
+              />
+            </div>
+          </div>,
+          document.body,
+        )}
     </>
   );
 }

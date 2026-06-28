@@ -16,7 +16,9 @@ function makeBus(): DomainEventBus & { published: DomainEvent[] } {
   const published: DomainEvent[] = [];
   return {
     published,
-    async publish(events) { published.push(...events); },
+    async publish(events) {
+      published.push(...events);
+    },
     subscribe() {},
   };
 }
@@ -25,11 +27,21 @@ function makeRepo(): ICardTemplateRepository & { store: Map<string, CardTemplate
   const store = new Map<string, CardTemplate>();
   return {
     store,
-    async findById(id) { return store.get(id) ?? null; },
-    async findAllByTenant() { return [...store.values()]; },
-    async save(t) { store.set(t.id.value, t); },
-    async registerAsset(a) { return { ...a, id: "asset-id", createdAt: new Date() }; },
-    async findAssetsByTemplate() { return []; },
+    async findById(id) {
+      return store.get(id) ?? null;
+    },
+    async findAllByTenant() {
+      return [...store.values()];
+    },
+    async save(t) {
+      store.set(t.id.value, t);
+    },
+    async registerAsset(a) {
+      return { ...a, id: "asset-id", createdAt: new Date() };
+    },
+    async findAssetsByTemplate() {
+      return [];
+    },
   };
 }
 
@@ -77,7 +89,7 @@ describe("CreateCardTemplateHandler", () => {
     expect(repo.store.size).toBe(1);
 
     // Event published
-    const event = bus.published.find(e => e.name === "CardTemplateCreated");
+    const event = bus.published.find((e) => e.name === "CardTemplateCreated");
     expect(event).toBeDefined();
     expect(event?.payload.tenantId).toBe(TENANT_ID);
   });

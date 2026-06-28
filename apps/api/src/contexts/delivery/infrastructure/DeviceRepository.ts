@@ -46,10 +46,7 @@ export class DeviceRepository implements IDeviceRepository {
   }
 
   async delete(deviceId: string): Promise<void> {
-    await this.pool.query(
-      `DELETE FROM delivery.devices WHERE id = $1`,
-      [deviceId],
-    );
+    await this.pool.query(`DELETE FROM delivery.devices WHERE id = $1`, [deviceId]);
   }
 
   private _map(row: DeviceRow): Device {

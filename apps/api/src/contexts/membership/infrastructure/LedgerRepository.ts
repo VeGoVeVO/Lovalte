@@ -26,21 +26,12 @@ export class LedgerRepository implements ILedgerRepository {
   }): Promise<void> {
     const client = await this.pool.connect();
     try {
-      await client.query(
-        "SELECT set_config('app.current_tenant', $1, true)",
-        [row.tenantId],
-      );
+      await client.query("SELECT set_config('app.current_tenant', $1, true)", [row.tenantId]);
       await client.query(
         `INSERT INTO loyalty.point_ledger
            (tenant_id, member_id, delta, reason, reference_id)
          VALUES ($1, $2, $3, $4, $5)`,
-        [
-          row.tenantId,
-          row.memberId,
-          row.delta,
-          row.reason,
-          row.referenceId ?? null,
-        ],
+        [row.tenantId, row.memberId, row.delta, row.reason, row.referenceId ?? null],
       );
     } finally {
       client.release();
@@ -56,10 +47,7 @@ export class LedgerRepository implements ILedgerRepository {
     const offset = (page - 1) * pageSize;
     const client = await this.pool.connect();
     try {
-      await client.query(
-        "SELECT set_config('app.current_tenant', $1, true)",
-        [tenantId],
-      );
+      await client.query("SELECT set_config('app.current_tenant', $1, true)", [tenantId]);
 
       const dataResult = await client.query<LedgerDbRow>(
         `SELECT id, member_id, tenant_id, delta, reason, recorded_at

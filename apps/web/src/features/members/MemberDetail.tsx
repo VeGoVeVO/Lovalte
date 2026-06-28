@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api, type ApiError } from "../../lib/api";
-import { GlassCard, GlassButton } from "../../design-system/halo";
+import { GlassCard } from "../../design-system/halo";
 import type { Member } from "./MembersPage";
 import { useT } from "../../lib/i18n";
 
@@ -25,17 +25,6 @@ export interface MemberDetailProps {
 }
 
 // ── helpers ──────────────────────────────────────────────────────────────────
-const srOnly: React.CSSProperties = {
-  position: "absolute",
-  width: 1,
-  height: 1,
-  padding: 0,
-  margin: -1,
-  overflow: "hidden",
-  clip: "rect(0,0,0,0)",
-  whiteSpace: "nowrap",
-  border: 0,
-};
 
 function fmt(iso: string): string {
   try {
@@ -91,10 +80,24 @@ export function MemberDetail({ memberId, onBack }: MemberDetailProps) {
           className="btn ghost"
           onClick={onBack}
           aria-label={t("Back to members list")}
-          style={{ display: "inline-flex", alignItems: "center", gap: "0.45rem", padding: "0.55rem 0.9rem" }}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "0.45rem",
+            padding: "0.55rem 0.9rem",
+          }}
         >
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
-            strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <svg
+            viewBox="0 0 24 24"
+            width="15"
+            height="15"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
             <path d="M19 12H5M11 6l-6 6 6 6" />
           </svg>
           {t("Members")}
@@ -105,32 +108,59 @@ export function MemberDetail({ memberId, onBack }: MemberDetailProps) {
       {memberQ.isError ? (
         <GlassCard className="feature" style={{ marginBottom: "1.5rem" }}>
           <p role="alert" style={{ margin: 0, color: "var(--muted)" }}>
-            {t("Could not load member: {message}", { message: (memberQ.error as ApiError)?.message ?? t("Unknown error") })}
+            {t("Could not load member: {message}", {
+              message: (memberQ.error as ApiError)?.message ?? t("Unknown error"),
+            })}
           </p>
         </GlassCard>
       ) : (
         <GlassCard hover light className="feature" style={{ marginBottom: "1.5rem" }}>
           {memberQ.isLoading ? (
-            <p aria-live="polite" style={{ margin: 0, color: "var(--muted)" }}>{t("Loading…")}</p>
+            <p aria-live="polite" style={{ margin: 0, color: "var(--muted)" }}>
+              {t("Loading…")}
+            </p>
           ) : (
             <>
-              <h2 style={{ margin: "0 0 1.25rem", fontSize: "1.55rem", fontWeight: 600,
-                letterSpacing: "-.025em", color: "var(--text)" }}>
+              <h2
+                style={{
+                  margin: "0 0 1.25rem",
+                  fontSize: "1.55rem",
+                  fontWeight: 600,
+                  letterSpacing: "-.025em",
+                  color: "var(--text)",
+                }}
+              >
                 {m?.displayName ?? m?.email ?? t("Member")}
               </h2>
               <dl style={{ display: "flex", gap: "2.5rem", flexWrap: "wrap", margin: 0 }}>
                 {m?.email && (
                   <div>
-                    <dt style={{ fontSize: "0.7rem", fontWeight: 600, letterSpacing: "0.06em",
-                      textTransform: "uppercase", color: "var(--muted)", marginBottom: "0.3rem" }}>
+                    <dt
+                      style={{
+                        fontSize: "0.7rem",
+                        fontWeight: 600,
+                        letterSpacing: "0.06em",
+                        textTransform: "uppercase",
+                        color: "var(--muted)",
+                        marginBottom: "0.3rem",
+                      }}
+                    >
                       {t("Email")}
                     </dt>
                     <dd style={{ margin: 0 }}>{m.email}</dd>
                   </div>
                 )}
                 <div>
-                  <dt style={{ fontSize: "0.7rem", fontWeight: 600, letterSpacing: "0.06em",
-                    textTransform: "uppercase", color: "var(--muted)", marginBottom: "0.3rem" }}>
+                  <dt
+                    style={{
+                      fontSize: "0.7rem",
+                      fontWeight: 600,
+                      letterSpacing: "0.06em",
+                      textTransform: "uppercase",
+                      color: "var(--muted)",
+                      marginBottom: "0.3rem",
+                    }}
+                  >
                     {t("Balance")}
                   </dt>
                   <dd style={{ margin: 0, fontVariantNumeric: "tabular-nums" }}>
@@ -138,13 +168,19 @@ export function MemberDetail({ memberId, onBack }: MemberDetailProps) {
                   </dd>
                 </div>
                 <div>
-                  <dt style={{ fontSize: "0.7rem", fontWeight: 600, letterSpacing: "0.06em",
-                    textTransform: "uppercase", color: "var(--muted)", marginBottom: "0.3rem" }}>
+                  <dt
+                    style={{
+                      fontSize: "0.7rem",
+                      fontWeight: 600,
+                      letterSpacing: "0.06em",
+                      textTransform: "uppercase",
+                      color: "var(--muted)",
+                      marginBottom: "0.3rem",
+                    }}
+                  >
                     {t("Tier")}
                   </dt>
-                  <dd style={{ margin: 0, textTransform: "capitalize" }}>
-                    {m?.tier ?? "-"}
-                  </dd>
+                  <dd style={{ margin: 0, textTransform: "capitalize" }}>{m?.tier ?? "-"}</dd>
                 </div>
               </dl>
             </>
@@ -153,15 +189,25 @@ export function MemberDetail({ memberId, onBack }: MemberDetailProps) {
       )}
 
       {/* Activity ledger */}
-      <h3 style={{ margin: "0 0 1rem", fontSize: "0.72rem", fontWeight: 600,
-        letterSpacing: "0.06em", color: "var(--muted)", textTransform: "uppercase" }}>
+      <h3
+        style={{
+          margin: "0 0 1rem",
+          fontSize: "0.72rem",
+          fontWeight: 600,
+          letterSpacing: "0.06em",
+          color: "var(--muted)",
+          textTransform: "uppercase",
+        }}
+      >
         {t("Activity")}
       </h3>
 
       {activityQ.isError ? (
         <GlassCard className="feature">
           <p role="alert" style={{ margin: 0, color: "var(--muted)" }}>
-            {t("Could not load activity: {message}", { message: (activityQ.error as ApiError)?.message ?? t("Unknown error") })}
+            {t("Could not load activity: {message}", {
+              message: (activityQ.error as ApiError)?.message ?? t("Unknown error"),
+            })}
           </p>
         </GlassCard>
       ) : activityQ.isLoading ? (
@@ -184,19 +230,28 @@ export function MemberDetail({ memberId, onBack }: MemberDetailProps) {
               >
                 <thead>
                   <tr style={{ borderBottom: "1px solid rgba(32,36,42,0.08)" }}>
-                    <th scope="col" style={TH}>{t("Date")}</th>
-                    <th scope="col" style={TH}>{t("Reason")}</th>
-                    <th scope="col" style={{ ...TH, textAlign: "right" }}>{t("Points")}</th>
+                    <th scope="col" style={TH}>
+                      {t("Date")}
+                    </th>
+                    <th scope="col" style={TH}>
+                      {t("Reason")}
+                    </th>
+                    <th scope="col" style={{ ...TH, textAlign: "right" }}>
+                      {t("Points")}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {act.entries.map((entry) => (
-                    <tr
-                      key={entry.id}
-                      style={{ borderBottom: "1px solid rgba(32,36,42,0.05)" }}
-                    >
-                      <td style={{ ...TD, color: "var(--muted)", fontSize: "0.85rem",
-                        whiteSpace: "nowrap" }}>
+                    <tr key={entry.id} style={{ borderBottom: "1px solid rgba(32,36,42,0.05)" }}>
+                      <td
+                        style={{
+                          ...TD,
+                          color: "var(--muted)",
+                          fontSize: "0.85rem",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
                         {fmt(entry.recordedAt)}
                       </td>
                       <td style={TD}>{entry.reason}</td>
@@ -208,7 +263,9 @@ export function MemberDetail({ memberId, onBack }: MemberDetailProps) {
                           fontWeight: 600,
                           color: entry.delta >= 0 ? "#1a7a45" : "#b93333",
                         }}
-                        aria-label={t("{delta} points", { delta: `${entry.delta >= 0 ? "+" : ""}${entry.delta.toLocaleString()}` })}
+                        aria-label={t("{delta} points", {
+                          delta: `${entry.delta >= 0 ? "+" : ""}${entry.delta.toLocaleString()}`,
+                        })}
                       >
                         {entry.delta >= 0 ? "+" : ""}
                         {entry.delta.toLocaleString()}
@@ -224,8 +281,13 @@ export function MemberDetail({ memberId, onBack }: MemberDetailProps) {
           {totalPages > 1 && (
             <nav
               aria-label={t("Activity pagination")}
-              style={{ display: "flex", justifyContent: "space-between",
-                alignItems: "center", marginTop: "1rem", gap: "1rem" }}
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginTop: "1rem",
+                gap: "1rem",
+              }}
             >
               <button
                 className="btn ghost"
@@ -237,8 +299,11 @@ export function MemberDetail({ memberId, onBack }: MemberDetailProps) {
               >
                 {t("← Previous")}
               </button>
-              <span style={{ fontSize: "0.85rem", color: "var(--muted)" }}
-                aria-live="polite" aria-atomic="true">
+              <span
+                style={{ fontSize: "0.85rem", color: "var(--muted)" }}
+                aria-live="polite"
+                aria-atomic="true"
+              >
                 {t("Page {page} of {totalPages}", { page, totalPages })}
               </span>
               <button

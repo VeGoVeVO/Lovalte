@@ -1,5 +1,13 @@
 import { randomBytes } from "node:crypto";
-import { NotFoundError, ConflictError, type Result, ok, err, type Clock, type DomainEventBus } from "../../../kernel";
+import {
+  NotFoundError,
+  ConflictError,
+  type Result,
+  ok,
+  err,
+  type Clock,
+  type DomainEventBus,
+} from "../../../kernel";
 import { Pass } from "../domain/Pass";
 import { SerialNumber } from "../domain/SerialNumber";
 import { AuthenticationToken } from "../domain/AuthenticationToken";
@@ -47,14 +55,16 @@ export class IssuePassHandler {
   async execute(cmd: IssuePassCommand): Promise<Result<IssuePassDto>> {
     // Idempotency: return existing pass if already issued for this member+template
     const existing = await this.passes.findByMemberAndType(
-      cmd.memberId, cmd.passTypeId, cmd.tenantId,
+      cmd.memberId,
+      cmd.passTypeId,
+      cmd.tenantId,
     );
     if (existing) {
       return ok({
-        passId:       existing.id.value,
+        passId: existing.id.value,
         serialNumber: existing.serialNumber.value,
-        memberId:     existing.memberId,
-        createdAt:    existing.createdAt,
+        memberId: existing.memberId,
+        createdAt: existing.createdAt,
       });
     }
 
@@ -67,9 +77,9 @@ export class IssuePassHandler {
     }
 
     // Mint identity
-    const serial    = SerialNumber.mint();
+    const serial = SerialNumber.mint();
     const authToken = AuthenticationToken.fromRaw(randomBytes(32).toString("hex"));
-    const now       = this.clock.now();
+    const now = this.clock.now();
 
     // Seed field values from the template so the pass actually carries its
     // fields (e.g. POINTS = 0). Without a seeded value the storeCard field is
@@ -77,16 +87,16 @@ export class IssuePassHandler {
     // update, so the balance would never appear on the pass.
     const fieldValues =
       cmd.fieldValues && cmd.fieldValues.length > 0
-        ? cmd.fieldValues.map(fv => ({ ...fv }))
-        : template.fieldDefinitions.map(d => ({
-            key:   d.key,
+        ? cmd.fieldValues.map((fv) => ({ ...fv }))
+        : template.fieldDefinitions.map((d) => ({
+            key: d.key,
             label: d.label,
             value: (d.key === "points" || d.key === "balance" ? 0 : "") as string | number,
           }));
     const pass = Pass.issue({
-      passTypeId:   cmd.passTypeId,
-      memberId:     cmd.memberId,
-      tenantId:     cmd.tenantId,
+      passTypeId: cmd.passTypeId,
+      memberId: cmd.memberId,
+      tenantId: cmd.tenantId,
       serialNumber: serial,
       authToken,
       fieldValues,
@@ -101,7 +111,7 @@ export class IssuePassHandler {
 
     // Build + sign pass document (throws DomainError if certs not configured)
     const passJson = this.builder.build(pass, template, qrMessage);
-    const buffer   = await this.signer.sign(
+    const buffer = await this.signer.sign(
       passJson as unknown as Record<string, unknown>,
       template.imageAssetRefs,
     );
@@ -115,10 +125,10 @@ export class IssuePassHandler {
     await this.bus.publish(pass.pullEvents());
 
     return ok({
-      passId:       pass.id.value,
+      passId: pass.id.value,
       serialNumber: serial.value,
-      memberId:     cmd.memberId,
-      createdAt:    now,
+      memberId: cmd.memberId,
+      createdAt: now,
     });
   }
 }

@@ -24,10 +24,7 @@ export class MemberRepository implements IMemberRepository {
   constructor(private readonly pool: Pool) {}
 
   private async setTenantCtx(client: PoolClient, tenantId: string): Promise<void> {
-    await client.query(
-      "SELECT set_config('app.current_tenant', $1, true)",
-      [tenantId],
-    );
+    await client.query("SELECT set_config('app.current_tenant', $1, true)", [tenantId]);
   }
 
   /** Compute balance from the append-only ledger for a single member. */
@@ -116,9 +113,7 @@ export class MemberRepository implements IMemberRepository {
          ORDER BY m.joined_at DESC`,
         [tenantId],
       );
-      return result.rows.map((row) =>
-        this.toAggregate(row, parseInt(row.balance, 10)),
-      );
+      return result.rows.map((row) => this.toAggregate(row, parseInt(row.balance, 10)));
     } finally {
       client.release();
     }

@@ -21,7 +21,11 @@ export function LoginPage() {
     setBusy(true);
     setError(null);
     try {
-      await api.post("/api/v1/auth/login", { email, password, ...(slug.trim() ? { slug: slug.trim() } : {}) });
+      await api.post("/api/v1/auth/login", {
+        email,
+        password,
+        ...(slug.trim() ? { slug: slug.trim() } : {}),
+      });
       nav("/app");
     } catch (err) {
       setError((err as ApiError).message ?? t("Login failed"));
@@ -34,15 +38,38 @@ export function LoginPage() {
     <AppShell>
       <GlassCard light className="waitlist" style={{ maxWidth: 440 }}>
         <h1 className="section">{t("Welcome back.")}</h1>
-        <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: "1rem", width: "100%" }}>
-          <GlassInput placeholder={t("Business slug (optional)")} aria-label={t("Business slug (optional)")}
-            value={slug} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSlug(e.target.value)} />
-          <GlassInput type="email" placeholder="you@business.com" aria-label={t("Email")}
-            value={email} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)} />
-          <GlassInput type="password" placeholder={t("Password")} aria-label={t("Password")}
-            value={password} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)} />
-          {error ? <p className="body" style={{ color: "#b4434e", margin: 0 }} role="alert">{error}</p> : null}
-          <GlassButton type="submit" disabled={busy}>{busy ? t("Signing in…") : t("Sign in")}</GlassButton>
+        <form
+          onSubmit={submit}
+          style={{ display: "flex", flexDirection: "column", gap: "1rem", width: "100%" }}
+        >
+          <GlassInput
+            placeholder={t("Business slug (optional)")}
+            aria-label={t("Business slug (optional)")}
+            value={slug}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSlug(e.target.value)}
+          />
+          <GlassInput
+            type="email"
+            placeholder="you@business.com"
+            aria-label={t("Email")}
+            value={email}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+          />
+          <GlassInput
+            type="password"
+            placeholder={t("Password")}
+            aria-label={t("Password")}
+            value={password}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+          />
+          {error ? (
+            <p className="body" style={{ color: "#b4434e", margin: 0 }} role="alert">
+              {error}
+            </p>
+          ) : null}
+          <GlassButton type="submit" disabled={busy}>
+            {busy ? t("Signing in…") : t("Sign in")}
+          </GlassButton>
         </form>
         <p className="body" style={{ marginTop: "1rem" }}>
           {t("New here?")} <Link to="/signup">{t("Create a business")}</Link>

@@ -6,22 +6,91 @@ import { useT } from "../../lib/i18n";
 
 /** kebab-case ("a-arrow-down") → readable label ("A Arrow Down"). */
 function pretty(name: string): string {
-  return name.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+  return name
+    .split("-")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
 }
 
 const VISIBLE_CAP = 120;
 
 /** Recognisable starters shown before the user searches (filtered to ones that exist). */
 const FEATURED = [
-  "coffee", "cup-soda", "beer", "wine", "utensils", "pizza", "ice-cream-cone", "cake",
-  "croissant", "cookie", "candy", "apple", "carrot", "sandwich", "salad",
-  "star", "heart", "gift", "award", "trophy", "medal", "crown", "gem", "sparkles", "flame",
-  "ticket", "tag", "percent", "badge-percent", "shopping-bag", "shopping-cart", "shopping-basket",
-  "store", "wallet", "credit-card", "banknote", "coins", "piggy-bank", "receipt",
-  "smile", "thumbs-up", "party-popper", "leaf", "flower", "sun", "zap", "bell", "camera",
-  "music", "gamepad-2", "palette", "scissors", "shirt", "glasses", "dumbbell", "bike", "car",
-  "plane", "rocket", "map-pin", "calendar", "clock", "key", "lock", "shield", "paw-print",
-  "dog", "cat", "tree-pine", "droplet", "snowflake", "umbrella", "anchor", "compass", "globe",
+  "coffee",
+  "cup-soda",
+  "beer",
+  "wine",
+  "utensils",
+  "pizza",
+  "ice-cream-cone",
+  "cake",
+  "croissant",
+  "cookie",
+  "candy",
+  "apple",
+  "carrot",
+  "sandwich",
+  "salad",
+  "star",
+  "heart",
+  "gift",
+  "award",
+  "trophy",
+  "medal",
+  "crown",
+  "gem",
+  "sparkles",
+  "flame",
+  "ticket",
+  "tag",
+  "percent",
+  "badge-percent",
+  "shopping-bag",
+  "shopping-cart",
+  "shopping-basket",
+  "store",
+  "wallet",
+  "credit-card",
+  "banknote",
+  "coins",
+  "piggy-bank",
+  "receipt",
+  "smile",
+  "thumbs-up",
+  "party-popper",
+  "leaf",
+  "flower",
+  "sun",
+  "zap",
+  "bell",
+  "camera",
+  "music",
+  "gamepad-2",
+  "palette",
+  "scissors",
+  "shirt",
+  "glasses",
+  "dumbbell",
+  "bike",
+  "car",
+  "plane",
+  "rocket",
+  "map-pin",
+  "calendar",
+  "clock",
+  "key",
+  "lock",
+  "shield",
+  "paw-print",
+  "dog",
+  "cat",
+  "tree-pine",
+  "droplet",
+  "snowflake",
+  "umbrella",
+  "anchor",
+  "compass",
+  "globe",
 ];
 
 interface IconPickerProps {
@@ -62,7 +131,7 @@ export function IconPicker({ onPick, onClose }: IconPickerProps) {
     }
     if (e.key !== "Tab" || !dialogRef.current) return;
     const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
     );
     const first = focusable[0];
     const last = focusable[focusable.length - 1];
@@ -92,9 +161,14 @@ export function IconPicker({ onPick, onClose }: IconPickerProps) {
         if (e.target === e.currentTarget) onClose();
       }}
       style={{
-        position: "fixed", inset: 0, zIndex: 1000,
-        background: "rgba(16,18,27,.62)", backdropFilter: "blur(6px)",
-        display: "grid", placeItems: "center", padding: "1.25rem",
+        position: "fixed",
+        inset: 0,
+        zIndex: 1000,
+        background: "rgba(16,18,27,.62)",
+        backdropFilter: "blur(6px)",
+        display: "grid",
+        placeItems: "center",
+        padding: "1.25rem",
       }}
     >
       <style>{`
@@ -125,35 +199,83 @@ export function IconPicker({ onPick, onClose }: IconPickerProps) {
         aria-labelledby="icon-picker-title"
         onKeyDown={onKeyDown}
         style={{
-          width: "min(680px, 100%)", maxHeight: "min(82vh, 660px)",
-          display: "flex", flexDirection: "column",
-          background: "#fff", border: "1px solid rgba(20,24,32,.10)",
-          borderRadius: 18, boxShadow: "0 30px 90px -28px rgba(16,18,27,.6)", overflow: "hidden",
+          width: "min(680px, 100%)",
+          maxHeight: "min(82vh, 660px)",
+          display: "flex",
+          flexDirection: "column",
+          background: "#fff",
+          border: "1px solid rgba(20,24,32,.10)",
+          borderRadius: 18,
+          boxShadow: "0 30px 90px -28px rgba(16,18,27,.6)",
+          overflow: "hidden",
         }}
       >
         {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem", padding: "1.1rem 1.25rem 0.9rem" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "1rem",
+            padding: "1.1rem 1.25rem 0.9rem",
+          }}
+        >
           <div style={{ flex: 1 }}>
-            <h2 id="icon-picker-title" style={{ margin: 0, fontSize: "1.1rem", fontWeight: 650, color: "#20242A", letterSpacing: "-0.01em" }}>
+            <h2
+              id="icon-picker-title"
+              style={{
+                margin: 0,
+                fontSize: "1.1rem",
+                fontWeight: 650,
+                color: "#20242A",
+                letterSpacing: "-0.01em",
+              }}
+            >
               {t("Choose an icon")}
             </h2>
-            <p id="icon-results-count" role="status" aria-live="polite"
-              style={{ margin: "0.15rem 0 0", fontSize: "0.78rem", color: "#6F7684" }}>
+            <p
+              id="icon-results-count"
+              role="status"
+              aria-live="polite"
+              style={{ margin: "0.15rem 0 0", fontSize: "0.78rem", color: "#6F7684" }}
+            >
               {matches.total === 0
                 ? t("No icons match - try another word.")
                 : matches.mode === "featured"
                   ? t("Popular icons · {n} in total - search to find any.", { n: all.length })
                   : matches.total > VISIBLE_CAP
-                    ? t("Showing {shown} of {total} - keep typing to narrow.", { shown: VISIBLE_CAP, total: matches.total })
-                    : matches.total === 1 ? t("1 icon.") : t("{n} icons.", { n: matches.total })}
+                    ? t("Showing {shown} of {total} - keep typing to narrow.", {
+                        shown: VISIBLE_CAP,
+                        total: matches.total,
+                      })
+                    : matches.total === 1
+                      ? t("1 icon.")
+                      : t("{n} icons.", { n: matches.total })}
             </p>
           </div>
-          <button type="button" className="lvt-ip-close" onClick={onClose} aria-label={t("Close icon picker")}>✕</button>
+          <button
+            type="button"
+            className="lvt-ip-close"
+            onClick={onClose}
+            aria-label={t("Close icon picker")}
+          >
+            ✕
+          </button>
         </div>
 
         {/* Search */}
         <div style={{ padding: "0 1.25rem 0.85rem", position: "relative" }}>
-          <span aria-hidden="true" style={{ position: "absolute", left: "1.95rem", top: "50%", transform: "translateY(-50%)", color: "#9aa1ad", display: "grid", placeItems: "center" }}>
+          <span
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              left: "1.95rem",
+              top: "50%",
+              transform: "translateY(-50%)",
+              color: "#9aa1ad",
+              display: "grid",
+              placeItems: "center",
+            }}
+          >
             <DynamicIcon name={"search" as never} size={16} />
           </span>
           <input
@@ -170,16 +292,43 @@ export function IconPicker({ onPick, onClose }: IconPickerProps) {
         </div>
 
         {/* Grid */}
-        <Scrollbar style={{ flex: 1, padding: "0.25rem 1.25rem 1.25rem", background: "#FBFCFE", borderTop: "1px solid rgba(20,24,32,.06)" }}>
+        <Scrollbar
+          style={{
+            flex: 1,
+            padding: "0.25rem 1.25rem 1.25rem",
+            background: "#FBFCFE",
+            borderTop: "1px solid rgba(20,24,32,.06)",
+          }}
+        >
           {matches.shown.length === 0 ? (
-            <p style={{ textAlign: "center", color: "#6F7684", padding: "2.5rem 1rem", fontSize: "0.9rem" }}>
+            <p
+              style={{
+                textAlign: "center",
+                color: "#6F7684",
+                padding: "2.5rem 1rem",
+                fontSize: "0.9rem",
+              }}
+            >
               {t("No icons match - try another word.")}
             </p>
           ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(68px, 1fr))", gap: "0.5rem", paddingTop: "0.75rem" }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(68px, 1fr))",
+                gap: "0.5rem",
+                paddingTop: "0.75rem",
+              }}
+            >
               {matches.shown.map((name) => (
-                <button key={name} type="button" className="lvt-ip-cell" onClick={(e) => pick(e, name)}
-                  aria-label={pretty(name)} title={pretty(name)}>
+                <button
+                  key={name}
+                  type="button"
+                  className="lvt-ip-cell"
+                  onClick={(e) => pick(e, name)}
+                  aria-label={pretty(name)}
+                  title={pretty(name)}
+                >
                   <DynamicIcon name={name as never} size={22} aria-hidden="true" />
                 </button>
               ))}
@@ -188,6 +337,6 @@ export function IconPicker({ onPick, onClose }: IconPickerProps) {
         </Scrollbar>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }

@@ -11,8 +11,8 @@ export function QuietStatement() {
           Designed to be felt, not noticed.
         </h2>
         <p className="lead">
-          Most lights demand attention - a switch, a setting, a glare. Halo was
-          built to recede. The effort went into the parts you never see.
+          Most lights demand attention - a switch, a setting, a glare. Halo was built to recede. The
+          effort went into the parts you never see.
         </p>
         <div className="meta-row">
           <GlassCard hover light className="meta">

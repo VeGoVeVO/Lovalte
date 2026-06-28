@@ -1,29 +1,26 @@
 import type { Pool, PoolClient } from "pg";
-import { Pass, PassId } from "../domain/Pass";
+import { Pass } from "../domain/Pass";
 import { SerialNumber } from "../domain/SerialNumber";
 import { AuthenticationToken } from "../domain/AuthenticationToken";
 import type { IPassRepository } from "../domain/ports";
 
 /** Set the RLS current-tenant for the duration of the current transaction. */
 async function setTenant(client: PoolClient, tenantId: string): Promise<void> {
-  await client.query(
-    "SELECT set_config('app.current_tenant', $1, true)",
-    [tenantId],
-  );
+  await client.query("SELECT set_config('app.current_tenant', $1, true)", [tenantId]);
 }
 
 function rowToPass(row: Record<string, unknown>): Pass {
   return Pass.reconstitute(row.id as string, {
     serialNumber: SerialNumber.from(row.serial_number as string),
-    passTypeId:   row.pass_type_id as string,
-    memberId:     row.member_id as string,
-    tenantId:     row.tenant_id as string,
-    authToken:    AuthenticationToken.fromRaw(row.authentication_token as string),
-    fieldValues:  JSON.parse(row.field_values as string) as [],
-    voided:       row.voided as boolean,
-    lastUpdated:  new Date(row.last_updated as string),
-    version:      row.version as number,
-    createdAt:    new Date(row.created_at as string),
+    passTypeId: row.pass_type_id as string,
+    memberId: row.member_id as string,
+    tenantId: row.tenant_id as string,
+    authToken: AuthenticationToken.fromRaw(row.authentication_token as string),
+    fieldValues: JSON.parse(row.field_values as string) as [],
+    voided: row.voided as boolean,
+    lastUpdated: new Date(row.last_updated as string),
+    version: row.version as number,
+    createdAt: new Date(row.created_at as string),
   });
 }
 
@@ -45,7 +42,9 @@ export class SqlPassRepository implements IPassRepository {
         [id, tenantId],
       );
       return res.rows.length ? rowToPass(res.rows[0]) : null;
-    } finally { client.release(); }
+    } finally {
+      client.release();
+    }
   }
 
   async findBySerial(serial: string, tenantId: string): Promise<Pass | null> {
@@ -57,7 +56,9 @@ export class SqlPassRepository implements IPassRepository {
         [serial, tenantId],
       );
       return res.rows.length ? rowToPass(res.rows[0]) : null;
-    } finally { client.release(); }
+    } finally {
+      client.release();
+    }
   }
 
   async findByMemberId(memberId: string, tenantId: string): Promise<Pass[]> {
@@ -69,11 +70,15 @@ export class SqlPassRepository implements IPassRepository {
         [memberId, tenantId],
       );
       return res.rows.map(rowToPass);
-    } finally { client.release(); }
+    } finally {
+      client.release();
+    }
   }
 
   async findByMemberAndType(
-    memberId: string, passTypeId: string, tenantId: string,
+    memberId: string,
+    passTypeId: string,
+    tenantId: string,
   ): Promise<Pass | null> {
     const client = await this.pool.connect();
     try {
@@ -84,7 +89,9 @@ export class SqlPassRepository implements IPassRepository {
         [memberId, passTypeId, tenantId],
       );
       return res.rows.length ? rowToPass(res.rows[0]) : null;
-    } finally { client.release(); }
+    } finally {
+      client.release();
+    }
   }
 
   async save(pass: Pass): Promise<void> {
@@ -115,6 +122,8 @@ export class SqlPassRepository implements IPassRepository {
           pass.createdAt.toISOString(),
         ],
       );
-    } finally { client.release(); }
+    } finally {
+      client.release();
+    }
   }
 }

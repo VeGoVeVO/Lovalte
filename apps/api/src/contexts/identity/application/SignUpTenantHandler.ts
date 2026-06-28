@@ -28,7 +28,7 @@ export class SignUpTenantHandler {
   constructor(
     private readonly tenants: ITenantRepository,
     private readonly txRunner: IIdentityTxRunner,
-    private readonly bus: DomainEventBus
+    private readonly bus: DomainEventBus,
   ) {}
 
   async execute(input: SignUpTenantInput): Promise<Result<SignUpTenantOutput>> {

@@ -1,25 +1,14 @@
-import {
-  DomainError,
-  DomainEventBus,
-  NotFoundError,
-  ok,
-  err,
-  type Result,
-} from "../../../kernel";
+import { DomainError, DomainEventBus, NotFoundError, ok, err, type Result } from "../../../kernel";
 import { BrandConfig } from "../domain/BrandConfig";
 import { RgbColor } from "../domain/RgbColor";
 import { RewardRule } from "../domain/RewardRule";
 import type { ICardTemplateRepository } from "./ICardTemplateRepository";
-import {
-  toCardTemplateDTO,
-  type CardTemplateDTO,
-  type UpdateCardTemplateInput,
-} from "./dtos";
+import { toCardTemplateDTO, type CardTemplateDTO, type UpdateCardTemplateInput } from "./dtos";
 
 export class UpdateCardTemplateHandler {
   constructor(
     private readonly repo: ICardTemplateRepository,
-    private readonly bus: DomainEventBus
+    private readonly bus: DomainEventBus,
   ) {}
 
   async execute(input: UpdateCardTemplateInput): Promise<Result<CardTemplateDTO>> {
@@ -46,11 +35,7 @@ export class UpdateCardTemplateHandler {
         stripRef: template.brand.stripRef,
       });
 
-      const rule = new RewardRule(
-        input.pointsPerVisit,
-        input.rewardThreshold,
-        input.tierRules
-      );
+      const rule = new RewardRule(input.pointsPerVisit, input.rewardThreshold, input.tierRules);
 
       template.updateBrand(brand, rule, input.name);
       await this.repo.save(template);

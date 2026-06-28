@@ -1,6 +1,13 @@
 import type { Pool, PoolClient } from "pg";
 import { withTransaction } from "../../../db/pool";
-import { CardImage, CardImageId, type CardImageProps, type AllowedImageType, type ImageKind, type ImageSource } from "../domain/CardImage";
+import {
+  CardImage,
+  CardImageId,
+  type CardImageProps,
+  type AllowedImageType,
+  type ImageKind,
+  type ImageSource,
+} from "../domain/CardImage";
 import type { IImageRepository, StoredImage } from "../application/IImageRepository";
 
 export class SqlImageRepository implements IImageRepository {
@@ -23,7 +30,7 @@ export class SqlImageRepository implements IImageRepository {
           image.source,
           bytes,
           image.createdAt,
-        ]
+        ],
       );
     });
   }
@@ -33,7 +40,7 @@ export class SqlImageRepository implements IImageRepository {
       `SELECT id, tenant_id, kind, content_type, byte_size, sha256, source, bytes, created_at
        FROM card_images
        WHERE id = $1`,
-      [id]
+      [id],
     );
     if (res.rows.length === 0) return null;
     const row = res.rows[0];

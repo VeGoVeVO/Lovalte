@@ -1,4 +1,4 @@
-import { NotFoundError, UnauthorizedError, DomainError, ok, err } from "../../../kernel";
+import { UnauthorizedError, DomainError, ok, err } from "../../../kernel";
 import type { Result } from "../../../kernel";
 import type { UserRole } from "../domain/User";
 import type { ITenantRepository, IUserRepository } from "./ports";
@@ -24,7 +24,7 @@ export interface LoginOutput {
 export class LoginHandler {
   constructor(
     private readonly tenants: ITenantRepository,
-    private readonly users: IUserRepository
+    private readonly users: IUserRepository,
   ) {}
 
   async execute(input: LoginInput): Promise<Result<LoginOutput>> {

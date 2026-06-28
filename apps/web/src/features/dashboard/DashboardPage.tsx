@@ -32,9 +32,14 @@ export function DashboardPage() {
   return (
     <AppShell title={t("Overview")}>
       {isError ? (
-        <GlassCard className="feature"><p className="body">{t("Sign in to view your dashboard.")}</p></GlassCard>
+        <GlassCard className="feature">
+          <p className="body">{t("Sign in to view your dashboard.")}</p>
+        </GlassCard>
       ) : (
-        <div className="grid-3" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))" }}>
+        <div
+          className="grid-3"
+          style={{ gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))" }}
+        >
           {KPIS.map((kpi) => (
             <GlassCard key={kpi.key} hover light className="meta">
               <div className="n">{isLoading ? "-" : (data?.[kpi.key] ?? 0).toLocaleString()}</div>

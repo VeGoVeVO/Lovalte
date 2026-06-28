@@ -13,7 +13,11 @@ export class RgbColor extends ValueObject<RgbProps> {
   }
 
   static create(r: number, g: number, b: number): RgbColor {
-    for (const [name, v] of [["r", r], ["g", g], ["b", b]] as [string, number][]) {
+    for (const [name, v] of [
+      ["r", r],
+      ["g", g],
+      ["b", b],
+    ] as [string, number][]) {
       if (!Number.isInteger(v) || v < 0 || v > 255) {
         throw new ValidationError(`Color channel ${name}=${v} must be an integer 0-255`);
       }
@@ -29,7 +33,7 @@ export class RgbColor extends ValueObject<RgbProps> {
     const m = /^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/.exec(s.trim());
     if (!m) {
       throw new ValidationError(
-        `"${s}" is not a valid rgb(r, g, b) string. Hex and other formats are not accepted.`
+        `"${s}" is not a valid rgb(r, g, b) string. Hex and other formats are not accepted.`,
       );
     }
     return RgbColor.create(Number(m[1]), Number(m[2]), Number(m[3]));

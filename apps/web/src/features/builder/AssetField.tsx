@@ -68,38 +68,75 @@ export function AssetField({ kind, label, hint, value, onChange, iconColor }: As
       <div
         aria-hidden={!value}
         style={{
-          flexShrink: 0, width: 56, height: 56, borderRadius: "var(--r-input, 8px)",
-          border: "1px solid var(--border, rgba(0,0,0,.12))", background: "var(--card, #f4f4f7)",
-          display: "grid", placeItems: "center", overflow: "hidden",
+          flexShrink: 0,
+          width: 56,
+          height: 56,
+          borderRadius: "var(--r-input, 8px)",
+          border: "1px solid var(--border, rgba(0,0,0,.12))",
+          background: "var(--card, #f4f4f7)",
+          display: "grid",
+          placeItems: "center",
+          overflow: "hidden",
         }}
       >
         {value ? (
-          <img src={value} alt={t("{label} preview", { label })} width={56} height={56} loading="lazy"
-            style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+          <img
+            src={value}
+            alt={t("{label} preview", { label })}
+            width={56}
+            height={56}
+            loading="lazy"
+            style={{ width: "100%", height: "100%", objectFit: "contain" }}
+          />
         ) : (
-          <span aria-hidden="true" style={{ color: "var(--muted, #889)", fontSize: "0.7rem" }}>{t("none")}</span>
+          <span aria-hidden="true" style={{ color: "var(--muted, #889)", fontSize: "0.7rem" }}>
+            {t("none")}
+          </span>
         )}
       </div>
 
       {/* Controls */}
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontWeight: 600, fontSize: "0.85rem", color: "var(--text, #111)" }}>{label}</div>
-        <div className="body" style={{ fontSize: "0.72rem", color: "var(--muted, #778)", margin: "0.1rem 0 0.45rem" }}>{hint}</div>
+        <div style={{ fontWeight: 600, fontSize: "0.85rem", color: "var(--text, #111)" }}>
+          {label}
+        </div>
+        <div
+          className="body"
+          style={{ fontSize: "0.72rem", color: "var(--muted, #778)", margin: "0.1rem 0 0.45rem" }}
+        >
+          {hint}
+        </div>
 
         <div style={{ display: "flex", gap: "0.45rem", flexWrap: "wrap" }}>
           {kind === "icon" && (
-            <GlassButton type="button" variant="ghost" onClick={() => setPicking(true)} disabled={busy}
-              style={{ fontSize: "0.8rem", padding: "0.35rem 0.7rem" }}>
+            <GlassButton
+              type="button"
+              variant="ghost"
+              onClick={() => setPicking(true)}
+              disabled={busy}
+              style={{ fontSize: "0.8rem", padding: "0.35rem 0.7rem" }}
+            >
               {t("Choose icon")}
             </GlassButton>
           )}
-          <GlassButton type="button" variant="ghost" onClick={() => fileRef.current?.click()} disabled={busy}
-            aria-busy={busy} style={{ fontSize: "0.8rem", padding: "0.35rem 0.7rem" }}>
+          <GlassButton
+            type="button"
+            variant="ghost"
+            onClick={() => fileRef.current?.click()}
+            disabled={busy}
+            aria-busy={busy}
+            style={{ fontSize: "0.8rem", padding: "0.35rem 0.7rem" }}
+          >
             {busy ? t("Uploading…") : t("Upload")}
           </GlassButton>
           {value && (
-            <GlassButton type="button" variant="ghost" onClick={() => onChange("")} disabled={busy}
-              style={{ fontSize: "0.8rem", padding: "0.35rem 0.7rem" }}>
+            <GlassButton
+              type="button"
+              variant="ghost"
+              onClick={() => onChange("")}
+              disabled={busy}
+              style={{ fontSize: "0.8rem", padding: "0.35rem 0.7rem" }}
+            >
               {t("Remove")}
             </GlassButton>
           )}
@@ -116,7 +153,12 @@ export function AssetField({ kind, label, hint, value, onChange, iconColor }: As
         />
 
         {error && (
-          <p id={errorId} role="alert" className="body" style={{ margin: "0.4rem 0 0", fontSize: "0.75rem", color: "#c0392b" }}>
+          <p
+            id={errorId}
+            role="alert"
+            className="body"
+            style={{ margin: "0.4rem 0 0", fontSize: "0.75rem", color: "#c0392b" }}
+          >
             {error}
           </p>
         )}

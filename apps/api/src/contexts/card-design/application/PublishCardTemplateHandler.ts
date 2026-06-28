@@ -1,11 +1,4 @@
-import {
-  DomainError,
-  DomainEventBus,
-  NotFoundError,
-  ok,
-  err,
-  type Result,
-} from "../../../kernel";
+import { DomainError, DomainEventBus, NotFoundError, ok, err, type Result } from "../../../kernel";
 import type { ICardTemplateRepository } from "./ICardTemplateRepository";
 import type { PublishResultDTO } from "./dtos";
 
@@ -17,7 +10,7 @@ export interface PublishCardTemplateInput {
 export class PublishCardTemplateHandler {
   constructor(
     private readonly repo: ICardTemplateRepository,
-    private readonly bus: DomainEventBus
+    private readonly bus: DomainEventBus,
   ) {}
 
   async execute(input: PublishCardTemplateInput): Promise<Result<PublishResultDTO>> {

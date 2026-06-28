@@ -22,29 +22,35 @@ export function App() {
       <style>{globalCss}</style>
       <AmbientBackground />
       <Routes>
-      <Route path="/" element={<LovalteLanding />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/signup" element={<SignupPage />} />
-      <Route path="/enroll" element={<EnrollPage />} />
+        <Route path="/" element={<LovalteLanding />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
+        <Route path="/enroll" element={<EnrollPage />} />
 
-      <Route element={<RequireAuth />}>
-        <Route path="/app" element={<DashboardPage />} />
-        <Route path="/app/builder" element={<BuilderPage />} />
-        <Route path="/app/analytics" element={<AnalyticsPage />} />
-        <Route path="/app/members" element={<MembersPage />} />
-        <Route path="/app/staff" element={<StaffPage />} />
-        <Route path="/app/issue" element={<IssuePassPage />} />
-        <Route path="/app/scan" element={<ScanPage />} />
-      </Route>
+        <Route element={<RequireAuth />}>
+          <Route path="/app" element={<DashboardPage />} />
+          <Route path="/app/builder" element={<BuilderPage />} />
+          <Route path="/app/analytics" element={<AnalyticsPage />} />
+          <Route path="/app/members" element={<MembersPage />} />
+          <Route path="/app/staff" element={<StaffPage />} />
+          <Route path="/app/issue" element={<IssuePassPage />} />
+          <Route path="/app/scan" element={<ScanPage />} />
+        </Route>
 
-      <Route path="*" element={<LovalteLanding />} />
+        <Route path="*" element={<LovalteLanding />} />
       </Routes>
       <span
         aria-hidden="true"
         style={{
-          position: "fixed", bottom: "calc(6px + env(safe-area-inset-bottom, 0px))", right: 10,
-          fontSize: "0.62rem", color: "rgba(32,36,42,.28)", letterSpacing: ".03em",
-          fontVariantNumeric: "tabular-nums", pointerEvents: "none", zIndex: 5,
+          position: "fixed",
+          bottom: "calc(6px + env(safe-area-inset-bottom, 0px))",
+          right: 10,
+          fontSize: "0.62rem",
+          color: "rgba(32,36,42,.28)",
+          letterSpacing: ".03em",
+          fontVariantNumeric: "tabular-nums",
+          pointerEvents: "none",
+          zIndex: 5,
         }}
       >
         v{APP_VERSION}

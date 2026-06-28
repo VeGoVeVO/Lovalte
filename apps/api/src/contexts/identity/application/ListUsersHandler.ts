@@ -28,7 +28,7 @@ export class ListUsersHandler {
           role: u.role,
           status: u.status,
           createdAt: u.createdAt.toISOString(),
-        }))
+        })),
       );
     } catch (e) {
       if (e instanceof DomainError) return err(e);

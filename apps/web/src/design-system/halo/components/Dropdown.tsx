@@ -51,7 +51,15 @@ function ensureStyle() {
 
 /** Accessible custom select. Portaled listbox (escapes glass/transform ancestors),
  *  full keyboard support, themed to match the design system. */
-export function Dropdown({ options, value, onChange, placeholder = "Select…", id, ariaLabel, disabled }: DropdownProps) {
+export function Dropdown({
+  options,
+  value,
+  onChange,
+  placeholder = "Select…",
+  id,
+  ariaLabel,
+  disabled,
+}: DropdownProps) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
   const [rect, setRect] = useState<{ left: number; top: number; width: number } | null>(null);
@@ -65,13 +73,19 @@ export function Dropdown({ options, value, onChange, placeholder = "Select…", 
     const r = triggerRef.current?.getBoundingClientRect();
     if (r) setRect({ left: r.left, top: r.bottom + 6, width: r.width });
   };
-  useLayoutEffect(() => { if (open) place(); }, [open]);
+  useLayoutEffect(() => {
+    if (open) place();
+  }, [open]);
 
   // Close on outside click / scroll / resize
   useEffect(() => {
     if (!open) return;
     const onDoc = (e: MouseEvent) => {
-      if (!popRef.current?.contains(e.target as Node) && !triggerRef.current?.contains(e.target as Node)) setOpen(false);
+      if (
+        !popRef.current?.contains(e.target as Node) &&
+        !triggerRef.current?.contains(e.target as Node)
+      )
+        setOpen(false);
     };
     const reposition = () => setOpen(false);
     document.addEventListener("mousedown", onDoc);
@@ -86,7 +100,12 @@ export function Dropdown({ options, value, onChange, placeholder = "Select…", 
 
   const openMenu = () => {
     if (disabled) return;
-    setActive(Math.max(0, options.findIndex((o) => o.value === value)));
+    setActive(
+      Math.max(
+        0,
+        options.findIndex((o) => o.value === value),
+      ),
+    );
     setOpen(true);
   };
   const choose = (i: number) => {
@@ -98,19 +117,39 @@ export function Dropdown({ options, value, onChange, placeholder = "Select…", 
 
   const onKey = (e: KeyboardEvent) => {
     if (!open) {
-      if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") { e.preventDefault(); openMenu(); }
+      if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        openMenu();
+      }
       return;
     }
-    if (e.key === "Escape") { e.preventDefault(); setOpen(false); triggerRef.current?.focus(); }
-    else if (e.key === "ArrowDown") { e.preventDefault(); setActive((i) => Math.min(options.length - 1, i + 1)); }
-    else if (e.key === "ArrowUp") { e.preventDefault(); setActive((i) => Math.max(0, i - 1)); }
-    else if (e.key === "Home") { e.preventDefault(); setActive(0); }
-    else if (e.key === "End") { e.preventDefault(); setActive(options.length - 1); }
-    else if (e.key === "Enter" || e.key === " ") { e.preventDefault(); choose(active); }
+    if (e.key === "Escape") {
+      e.preventDefault();
+      setOpen(false);
+      triggerRef.current?.focus();
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActive((i) => Math.min(options.length - 1, i + 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActive((i) => Math.max(0, i - 1));
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      setActive(0);
+    } else if (e.key === "End") {
+      e.preventDefault();
+      setActive(options.length - 1);
+    } else if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      choose(active);
+    }
   };
 
   useEffect(() => {
-    if (open) popRef.current?.querySelector<HTMLElement>(".lvt-dd-opt.active")?.scrollIntoView({ block: "nearest" });
+    if (open)
+      popRef.current
+        ?.querySelector<HTMLElement>(".lvt-dd-opt.active")
+        ?.scrollIntoView({ block: "nearest" });
   }, [open, active]);
 
   return (
@@ -128,37 +167,82 @@ export function Dropdown({ options, value, onChange, placeholder = "Select…", 
         onClick={() => (open ? setOpen(false) : openMenu())}
         onKeyDown={onKey}
       >
-        <span className={`lvt-dd-val${selected ? "" : " placeholder"}`}>{selected ? selected.label : placeholder}</span>
-        <svg className="lvt-dd-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <span className={`lvt-dd-val${selected ? "" : " placeholder"}`}>
+          {selected ? selected.label : placeholder}
+        </span>
+        <svg
+          className="lvt-dd-chev"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          aria-hidden="true"
+        >
+          <path
+            d="M6 9l6 6 6-6"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
         </svg>
       </button>
 
-      {open && rect && createPortal(
-        <div ref={popRef} className="lvt-dd-pop" role="listbox" aria-activedescendant={`lvt-opt-${active}`}
-          style={{ left: rect.left, top: rect.top, width: rect.width }} onKeyDown={onKey}>
-          {options.map((o, i) => (
-            <button
-              key={o.value}
-              id={`lvt-opt-${i}`}
-              type="button"
-              role="option"
-              aria-selected={o.value === value}
-              className={`lvt-dd-opt${i === active ? " active" : ""}`}
-              onMouseEnter={() => setActive(i)}
-              onClick={() => choose(i)}
-            >
-              <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{o.label}</span>
-              {o.value === value && (
-                <svg className="lvt-dd-check" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <path d="M5 12l5 5L20 7" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              )}
-            </button>
-          ))}
-        </div>,
-        document.body
-      )}
+      {open &&
+        rect &&
+        createPortal(
+          <div
+            ref={popRef}
+            className="lvt-dd-pop"
+            role="listbox"
+            aria-activedescendant={`lvt-opt-${active}`}
+            style={{ left: rect.left, top: rect.top, width: rect.width }}
+            onKeyDown={onKey}
+          >
+            {options.map((o, i) => (
+              <button
+                key={o.value}
+                id={`lvt-opt-${i}`}
+                type="button"
+                role="option"
+                aria-selected={o.value === value}
+                className={`lvt-dd-opt${i === active ? " active" : ""}`}
+                onMouseEnter={() => setActive(i)}
+                onClick={() => choose(i)}
+              >
+                <span
+                  style={{
+                    flex: 1,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {o.label}
+                </span>
+                {o.value === value && (
+                  <svg
+                    className="lvt-dd-check"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M5 12l5 5L20 7"
+                      stroke="currentColor"
+                      strokeWidth="2.4"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                )}
+              </button>
+            ))}
+          </div>,
+          document.body,
+        )}
     </>
   );
 }

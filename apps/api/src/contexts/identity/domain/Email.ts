@@ -1,6 +1,8 @@
 import { ValueObject, ValidationError } from "../../../kernel";
 
-interface EmailProps { value: string }
+interface EmailProps {
+  value: string;
+}
 
 /**
  * Email value object: RFC-5321 validated, lowercase-normalised.
@@ -23,5 +25,7 @@ export class Email extends ValueObject<EmailProps> {
     return new Email({ value });
   }
 
-  get value(): string { return this.props.value; }
+  get value(): string {
+    return this.props.value;
+  }
 }

@@ -2,12 +2,7 @@ import { z } from "zod";
 import type { FastifyInstance } from "fastify";
 import type { Deps } from "../../../shared/deps";
 import { parse } from "../../../http/validation";
-import {
-  requireAuth,
-  getAuth,
-  setSessionCookie,
-  clearSessionCookie,
-} from "../../../http/auth";
+import { requireAuth, getAuth, setSessionCookie, clearSessionCookie } from "../../../http/auth";
 import type { SignUpTenantHandler } from "../application/SignUpTenantHandler";
 import type { LoginHandler } from "../application/LoginHandler";
 import type { InviteUserHandler } from "../application/InviteUserHandler";
@@ -59,7 +54,7 @@ const acceptInvitationSchema = z
 export function registerIdentityRoutes(
   app: FastifyInstance,
   deps: Deps,
-  handlers: IdentityHandlers
+  handlers: IdentityHandlers,
 ): void {
   const secret = deps.config.SESSION_SECRET;
 
@@ -71,7 +66,7 @@ export function registerIdentityRoutes(
     setSessionCookie(
       reply,
       { userId: r.value.userId, tenantId: r.value.tenantId, role: "owner" },
-      secret
+      secret,
     );
     return reply.status(201).send({ data: r.value });
   });
@@ -84,7 +79,7 @@ export function registerIdentityRoutes(
     setSessionCookie(
       reply,
       { userId: r.value.userId, tenantId: r.value.tenantId, role: r.value.role },
-      secret
+      secret,
     );
     return reply.status(200).send({
       data: {
@@ -97,14 +92,10 @@ export function registerIdentityRoutes(
   });
 
   // POST /api/v1/auth/logout - clear session cookie
-  app.post(
-    "/api/v1/auth/logout",
-    { preHandler: requireAuth(secret) },
-    async (_req, reply) => {
-      clearSessionCookie(reply);
-      return reply.status(204).send();
-    }
-  );
+  app.post("/api/v1/auth/logout", { preHandler: requireAuth(secret) }, async (_req, reply) => {
+    clearSessionCookie(reply);
+    return reply.status(204).send();
+  });
 
   // POST /api/v1/auth/accept-invitation - create account from invitation token
   app.post("/api/v1/auth/accept-invitation", async (req, reply) => {
@@ -118,7 +109,7 @@ export function registerIdentityRoutes(
     setSessionCookie(
       reply,
       { userId: r.value.userId, tenantId: r.value.tenantId, role: r.value.role },
-      secret
+      secret,
     );
     return reply.status(200).send({ data: r.value });
   });
@@ -139,7 +130,7 @@ export function registerIdentityRoutes(
       });
       if (!r.ok) throw r.error;
       return reply.status(201).send({ data: r.value });
-    }
+    },
   );
 
   // GET /api/v1/users - list all users in the tenant (owner or manager only)
@@ -151,15 +142,11 @@ export function registerIdentityRoutes(
       const r = await handlers.listUsers.execute(auth.tenantId);
       if (!r.ok) throw r.error;
       return reply.status(200).send({ data: r.value });
-    }
+    },
   );
 
   // GET /api/v1/auth/me - return the current session's auth context
-  app.get(
-    "/api/v1/auth/me",
-    { preHandler: requireAuth(secret) },
-    async (req, reply) => {
-      return reply.status(200).send({ data: getAuth(req) });
-    }
-  );
+  app.get("/api/v1/auth/me", { preHandler: requireAuth(secret) }, async (req, reply) => {
+    return reply.status(200).send({ data: getAuth(req) });
+  });
 }

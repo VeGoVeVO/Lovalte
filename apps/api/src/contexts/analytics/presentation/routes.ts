@@ -9,12 +9,8 @@ import type { GetAnalyticsTimeseriesHandler } from "../application/GetAnalyticsT
 /** Zod schema for timeseries query parameters. */
 const timeseriesQuerySchema = z.object({
   metric: z.string().min(1),
-  from: z
-    .string()
-    .refine((s) => !isNaN(Date.parse(s)), { message: "Invalid 'from' date" }),
-  to: z
-    .string()
-    .refine((s) => !isNaN(Date.parse(s)), { message: "Invalid 'to' date" }),
+  from: z.string().refine((s) => !isNaN(Date.parse(s)), { message: "Invalid 'from' date" }),
+  to: z.string().refine((s) => !isNaN(Date.parse(s)), { message: "Invalid 'to' date" }),
 });
 
 /**
@@ -34,35 +30,27 @@ export function registerAnalyticsRoutes(
    * GET /api/v1/analytics/overview
    * Returns KPI snapshot: totalMembers, totalScans, totalRedemptions, pointsLiability.
    */
-  app.get(
-    "/api/v1/analytics/overview",
-    { preHandler: auth },
-    async (req, reply) => {
-      const { tenantId } = getAuth(req);
-      const r = await overviewHandler.execute(tenantId);
-      if (!r.ok) throw r.error;
-      return reply.status(200).send({ data: r.value });
-    },
-  );
+  app.get("/api/v1/analytics/overview", { preHandler: auth }, async (req, reply) => {
+    const { tenantId } = getAuth(req);
+    const r = await overviewHandler.execute(tenantId);
+    if (!r.ok) throw r.error;
+    return reply.status(200).send({ data: r.value });
+  });
 
   /**
    * GET /api/v1/analytics/timeseries?metric=<type>&from=<iso>&to=<iso>
    * Returns daily event counts for the requested metric and date range.
    */
-  app.get(
-    "/api/v1/analytics/timeseries",
-    { preHandler: auth },
-    async (req, reply) => {
-      const { tenantId } = getAuth(req);
-      const q = parse(timeseriesQuerySchema, req.query);
-      const r = await timeseriesHandler.execute({
-        tenantId,
-        metric: q.metric,
-        from: q.from,
-        to: q.to,
-      });
-      if (!r.ok) throw r.error;
-      return reply.status(200).send({ data: r.value });
-    },
-  );
+  app.get("/api/v1/analytics/timeseries", { preHandler: auth }, async (req, reply) => {
+    const { tenantId } = getAuth(req);
+    const q = parse(timeseriesQuerySchema, req.query);
+    const r = await timeseriesHandler.execute({
+      tenantId,
+      metric: q.metric,
+      from: q.from,
+      to: q.to,
+    });
+    if (!r.ok) throw r.error;
+    return reply.status(200).send({ data: r.value });
+  });
 }

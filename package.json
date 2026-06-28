@@ -2,7 +2,7 @@
   "name": "lovalte",
   "version": "0.1.0",
   "private": true,
-  "description": "Lovalte — loyalty cards in Apple Wallet (multi-tenant SaaS).",
+  "description": "Lovalte \u2014 loyalty cards in Apple Wallet (multi-tenant SaaS).",
   "workspaces": [
     "apps/*"
   ],
@@ -11,9 +11,25 @@
     "build": "npm run build --workspace apps/api && npm run build --workspace apps/web",
     "typecheck": "npm run typecheck --workspace apps/api && npm run typecheck --workspace apps/web",
     "test": "npm run test --workspace apps/api",
-    "migrate": "npm run migrate --workspace apps/api"
+    "migrate": "npm run migrate --workspace apps/api",
+    "lint": "eslint \"apps/**/*.{ts,tsx}\"",
+    "format": "prettier --write \"apps/**/*.{ts,tsx,json,sql}\"",
+    "format:check": "prettier --check \"apps/**/*.{ts,tsx,json,sql}\""
   },
   "engines": {
     "node": ">=22"
+  },
+  "overrides": {
+    "passkit-generator": {
+      "joi": "17.13.4"
+    }
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.62.0",
+    "@typescript-eslint/parser": "^8.62.0",
+    "eslint": "^9.39.4",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "prettier": "^3.9.1"
   }
 }

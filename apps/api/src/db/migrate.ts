@@ -14,7 +14,7 @@ async function migrate(): Promise<void> {
   const cfg = loadConfig();
   const pool = new Pool({ connectionString: cfg.DATABASE_URL });
   await pool.query(
-    `CREATE TABLE IF NOT EXISTS _migrations (id TEXT PRIMARY KEY, applied_at TIMESTAMPTZ NOT NULL DEFAULT now())`
+    `CREATE TABLE IF NOT EXISTS _migrations (id TEXT PRIMARY KEY, applied_at TIMESTAMPTZ NOT NULL DEFAULT now())`,
   );
   const dir = join(__dirname, "migrations");
   const files = readdirSync(dir)

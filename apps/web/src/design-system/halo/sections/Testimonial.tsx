@@ -9,9 +9,8 @@ export function Testimonial() {
         <Reveal>
           <GlassCard light className="quote">
             <p id="story-title">
-              “It’s the first object in my home I stopped thinking about. By the
-              second evening it just felt like the room had always known when to
-              soften.”
+              “It’s the first object in my home I stopped thinking about. By the second evening it
+              just felt like the room had always known when to soften.”
             </p>
             <div className="who">Mara Eldridge · early access</div>
           </GlassCard>

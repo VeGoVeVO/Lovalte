@@ -88,14 +88,11 @@ export function AnalyticsPage() {
   const timeseries = useQuery({
     queryKey: ["analytics-timeseries", metric, from, to],
     queryFn: () =>
-      api.get<TimeseriesDTO>(
-        `/api/v1/analytics/timeseries?metric=${metric}&from=${from}&to=${to}`,
-      ),
+      api.get<TimeseriesDTO>(`/api/v1/analytics/timeseries?metric=${metric}&from=${from}&to=${to}`),
     staleTime: 60_000,
   });
 
-  const metricLabel =
-    METRICS.find((m) => m.value === metric)?.label ?? metric;
+  const metricLabel = METRICS.find((m) => m.value === metric)?.label ?? metric;
 
   return (
     <AppShell title={t("Analytics")}>
@@ -103,11 +100,7 @@ export function AnalyticsPage() {
 
       {/* ── KPI cards ──────────────────────────────────────────────── */}
       <section aria-labelledby="analytics-kpi-heading">
-        <h2
-          id="analytics-kpi-heading"
-          className="eyebrow"
-          style={{ marginBottom: "1rem" }}
-        >
+        <h2 id="analytics-kpi-heading" className="eyebrow" style={{ marginBottom: "1rem" }}>
           {t("Overview")}
         </h2>
 
@@ -126,10 +119,9 @@ export function AnalyticsPage() {
         >
           {KPIS.map((kpi) => {
             const value = overview.data?.[kpi.key];
-            const displayValue =
-              overview.isLoading
-                ? "-"
-                : overview.isError
+            const displayValue = overview.isLoading
+              ? "-"
+              : overview.isError
                 ? "-"
                 : (value ?? 0).toLocaleString();
 
@@ -168,9 +160,7 @@ export function AnalyticsPage() {
             {t("{label} over time", { label: t(metricLabel) })}
           </h2>
 
-          <div
-            style={{ display: "flex", flexWrap: "wrap", gap: "1rem", alignItems: "flex-start" }}
-          >
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem", alignItems: "flex-start" }}>
             {/* Metric selector */}
             <div role="group" aria-labelledby="metric-group-label">
               <span

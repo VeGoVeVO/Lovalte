@@ -38,15 +38,38 @@ export function SignupPage() {
     <AppShell>
       <GlassCard light className="waitlist" style={{ maxWidth: 460 }}>
         <h1 className="section">{t("Start your loyalty program.")}</h1>
-        <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: "1rem", width: "100%" }}>
-          <GlassInput placeholder={t("Business name")} aria-label={t("Business name")}
-            value={business} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setBusiness(e.target.value)} />
-          <GlassInput type="email" placeholder="you@business.com" aria-label={t("Email")}
-            value={email} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)} />
-          <GlassInput type="password" placeholder={t("Password (min 12 characters)")} aria-label={t("Password")}
-            value={password} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)} />
-          {error ? <p className="body" style={{ color: "#b4434e", margin: 0 }} role="alert">{error}</p> : null}
-          <GlassButton type="submit" disabled={busy}>{busy ? t("Creating…") : t("Create business")}</GlassButton>
+        <form
+          onSubmit={submit}
+          style={{ display: "flex", flexDirection: "column", gap: "1rem", width: "100%" }}
+        >
+          <GlassInput
+            placeholder={t("Business name")}
+            aria-label={t("Business name")}
+            value={business}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setBusiness(e.target.value)}
+          />
+          <GlassInput
+            type="email"
+            placeholder="you@business.com"
+            aria-label={t("Email")}
+            value={email}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+          />
+          <GlassInput
+            type="password"
+            placeholder={t("Password (min 12 characters)")}
+            aria-label={t("Password")}
+            value={password}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+          />
+          {error ? (
+            <p className="body" style={{ color: "#b4434e", margin: 0 }} role="alert">
+              {error}
+            </p>
+          ) : null}
+          <GlassButton type="submit" disabled={busy}>
+            {busy ? t("Creating…") : t("Create business")}
+          </GlassButton>
         </form>
         <p className="body" style={{ marginTop: "1rem" }}>
           {t("Already have an account?")} <Link to="/login">{t("Sign in")}</Link>

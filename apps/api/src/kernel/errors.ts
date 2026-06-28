@@ -3,7 +3,7 @@ export class DomainError extends Error {
   constructor(
     message: string,
     public readonly code: string = "DOMAIN_ERROR",
-    public readonly details?: unknown
+    public readonly details?: unknown,
   ) {
     super(message);
     this.name = new.target.name;

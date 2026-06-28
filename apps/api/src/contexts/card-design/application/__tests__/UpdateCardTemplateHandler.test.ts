@@ -20,12 +20,16 @@ function makeBus(): DomainEventBus & { published: DomainEvent[] } {
   const published: DomainEvent[] = [];
   return {
     published,
-    async publish(events) { published.push(...events); },
+    async publish(events) {
+      published.push(...events);
+    },
     subscribe() {},
   };
 }
 
-function makeMinimalBrand(overrides: Partial<ConstructorParameters<typeof BrandConfig>[0]> = {}): BrandConfig {
+function makeMinimalBrand(
+  overrides: Partial<ConstructorParameters<typeof BrandConfig>[0]> = {},
+): BrandConfig {
   return new BrandConfig({
     organizationName: "Acme",
     backgroundColor: RgbColor.create(0, 0, 0),
@@ -67,11 +71,19 @@ function makePublishedTemplate(): CardTemplate {
 
 function makeRepo(template: CardTemplate | null): ICardTemplateRepository {
   return {
-    async findById() { return template; },
-    async findAllByTenant() { return template ? [template] : []; },
+    async findById() {
+      return template;
+    },
+    async findAllByTenant() {
+      return template ? [template] : [];
+    },
     async save() {},
-    async registerAsset(a) { return { ...a, id: "asset-id", createdAt: new Date() }; },
-    async findAssetsByTemplate() { return []; },
+    async registerAsset(a) {
+      return { ...a, id: "asset-id", createdAt: new Date() };
+    },
+    async findAssetsByTemplate() {
+      return [];
+    },
   };
 }
 
@@ -110,7 +122,7 @@ describe("UpdateCardTemplateHandler", () => {
     expect(result.value.rewardRule.rewardThreshold).toBe(20);
     expect(result.value.status).toBe("draft");
 
-    const saved = bus.published.find(e => e.name === "CardTemplateSaved");
+    const saved = bus.published.find((e) => e.name === "CardTemplateSaved");
     expect(saved).toBeDefined();
     expect(saved?.payload.tenantId).toBe(TENANT_ID);
   });

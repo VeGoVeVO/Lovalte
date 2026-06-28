@@ -57,7 +57,8 @@ export class PassKitSigningAdapter implements IPassSigningPort {
     // published before the team id was set (stale pass_types snapshot with an
     // empty teamIdentifier) can't produce an invalid pass.json.
     if (this.config.APPLE_TEAM_ID) passJson.teamIdentifier = this.config.APPLE_TEAM_ID;
-    if (this.config.APPLE_PASS_TYPE_ID) passJson.passTypeIdentifier = this.config.APPLE_PASS_TYPE_ID;
+    if (this.config.APPLE_PASS_TYPE_ID)
+      passJson.passTypeIdentifier = this.config.APPLE_PASS_TYPE_ID;
 
     // ── Assemble the bundle ───────────────────────────────────────────────
     const buffers: Record<string, Buffer> = {
@@ -93,9 +94,7 @@ export class PassKitSigningAdapter implements IPassSigningPort {
       signerCert,
       signerKey,
       wwdr,
-      ...(APPLE_SIGNER_KEY_PASSPHRASE
-        ? { signerKeyPassphrase: APPLE_SIGNER_KEY_PASSPHRASE }
-        : {}),
+      ...(APPLE_SIGNER_KEY_PASSPHRASE ? { signerKeyPassphrase: APPLE_SIGNER_KEY_PASSPHRASE } : {}),
     });
 
     return pkpass.getAsBuffer();

@@ -22,7 +22,7 @@ export class CardTemplateRepository implements ICardTemplateRepository {
       `SELECT id, tenant_id, name, status, version, config, created_at, updated_at
        FROM card_templates
        WHERE id = $1 AND tenant_id = $2`,
-      [id, tenantId]
+      [id, tenantId],
     );
     if (res.rows.length === 0) return null;
     return this.rowToTemplate(res.rows[0]);
@@ -30,8 +30,7 @@ export class CardTemplateRepository implements ICardTemplateRepository {
 
   async findAllByTenant(tenantId: string, status?: string): Promise<CardTemplate[]> {
     const params: unknown[] = [tenantId];
-    let sql =
-      `SELECT id, tenant_id, name, status, version, config, created_at, updated_at
+    let sql = `SELECT id, tenant_id, name, status, version, config, created_at, updated_at
        FROM card_templates
        WHERE tenant_id = $1`;
     if (status !== undefined) {
@@ -70,7 +69,7 @@ export class CardTemplateRepository implements ICardTemplateRepository {
           JSON.stringify(config),
           template.createdAt,
           template.updatedAt,
-        ]
+        ],
       );
     });
   }
@@ -82,7 +81,7 @@ export class CardTemplateRepository implements ICardTemplateRepository {
         `INSERT INTO template_assets (tenant_id, template_id, kind, ref)
          VALUES ($1, $2, $3, $4)
          RETURNING id, tenant_id, template_id, kind, ref, created_at`,
-        [asset.tenantId, asset.templateId, asset.kind, asset.ref]
+        [asset.tenantId, asset.templateId, asset.kind, asset.ref],
       );
     });
     return this.rowToAsset(res.rows[0]);
@@ -94,7 +93,7 @@ export class CardTemplateRepository implements ICardTemplateRepository {
        FROM template_assets
        WHERE template_id = $1 AND tenant_id = $2
        ORDER BY created_at DESC`,
-      [templateId, tenantId]
+      [templateId, tenantId],
     );
     return res.rows.map((r) => this.rowToAsset(r));
   }
@@ -102,13 +101,13 @@ export class CardTemplateRepository implements ICardTemplateRepository {
   async delete(id: string, tenantId: string): Promise<void> {
     await withTransaction(this.pool, async (client: PoolClient) => {
       await client.query(`SELECT set_config('app.current_tenant', $1, true)`, [tenantId]);
-      await client.query(
-        `DELETE FROM template_assets WHERE template_id = $1 AND tenant_id = $2`,
-        [id, tenantId]
-      );
+      await client.query(`DELETE FROM template_assets WHERE template_id = $1 AND tenant_id = $2`, [
+        id,
+        tenantId,
+      ]);
       await client.query(
         `DELETE FROM card_templates WHERE id = $1 AND tenant_id = $2 AND status = 'draft'`,
-        [id, tenantId]
+        [id, tenantId],
       );
     });
   }
@@ -123,8 +122,7 @@ export class CardTemplateRepository implements ICardTemplateRepository {
       logoText: (b.logoText as string | null) ?? undefined,
       backgroundColor: RgbColor.fromString(b.backgroundColor as string),
       foregroundColor: RgbColor.fromString(b.foregroundColor as string),
-      labelColor:
-        b.labelColor ? RgbColor.fromString(b.labelColor as string) : undefined,
+      labelColor: b.labelColor ? RgbColor.fromString(b.labelColor as string) : undefined,
       headerFields: toFields(b.headerFields),
       primaryFields: toFields(b.primaryFields),
       secondaryFields: toFields(b.secondaryFields),
@@ -138,7 +136,7 @@ export class CardTemplateRepository implements ICardTemplateRepository {
     const rule = new RewardRule(
       rr.pointsPerVisit as number,
       rr.rewardThreshold as number,
-      (rr.tierRules as Array<{ label: string; minPoints: number }>) ?? []
+      (rr.tierRules as Array<{ label: string; minPoints: number }>) ?? [],
     );
 
     const props: CardTemplateProps = {

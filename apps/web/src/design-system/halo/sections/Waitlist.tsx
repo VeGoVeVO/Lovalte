@@ -14,14 +14,18 @@ export function Waitlist({ email, setEmail, joined, join }) {
         <Reveal>
           <GlassCard light className="waitlist">
             <span className="eyebrow">Limited first run</span>
-            <h2 className="section" id="waitlist-title">Be among the first.</h2>
+            <h2 className="section" id="waitlist-title">
+              Be among the first.
+            </h2>
             <p className="lead" style={{ maxWidth: "40ch" }}>
-              Reservations open this autumn. Leave your email and we’ll hold your
-              place - one note, no noise.
+              Reservations open this autumn. Leave your email and we’ll hold your place - one note,
+              no noise.
             </p>
             {joined ? (
               <div className="thanks" role="status">
-                <span className="check"><Icon.Check /></span>
+                <span className="check">
+                  <Icon.Check />
+                </span>
                 You’re on the list. We’ll be in touch.
               </div>
             ) : (

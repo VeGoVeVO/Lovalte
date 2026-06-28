@@ -1,16 +1,6 @@
-import {
-  DomainError,
-  NotFoundError,
-  ok,
-  err,
-  type Result,
-} from "../../../kernel";
+import { DomainError, NotFoundError, ok, err, type Result } from "../../../kernel";
 import type { ICardTemplateRepository } from "./ICardTemplateRepository";
-import {
-  toAssetRefDTO,
-  type AssetRefDTO,
-  type RegisterAssetRefInput,
-} from "./dtos";
+import { toAssetRefDTO, type AssetRefDTO, type RegisterAssetRefInput } from "./dtos";
 
 export class RegisterAssetRefHandler {
   constructor(private readonly repo: ICardTemplateRepository) {}

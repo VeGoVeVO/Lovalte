@@ -3,10 +3,7 @@ import type { PassTemplateDto, FieldDefinition } from "./domain/ports";
 import { IssuePassHandler } from "./application/IssuePassHandler";
 import { GetPassPkpassHandler } from "./application/GetPassPkpassHandler";
 import { GenerateQrTokenHandler } from "./application/GenerateQrTokenHandler";
-import {
-  UpdatePassFieldsHandler,
-  applyEarnedPoints,
-} from "./application/UpdatePassFieldsHandler";
+import { UpdatePassFieldsHandler, applyEarnedPoints } from "./application/UpdatePassFieldsHandler";
 import { SqlPassRepository } from "./infrastructure/SqlPassRepository";
 import { SqlPassTemplateRepository } from "./infrastructure/SqlPassTemplateRepository";
 import { PassKitSigningAdapter } from "./infrastructure/PassKitSigningAdapter";
@@ -26,20 +23,25 @@ import { registerPassRoutes } from "./presentation/routes";
  */
 export const registerPassIssuance: ContextModule = async (app, deps) => {
   // ── Infrastructure ───────────────────────────────────────────────────────
-  const passRepo     = new SqlPassRepository(deps.pool);
+  const passRepo = new SqlPassRepository(deps.pool);
   const templateRepo = new SqlPassTemplateRepository(deps.pool);
-  const signer       = new PassKitSigningAdapter(deps.config, deps.pool);
-  const bufferCache  = new RedisPassBufferCache(deps.redis);
+  const signer = new PassKitSigningAdapter(deps.config, deps.pool);
+  const bufferCache = new RedisPassBufferCache(deps.redis);
 
   // ── Handlers ─────────────────────────────────────────────────────────────
   const issuePass = new IssuePassHandler(
-    passRepo, templateRepo, signer, bufferCache, deps.clock, deps.bus,
+    passRepo,
+    templateRepo,
+    signer,
+    bufferCache,
+    deps.clock,
+    deps.bus,
   );
-  const getPassPkpass    = new GetPassPkpassHandler(passRepo, templateRepo, signer, bufferCache);
-  const generateQrToken  = new GenerateQrTokenHandler(passRepo, deps.redis, deps.config);
+  const getPassPkpass = new GetPassPkpassHandler(passRepo, templateRepo, signer, bufferCache);
+  const generateQrToken = new GenerateQrTokenHandler(passRepo, deps.redis, deps.config);
   const updatePassFields = new UpdatePassFieldsHandler(passRepo, deps.bus, deps.clock);
   const createEnrollLink = new CreateEnrollLinkHandler(templateRepo, deps.config, deps.clock);
-  const publicEnroll     = new PublicEnrollHandler(issuePass, deps.config, deps.clock);
+  const publicEnroll = new PublicEnrollHandler(issuePass, deps.config, deps.clock);
 
   // ── Cross-context event subscriptions ────────────────────────────────────
 
@@ -61,10 +63,10 @@ export const registerPassIssuance: ContextModule = async (app, deps) => {
     // identifiers (passType/team/webService) are infra config, never card-design data.
     const tpl = await deps.pool.query<{ name: string; config: Record<string, unknown> }>(
       `SELECT name, config FROM card_templates WHERE id = $1 AND tenant_id = $2`,
-      [templateId, tenantId]
+      [templateId, tenantId],
     );
     const row = tpl.rows[0];
-    const brand = ((row?.config?.brand ?? {}) as Record<string, unknown>);
+    const brand = (row?.config?.brand ?? {}) as Record<string, unknown>;
     const orgName = (brand.organizationName as string) ?? row?.name ?? "Lovalte";
 
     // Snapshot each brand field WITH its Apple pass region. PassDocumentBuilder
@@ -77,29 +79,29 @@ export const registerPassIssuance: ContextModule = async (app, deps) => {
       });
 
     const dto: PassTemplateDto = {
-      id:                 templateId,
+      id: templateId,
       tenantId,
       passTypeIdentifier: deps.config.APPLE_PASS_TYPE_ID ?? "pass.com.lovalte.loyalty",
-      teamIdentifier:     deps.config.APPLE_TEAM_ID ?? "",
-      organizationName:   orgName,
-      description:        (p.description as string) ?? `${orgName} loyalty card`,
-      logoText:           (brand.logoText as string | undefined),
-      backgroundColor:    (brand.backgroundColor as string) ?? "rgb(30,40,60)",
-      foregroundColor:    (brand.foregroundColor as string) ?? "rgb(255,255,255)",
-      labelColor:         (brand.labelColor as string | undefined),
+      teamIdentifier: deps.config.APPLE_TEAM_ID ?? "",
+      organizationName: orgName,
+      description: (p.description as string) ?? `${orgName} loyalty card`,
+      logoText: brand.logoText as string | undefined,
+      backgroundColor: (brand.backgroundColor as string) ?? "rgb(30,40,60)",
+      foregroundColor: (brand.foregroundColor as string) ?? "rgb(255,255,255)",
+      labelColor: brand.labelColor as string | undefined,
       // Strip any trailing slash: Apple appends "/v1/..." to webServiceURL, so a
       // trailing slash yields ".../wallet//v1/..." (double slash) which 404s and
       // breaks device registration -> no APNs push -> the card never updates.
-      webServiceUrl:      deps.config.WALLET_WEB_SERVICE_URL.replace(/\/+$/, ""),
-      fieldDefinitions:   [
+      webServiceUrl: deps.config.WALLET_WEB_SERVICE_URL.replace(/\/+$/, ""),
+      fieldDefinitions: [
         ...mapRegion(brand.headerFields, "header"),
         ...mapRegion(brand.primaryFields, "primary"),
         ...mapRegion(brand.secondaryFields, "secondary"),
         ...mapRegion(brand.auxiliaryFields, "auxiliary"),
       ],
-      imageAssetRefs:     {
-        icon:  (brand.iconRef as string) ?? "",
-        logo:  (brand.logoRef as string) ?? "",
+      imageAssetRefs: {
+        icon: (brand.iconRef as string) ?? "",
+        logo: (brand.logoRef as string) ?? "",
         strip: (brand.stripRef as string) ?? "",
       },
     };
@@ -114,11 +116,11 @@ export const registerPassIssuance: ContextModule = async (app, deps) => {
    * Expected payload: { memberId, tenantId, newBalance, newTier? }
    */
   deps.bus.subscribe("PointsEarned", async (event) => {
-    const p          = event.payload as Record<string, unknown>;
-    const memberId   = p.memberId as string;
-    const tenantId   = p.tenantId as string;
+    const p = event.payload as Record<string, unknown>;
+    const memberId = p.memberId as string;
+    const tenantId = p.tenantId as string;
     const newBalance = p.newBalance as number;
-    const newTier    = p.newTier as string | undefined;
+    const newTier = p.newTier as string | undefined;
 
     // Resolve the exact pass by passId (the reliable pass<->member link). The
     // pass's member_id is the enrollment UUID, which differs from the membership
@@ -126,13 +128,15 @@ export const registerPassIssuance: ContextModule = async (app, deps) => {
     // legacy events emitted before passId was added.
     const passId = p.passId as string | undefined;
     const passes = passId
-      ? [await passRepo.findById(passId, tenantId)].filter((x): x is NonNullable<typeof x> => x !== null)
+      ? [await passRepo.findById(passId, tenantId)].filter(
+          (x): x is NonNullable<typeof x> => x !== null,
+        )
       : await passRepo.findByMemberId(memberId, tenantId);
     for (const pass of passes) {
       if (pass.voided) continue;
       const updated = applyEarnedPoints(pass.fieldValues, newBalance, newTier);
       const r = await updatePassFields.execute({
-        passId:      pass.id.value,
+        passId: pass.id.value,
         tenantId,
         fieldValues: updated,
       });

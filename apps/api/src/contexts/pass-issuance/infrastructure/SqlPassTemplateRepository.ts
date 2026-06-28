@@ -2,27 +2,24 @@ import type { Pool, PoolClient } from "pg";
 import type { IPassTemplateRepository, PassTemplateDto, FieldDefinition } from "../domain/ports";
 
 async function setTenant(client: PoolClient, tenantId: string): Promise<void> {
-  await client.query(
-    "SELECT set_config('app.current_tenant', $1, true)",
-    [tenantId],
-  );
+  await client.query("SELECT set_config('app.current_tenant', $1, true)", [tenantId]);
 }
 
 function rowToDto(row: Record<string, unknown>): PassTemplateDto {
   return {
-    id:                  row.id as string,
-    tenantId:            row.tenant_id as string,
-    passTypeIdentifier:  row.pass_type_identifier as string,
-    teamIdentifier:      row.team_identifier as string,
-    organizationName:    row.organization_name as string,
-    description:         row.description as string,
-    logoText:            (row.logo_text as string | null) ?? undefined,
-    backgroundColor:     row.background_color as string,
-    foregroundColor:     row.foreground_color as string,
-    labelColor:          (row.label_color as string | null) ?? undefined,
-    webServiceUrl:       row.web_service_url as string,
-    fieldDefinitions:    JSON.parse(row.field_definitions as string) as FieldDefinition[],
-    imageAssetRefs:      JSON.parse(row.image_asset_refs as string) as Record<string, string>,
+    id: row.id as string,
+    tenantId: row.tenant_id as string,
+    passTypeIdentifier: row.pass_type_identifier as string,
+    teamIdentifier: row.team_identifier as string,
+    organizationName: row.organization_name as string,
+    description: row.description as string,
+    logoText: (row.logo_text as string | null) ?? undefined,
+    backgroundColor: row.background_color as string,
+    foregroundColor: row.foreground_color as string,
+    labelColor: (row.label_color as string | null) ?? undefined,
+    webServiceUrl: row.web_service_url as string,
+    fieldDefinitions: JSON.parse(row.field_definitions as string) as FieldDefinition[],
+    imageAssetRefs: JSON.parse(row.image_asset_refs as string) as Record<string, string>,
   };
 }
 
@@ -51,7 +48,9 @@ export class SqlPassTemplateRepository implements IPassTemplateRepository {
         [id, tenantId],
       );
       return res.rows.length ? rowToDto(res.rows[0]) : null;
-    } finally { client.release(); }
+    } finally {
+      client.release();
+    }
   }
 
   async upsert(dto: PassTemplateDto): Promise<void> {
@@ -93,6 +92,8 @@ export class SqlPassTemplateRepository implements IPassTemplateRepository {
           JSON.stringify(dto.imageAssetRefs),
         ],
       );
-    } finally { client.release(); }
+    } finally {
+      client.release();
+    }
   }
 }

@@ -29,9 +29,7 @@ export class GetUpdatedSerialsHandler {
     let since: Date | undefined;
     if (q.passesUpdatedSince) {
       const epoch = Number(q.passesUpdatedSince);
-      since = Number.isFinite(epoch)
-        ? new Date(epoch * 1000)
-        : new Date(q.passesUpdatedSince);
+      since = Number.isFinite(epoch) ? new Date(epoch * 1000) : new Date(q.passesUpdatedSince);
       if (Number.isNaN(since.getTime())) {
         since = undefined;
       }

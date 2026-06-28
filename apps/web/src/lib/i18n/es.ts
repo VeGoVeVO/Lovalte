@@ -34,7 +34,8 @@ export const ES: Record<string, string> = {
   "Failed to load members: {message}": "No se han podido cargar los clientes: {message}",
   "Unknown error": "Error desconocido",
   "Loading members": "Cargando clientes",
-  "No members yet - issue a card to get started.": "Aún no tienes clientes, emite una tarjeta para empezar.",
+  "No members yet - issue a card to get started.":
+    "Aún no tienes clientes, emite una tarjeta para empezar.",
   "Members appear here once a loyalty card has been issued to a customer.":
     "Los clientes aparecen aquí cuando se les emite una tarjeta de fidelidad.",
   Name: "Nombre",
@@ -123,7 +124,8 @@ export const ES: Record<string, string> = {
   "How it works": "Cómo funciona",
   Pricing: "Precios",
   "Loyalty in Apple Wallet": "Fidelidad en Apple Wallet",
-  "Loyalty cards your customers actually keep.": "Tarjetas de fidelidad que tus clientes guardan de verdad.",
+  "Loyalty cards your customers actually keep.":
+    "Tarjetas de fidelidad que tus clientes guardan de verdad.",
   "Lovalte turns paper punch cards into a beautiful pass in Apple Wallet. Design your card, share one QR, and watch repeat visits grow - nothing for customers to install.":
     "Lovalte convierte las tarjetas de papel en un pase bonito en Apple Wallet. Diseña tu tarjeta, comparte un QR y mira cómo crecen las visitas repetidas, sin que tus clientes tengan que instalar nada.",
   "Get started": "Empezar",
@@ -164,7 +166,8 @@ export const ES: Record<string, string> = {
   "Couldn't set up your card": "No hemos podido preparar tu tarjeta",
   "This enrollment link is invalid or expired.": "Este enlace de alta no es válido o ha caducado.",
   "This enrollment link is missing its code.": "A este enlace de alta le falta el código.",
-  "Your loyalty card is ready. Add it to Apple Wallet:": "Tu tarjeta de fidelidad está lista. Añádela a Apple Wallet:",
+  "Your loyalty card is ready. Add it to Apple Wallet:":
+    "Tu tarjeta de fidelidad está lista. Añádela a Apple Wallet:",
   "Add to Apple Wallet": "Añadir a Apple Wallet",
   "Add to Apple Wallet - downloads your pass": "Añadir a Apple Wallet (descarga tu pase)",
   "On iPhone this opens straight in Wallet. If nothing happens, open this page in Safari.":
@@ -174,7 +177,8 @@ export const ES: Record<string, string> = {
   "your business": "tu negocio",
   "Loyalty card": "Tarjeta de fidelidad",
   "Loyalty card preview for {name}": "Vista previa de la tarjeta de {name}",
-  "Loyalty cards in Apple Wallet · lovalte.com": "Tarjetas de fidelidad en Apple Wallet · lovalte.com",
+  "Loyalty cards in Apple Wallet · lovalte.com":
+    "Tarjetas de fidelidad en Apple Wallet · lovalte.com",
 
   // ── Issue a pass ─────────────────────────────────────────────────────
   "Issue a Wallet Pass": "Emitir una tarjeta de Wallet",
@@ -185,14 +189,16 @@ export const ES: Record<string, string> = {
     "Aún no tienes tarjetas publicadas. Crea y publica una tarjeta en el editor primero.",
   "Create enrollment QR": "Crear QR de alta",
   "Enrollment QR": "QR de alta",
-  "Customers scan this to get their loyalty card": "Tus clientes lo escanean para conseguir su tarjeta de fidelidad",
+  "Customers scan this to get their loyalty card":
+    "Tus clientes lo escanean para conseguir su tarjeta de fidelidad",
   "Issue one to a walk-in": "Emite una a alguien que entra",
   "Issued pass": "Tarjeta emitida",
   "Issuing…": "Emitiendo…",
   "Pass issued - member {memberId}.": "Tarjeta emitida, cliente {memberId}.",
   "Pass signing isn't fully configured yet (Apple certificate / card icon). Check the card has an icon and the certs are set.":
     "La firma del pase aún no está del todo configurada (certificado de Apple o icono de la tarjeta). Comprueba que la tarjeta tiene icono y que los certificados están puestos.",
-  "Add to Apple Wallet - downloads the .pkpass file": "Añadir a Apple Wallet (descarga el archivo .pkpass)",
+  "Add to Apple Wallet - downloads the .pkpass file":
+    "Añadir a Apple Wallet (descarga el archivo .pkpass)",
 
   // ── Card builder ─────────────────────────────────────────────────────
   "Card Builder": "Editor de tarjetas",
@@ -201,8 +207,10 @@ export const ES: Record<string, string> = {
   "Edit: {name}": "Editando: {name}",
   "Edit template: {name}": "Editar plantilla: {name}",
   "Loading templates…": "Cargando plantillas…",
-  "Could not load templates. Please refresh.": "No se han podido cargar las plantillas. Actualiza la página.",
-  "No templates yet - create your first loyalty card.": "Aún no tienes plantillas, crea tu primera tarjeta de fidelidad.",
+  "Could not load templates. Please refresh.":
+    "No se han podido cargar las plantillas. Actualiza la página.",
+  "No templates yet - create your first loyalty card.":
+    "Aún no tienes plantillas, crea tu primera tarjeta de fidelidad.",
   "Back to templates list": "Volver a la lista de plantillas",
   "Card settings": "Ajustes de la tarjeta",
   "Card images": "Imágenes de la tarjeta",
@@ -256,8 +264,10 @@ export const ES: Record<string, string> = {
   "Search icons - e.g. coffee, star, gift": "Busca iconos, p. ej. café, estrella, regalo",
   "Search {n} icons": "Buscar entre {n} iconos",
   "No icons match - try another word.": "Ningún icono coincide, prueba con otra palabra.",
-  "Popular icons · {n} in total - search to find any.": "Iconos populares · {n} en total, busca para encontrar cualquiera.",
-  "Showing {shown} of {total} - keep typing to narrow.": "Mostrando {shown} de {total}, sigue escribiendo para afinar.",
+  "Popular icons · {n} in total - search to find any.":
+    "Iconos populares · {n} en total, busca para encontrar cualquiera.",
+  "Showing {shown} of {total} - keep typing to narrow.":
+    "Mostrando {shown} de {total}, sigue escribiendo para afinar.",
   "Could not save icon.": "No se ha podido guardar el icono.",
   "{n} icons.": "{n} iconos.",
   "1 icon.": "1 icono.",
@@ -274,7 +284,8 @@ export const ES: Record<string, string> = {
   "{label} color": "Color de {label}",
   "No data for this period.": "No hay datos para este periodo.",
   "No {metric} data for this period": "No hay datos de {metric} para este periodo",
-  "Failed to load chart data. Please try again.": "No se han podido cargar los datos del gráfico. Inténtalo de nuevo.",
+  "Failed to load chart data. Please try again.":
+    "No se han podido cargar los datos del gráfico. Inténtalo de nuevo.",
   "Loading chart data": "Cargando datos del gráfico",
   "{metric} timeseries line chart": "Gráfico de líneas de {metric} a lo largo del tiempo",
   loading: "cargando",
@@ -291,7 +302,8 @@ export const ES: Record<string, string> = {
   "Requesting camera permission…": "Pidiendo permiso de la cámara…",
   "Scanning for QR code…": "Buscando el código QR…",
   "Camera viewfinder": "Visor de la cámara",
-  "Hold the customer's card QR inside the frame": "Coloca el QR de la tarjeta del cliente dentro del marco",
+  "Hold the customer's card QR inside the frame":
+    "Coloca el QR de la tarjeta del cliente dentro del marco",
   "QR detected": "QR detectado",
   "Scanned QR code": "Código QR escaneado",
   "Card detected - award or redeem below.": "Tarjeta detectada, suma o canjea puntos abajo.",
@@ -313,7 +325,8 @@ export const ES: Record<string, string> = {
   "QR Token": "Token del QR",
   "QR token": "Token del QR",
   "Paste QR token here": "Pega aquí el token del QR",
-  "Could not load cards. Refresh the page.": "No se han podido cargar las tarjetas. Actualiza la página.",
+  "Could not load cards. Refresh the page.":
+    "No se han podido cargar las tarjetas. Actualiza la página.",
   "Loading cards…": "Cargando tarjetas…",
 
   // ── Landing feature cards + steps (rendered from const arrays) ───────
@@ -327,11 +340,14 @@ export const ES: Record<string, string> = {
   "A live dashboard of members, visits, redemptions and points liability - across every location.":
     "Un panel en tiempo real de clientes, visitas, canjes y puntos emitidos, en todos tus locales.",
   Build: "Crea",
-  "Design your loyalty card and set the reward.": "Diseña tu tarjeta de fidelidad y define la recompensa.",
+  "Design your loyalty card and set the reward.":
+    "Diseña tu tarjeta de fidelidad y define la recompensa.",
   Share: "Comparte",
-  "Customers add it to Apple Wallet in one tap.": "Tus clientes la añaden a Apple Wallet con un toque.",
+  "Customers add it to Apple Wallet in one tap.":
+    "Tus clientes la añaden a Apple Wallet con un toque.",
   Grow: "Crece",
-  "Scan, reward, and watch repeat visits add up.": "Escanea, premia y mira cómo se acumulan las visitas.",
+  "Scan, reward, and watch repeat visits add up.":
+    "Escanea, premia y mira cómo se acumulan las visitas.",
 
   // ── Analytics metric / KPI labels (rendered from const arrays) ───────
   "Points Earned": "Puntos ganados",

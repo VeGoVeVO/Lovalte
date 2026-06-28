@@ -19,11 +19,68 @@ export function AmbientBackground() {
           sits at zIndex >= 1 above. mix-blend-mode is dropped: on iOS it breaks
           backdrop-filter compositing (cards rendered flat white) and isn't
           needed for the soft pastel look over the near-white canvas. */}
-      <div aria-hidden="true" style={{ position: "fixed", inset: 0, zIndex: 0, overflow: "hidden", pointerEvents: "none" }}>
-        <div className="lvt-orb" style={{ top: "-15%", left: "-10%", width: "60vw", height: "60vw", background: "#A9F5FF", opacity: 0.40, filter: "blur(120px)", animation: "lvtDrift1 35s ease-in-out infinite" }} />
-        <div className="lvt-orb" style={{ top: "10%", right: "-15%", width: "55vw", height: "55vw", background: "#FFDDF4", opacity: 0.40, filter: "blur(140px)", animation: "lvtDrift2 42s ease-in-out infinite" }} />
-        <div className="lvt-orb" style={{ bottom: "-25%", left: "5%", width: "70vw", height: "70vw", background: "#E5D8FF", opacity: 0.40, filter: "blur(160px)", animation: "lvtDrift1 48s ease-in-out infinite reverse" }} />
-        <div className="lvt-orb" style={{ top: "30%", left: "25%", width: "55vw", height: "55vw", background: "#C8EEFF", opacity: 0.35, filter: "blur(130px)", animation: "lvtDrift3 30s ease-in-out infinite alternate" }} />
+      <div
+        aria-hidden="true"
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 0,
+          overflow: "hidden",
+          pointerEvents: "none",
+        }}
+      >
+        <div
+          className="lvt-orb"
+          style={{
+            top: "-15%",
+            left: "-10%",
+            width: "60vw",
+            height: "60vw",
+            background: "#A9F5FF",
+            opacity: 0.4,
+            filter: "blur(120px)",
+            animation: "lvtDrift1 35s ease-in-out infinite",
+          }}
+        />
+        <div
+          className="lvt-orb"
+          style={{
+            top: "10%",
+            right: "-15%",
+            width: "55vw",
+            height: "55vw",
+            background: "#FFDDF4",
+            opacity: 0.4,
+            filter: "blur(140px)",
+            animation: "lvtDrift2 42s ease-in-out infinite",
+          }}
+        />
+        <div
+          className="lvt-orb"
+          style={{
+            bottom: "-25%",
+            left: "5%",
+            width: "70vw",
+            height: "70vw",
+            background: "#E5D8FF",
+            opacity: 0.4,
+            filter: "blur(160px)",
+            animation: "lvtDrift1 48s ease-in-out infinite reverse",
+          }}
+        />
+        <div
+          className="lvt-orb"
+          style={{
+            top: "30%",
+            left: "25%",
+            width: "55vw",
+            height: "55vw",
+            background: "#C8EEFF",
+            opacity: 0.35,
+            filter: "blur(130px)",
+            animation: "lvtDrift3 30s ease-in-out infinite alternate",
+          }}
+        />
       </div>
     </>
   );

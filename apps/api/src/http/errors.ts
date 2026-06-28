@@ -21,21 +21,32 @@ export function registerErrorHandler(app: FastifyInstance): void {
     }
     if ((error as { name?: string }).name === "ZodError") {
       return reply.status(400).send({
-        error: { code: "VALIDATION", message: "Invalid request", details: (error as unknown as { issues: unknown }).issues },
+        error: {
+          code: "VALIDATION",
+          message: "Invalid request",
+          details: (error as unknown as { issues: unknown }).issues,
+        },
       });
     }
     const statusCode = (error as { statusCode?: number }).statusCode;
     if (statusCode === 429) {
-      return reply.status(429).send({ error: { code: "RATE_LIMITED", message: "Too many requests" } });
+      return reply
+        .status(429)
+        .send({ error: { code: "RATE_LIMITED", message: "Too many requests" } });
     }
     // Honor framework/client errors (bad content-type, malformed body, etc.) as 4xx
     // instead of masking them as 500s.
     if (typeof statusCode === "number" && statusCode >= 400 && statusCode < 500) {
       return reply.status(statusCode).send({
-        error: { code: (error as { code?: string }).code ?? "BAD_REQUEST", message: (error as Error).message },
+        error: {
+          code: (error as { code?: string }).code ?? "BAD_REQUEST",
+          message: (error as Error).message,
+        },
       });
     }
     app.log.error(error);
-    return reply.status(500).send({ error: { code: "INTERNAL", message: "Internal Server Error" } });
+    return reply
+      .status(500)
+      .send({ error: { code: "INTERNAL", message: "Internal Server Error" } });
   });
 }

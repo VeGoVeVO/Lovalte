@@ -16,9 +16,8 @@ export function Hero({ discRef }) {
               Light that knows the hour.
             </h1>
             <p className="lead">
-              Halo is a single piece of glass that lights your space to match the
-              day. It warms as the sun sets, quiets when the room is empty, and
-              asks nothing of you.
+              Halo is a single piece of glass that lights your space to match the day. It warms as
+              the sun sets, quiets when the room is empty, and asks nothing of you.
             </p>
             <div className="hero-actions">
               <GlassButton onClick={() => scrollTo("waitlist")}>

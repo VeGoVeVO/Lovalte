@@ -30,7 +30,7 @@ function makeTemplate(brandOverrides: Partial<BrandConfigParams> = {}): CardTemp
     "tenant-abc",
     "Loyalty Card",
     makeBrand(brandOverrides),
-    makeRule()
+    makeRule(),
   );
 }
 

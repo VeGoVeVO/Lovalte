@@ -9,9 +9,9 @@ interface InvitationProps {
   tenantId: string;
   email: string;
   role: InvitationRole;
-  tokenHash: string;  // HMAC-SHA256 hex of the rawToken
+  tokenHash: string; // HMAC-SHA256 hex of the rawToken
   expiresAt: Date;
-  invitedBy: string;  // UserId
+  invitedBy: string; // UserId
   usedAt: Date | null;
   createdAt: Date;
 }
@@ -26,7 +26,10 @@ export class Invitation extends Entity<InvitationId> {
 
   private _usedAt: Date | null;
 
-  private constructor(id: InvitationId, private readonly props: InvitationProps) {
+  private constructor(
+    id: InvitationId,
+    private readonly props: InvitationProps,
+  ) {
     super(id);
     this._usedAt = props.usedAt;
   }
@@ -44,10 +47,7 @@ export class Invitation extends Entity<InvitationId> {
   }): { invitation: Invitation; rawToken: string } {
     const id = InvitationId.create();
     const rawToken = crypto.randomBytes(32).toString("hex");
-    const tokenHash = crypto
-      .createHmac("sha256", params.hmacSecret)
-      .update(rawToken)
-      .digest("hex");
+    const tokenHash = crypto.createHmac("sha256", params.hmacSecret).update(rawToken).digest("hex");
     const now = new Date();
     const invitation = new Invitation(id, {
       tenantId: params.tenantId,
@@ -69,10 +69,7 @@ export class Invitation extends Entity<InvitationId> {
 
   /** Timing-safe HMAC verification of a raw token against the stored hash. */
   static verifyToken(rawToken: string, storedHash: string, hmacSecret: string): boolean {
-    const expected = crypto
-      .createHmac("sha256", hmacSecret)
-      .update(rawToken)
-      .digest("hex");
+    const expected = crypto.createHmac("sha256", hmacSecret).update(rawToken).digest("hex");
     if (expected.length !== storedHash.length) return false;
     return crypto.timingSafeEqual(Buffer.from(expected, "hex"), Buffer.from(storedHash, "hex"));
   }
@@ -87,14 +84,34 @@ export class Invitation extends Entity<InvitationId> {
     this._usedAt = new Date();
   }
 
-  get tenantId(): string { return this.props.tenantId; }
-  get email(): string { return this.props.email; }
-  get role(): InvitationRole { return this.props.role; }
-  get tokenHash(): string { return this.props.tokenHash; }
-  get expiresAt(): Date { return this.props.expiresAt; }
-  get invitedBy(): string { return this.props.invitedBy; }
-  get usedAt(): Date | null { return this._usedAt; }
-  get createdAt(): Date { return this.props.createdAt; }
-  get isExpired(): boolean { return new Date() > this.props.expiresAt; }
-  get isUsed(): boolean { return this._usedAt !== null; }
+  get tenantId(): string {
+    return this.props.tenantId;
+  }
+  get email(): string {
+    return this.props.email;
+  }
+  get role(): InvitationRole {
+    return this.props.role;
+  }
+  get tokenHash(): string {
+    return this.props.tokenHash;
+  }
+  get expiresAt(): Date {
+    return this.props.expiresAt;
+  }
+  get invitedBy(): string {
+    return this.props.invitedBy;
+  }
+  get usedAt(): Date | null {
+    return this._usedAt;
+  }
+  get createdAt(): Date {
+    return this.props.createdAt;
+  }
+  get isExpired(): boolean {
+    return new Date() > this.props.expiresAt;
+  }
+  get isUsed(): boolean {
+    return this._usedAt !== null;
+  }
 }

@@ -70,7 +70,10 @@ export function MetricsChart({ data, metricLabel, isLoading, isError }: MetricsC
 
   if (data.length === 0) {
     return (
-      <div style={centeredBox} aria-label={t("No {metric} data for this period", { metric: metricLabel })}>
+      <div
+        style={centeredBox}
+        aria-label={t("No {metric} data for this period", { metric: metricLabel })}
+      >
         <span className="body">{t("No data for this period.")}</span>
       </div>
     );
@@ -82,11 +85,7 @@ export function MetricsChart({ data, metricLabel, isLoading, isError }: MetricsC
     <div aria-label={t("{metric} timeseries line chart", { metric: metricLabel })}>
       <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
         <LineChart data={chartData} margin={{ top: 4, right: 12, bottom: 4, left: 0 }}>
-          <CartesianGrid
-            strokeDasharray="3 4"
-            stroke="rgba(111,118,132,.14)"
-            vertical={false}
-          />
+          <CartesianGrid strokeDasharray="3 4" stroke="rgba(111,118,132,.14)" vertical={false} />
           <XAxis
             dataKey="day"
             tick={{ fill: "var(--muted)", fontSize: 11 }}

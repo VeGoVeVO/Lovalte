@@ -56,7 +56,7 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
           /* private mode / storage disabled - language still applies for the session */
         }
       },
-      t: (en, vars) => interpolate(locale === "es" ? ES[en] ?? en : en, vars),
+      t: (en, vars) => interpolate(locale === "es" ? (ES[en] ?? en) : en, vars),
     }),
     [locale],
   );

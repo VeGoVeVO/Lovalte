@@ -9,7 +9,7 @@ import type { UserRole } from "../domain/User";
 import type { IInvitationRepository, IIdentityTxRunner } from "./ports";
 
 export interface AcceptInvitationInput {
-  token: string;    // raw HMAC token from the invitation link
+  token: string; // raw HMAC token from the invitation link
   password: string;
   hmacSecret: string;
 }
@@ -30,7 +30,7 @@ export class AcceptInvitationHandler {
   constructor(
     private readonly invitations: IInvitationRepository,
     private readonly txRunner: IIdentityTxRunner,
-    private readonly bus: DomainEventBus
+    private readonly bus: DomainEventBus,
   ) {}
 
   async execute(input: AcceptInvitationInput): Promise<Result<AcceptInvitationOutput>> {
