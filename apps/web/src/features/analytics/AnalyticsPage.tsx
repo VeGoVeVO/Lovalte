@@ -111,9 +111,20 @@ const layoutCss = `
 .lvt-staff-sidebar.open {
   width: 284px;
 }
+/* Keep inner content mounted — rely on parent width for hide/show so close is smooth.
+   Opacity fades in on open (delayed 60ms to follow width) and out on close. */
 .lvt-staff-inner {
   width: 284px;
-  animation: lvt-staff-in 360ms cubic-bezier(.22,1,.36,1) both;
+  opacity: 0;
+  transform: translateX(12px);
+  transition: opacity 260ms cubic-bezier(.22,1,.36,1) 0ms,
+              transform 260ms cubic-bezier(.22,1,.36,1) 0ms;
+}
+.lvt-staff-sidebar.open .lvt-staff-inner {
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity 300ms cubic-bezier(.22,1,.36,1) 60ms,
+              transform 300ms cubic-bezier(.22,1,.36,1) 60ms;
 }
 .lvt-team-btn {
   display: inline-flex;
@@ -161,17 +172,18 @@ function StaffSidebar({ open, onClose }: { open: boolean; onClose: () => void })
   const { data: users, isLoading, isError } = useQuery({
     queryKey: ["staff-users"],
     queryFn: () => api.get<UserDTO[]>("/api/v1/users"),
-    enabled: open,
+    enabled: open,  // only fetch once sidebar is opened
     staleTime: 60_000,
   });
 
   return (
     <aside
+      id="staff-sidebar"
       className={`lvt-staff-sidebar${open ? " open" : ""}`}
       aria-label={t("Team")}
       aria-hidden={!open}
     >
-      {open && (
+      {/* Always mounted — parent width transition handles show/hide smoothly */}
         <div className="lvt-staff-inner">
           <GlassCard light className="feature" style={{ padding: "1.25rem 1.1rem" }}>
             {/* header */}
@@ -298,7 +310,6 @@ function StaffSidebar({ open, onClose }: { open: boolean; onClose: () => void })
             )}
           </GlassCard>
         </div>
-      )}
     </aside>
   );
 }
