@@ -19,11 +19,13 @@ echo "==> Running database migrations"
 $C run --rm api node dist/db/migrate.js
 
 echo "==> Starting / updating services"
-# An interrupted recreate can leave a half-renamed container (e.g.
-# <hash>_lovalte-api-1) that blocks the next `up` with a name conflict. Clear
-# any non-running project containers first; the live ones are untouched.
-stale=$(docker ps -aq --filter "name=lovalte-" --filter "status=created" --filter "status=exited" --filter "status=dead")
-[ -n "$stale" ] && docker rm -f $stale || true
+# An interrupted recreate leaves a backup container named "<hash>_lovalte-<svc>"
+# that blocks the next `up` with a name conflict. The leading-underscore filter
+# matches ONLY those hash-prefixed backups (real containers are "lovalte-<svc>",
+# no "_lovalte"), so we can force-remove them in any state without touching the
+# live stack.
+backups=$(docker ps -aq --filter "name=_lovalte-")
+[ -n "$backups" ] && docker rm -f $backups || true
 $C up -d --remove-orphans
 
 echo "==> Pruning old images"
