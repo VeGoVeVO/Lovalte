@@ -471,7 +471,14 @@ export function BuilderPage() {
             <legend className="eyebrow" style={{ marginBottom: "0.5rem" }}>
               {t("Colors")}
             </legend>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0.6rem" }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+                gap: "0.7rem",
+                alignItems: "start",
+              }}
+            >
               {colorFields.map(({ label, id, field }) => (
                 <div key={id} style={{ minWidth: 0 }}>
                   <label
@@ -496,7 +503,13 @@ export function BuilderPage() {
             <legend className="eyebrow" style={{ marginBottom: "0.5rem" }}>
               {t("Primary field *")}
             </legend>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+                gap: "0.5rem",
+              }}
+            >
               <GlassInput
                 value={form.pLabel}
                 placeholder={t("Label (e.g. POINTS)")}
@@ -551,7 +564,13 @@ export function BuilderPage() {
             valuePlaceholder={t("Value")}
           />
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+              gap: "0.75rem",
+            }}
+          >
             <div>
               <Lbl htmlFor="f-ppv" text={t("Points per visit")} />
               <GlassInput

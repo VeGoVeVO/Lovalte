@@ -40,15 +40,15 @@ export const css = `
   --d-slow:480ms;
   --ease:cubic-bezier(.22,1,.36,1);
 
-  /* ── shadow tokens - extremely soft, layered, faint blue ── */
+  /* ── shadow tokens - layered, faint blue, clearly lifted off the canvas ── */
   --shadow-soft:
-    0 1px 0 rgba(255,255,255,.7) inset,
-    0 2px 6px -3px rgba(46,62,92,.10),
-    0 16px 40px -26px rgba(46,62,92,.22);
+    0 1px 0 rgba(255,255,255,.8) inset,
+    0 2px 8px -2px rgba(46,62,92,.16),
+    0 14px 30px -16px rgba(46,62,92,.34);
   --shadow-lift:
-    0 1px 0 rgba(255,255,255,.85) inset,
-    0 6px 16px -8px rgba(46,62,92,.16),
-    0 40px 72px -40px rgba(46,62,92,.30);
+    0 1px 0 rgba(255,255,255,.9) inset,
+    0 8px 20px -8px rgba(46,62,92,.24),
+    0 34px 60px -30px rgba(46,62,92,.42);
 
   /* ── spacing scale ──────────────────────────────────────── */
   --s-1:.5rem; --s-2:1rem; --s-3:1.5rem; --s-4:2rem; --s-6:3rem; --s-8:5rem;

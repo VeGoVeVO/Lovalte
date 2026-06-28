@@ -146,6 +146,9 @@ export function CardPreview({
       style={{
         width: "100%",
         maxWidth: 375,
+        minHeight: 480,
+        display: "flex",
+        flexDirection: "column",
         background: bg,
         color: fg,
         borderRadius: 13,
@@ -153,7 +156,7 @@ export function CardPreview({
         fontFamily: FONT,
         userSelect: "none",
         boxShadow:
-          "0 1px 0 rgba(255,255,255,.10) inset, 0 24px 60px -28px rgba(0,0,0,.55), 0 6px 18px -10px rgba(0,0,0,.35)",
+          "0 1px 0 rgba(255,255,255,.10) inset, 0 28px 70px -26px rgba(0,0,0,.6), 0 8px 22px -10px rgba(0,0,0,.4)",
       }}
     >
       {/* ── Header: logo + logoText (left) · header fields (right) ── */}
@@ -220,7 +223,7 @@ export function CardPreview({
         )}
       </div>
 
-      {/* ── Primary field — overlaid on the strip image, or on the background ── */}
+      {/* ── Primary field — value on TOP, label beneath (matches Apple Wallet) ── */}
       {stripUrl ? (
         <div
           style={{
@@ -236,42 +239,49 @@ export function CardPreview({
             style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
           />
           <div style={{ position: "absolute", left: 16, bottom: 12, right: 16, minWidth: 0 }}>
-            <div style={{ ...labelStyle, color: lbl }}>{primaryLabel || "POINTS"}</div>
             <div
               style={{
-                fontSize: 30,
+                fontSize: 42,
                 fontWeight: 700,
                 lineHeight: 1,
                 color: fg,
-                letterSpacing: "-0.02em",
+                letterSpacing: "-0.03em",
               }}
             >
               {pValue}
             </div>
+            <div style={{ ...labelStyle, fontSize: 13, color: lbl, marginTop: 3 }}>
+              {primaryLabel || "POINTS"}
+            </div>
           </div>
         </div>
       ) : (
-        <div style={{ padding: "2px 16px 12px" }}>
-          <div style={{ ...labelStyle, marginBottom: 4 }}>{primaryLabel || "POINTS"}</div>
+        <div style={{ padding: "4px 16px 14px" }}>
           <div
             style={{
-              fontSize: 34,
+              fontSize: 62,
               fontWeight: 700,
               lineHeight: 1,
               color: fg,
-              letterSpacing: "-0.03em",
+              letterSpacing: "-0.04em",
             }}
           >
             {pValue}
+          </div>
+          <div style={{ ...labelStyle, fontSize: 15, letterSpacing: "0.03em", marginTop: 6 }}>
+            {primaryLabel || "POINTS"}
           </div>
         </div>
       )}
 
       {/* ── Secondary + auxiliary field rows ── */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: "12px 0 4px" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: "4px 0" }}>
         <FieldRow fields={secondaryFields} labelStyle={labelStyle} valueStyle={valueStyle} />
         <FieldRow fields={auxiliaryFields} labelStyle={labelStyle} valueStyle={valueStyle} />
       </div>
+
+      {/* Spacer: pushes the barcode to the bottom like a real tall pass. */}
+      <div style={{ flex: 1, minHeight: 16 }} />
 
       {/* ── Barcode centered on a white quiet-zone, altText below ── */}
       <div
