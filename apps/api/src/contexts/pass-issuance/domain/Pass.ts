@@ -114,6 +114,7 @@ export class Pass extends AggregateRoot<PassId> {
     this._lastUpdated = now;
     this._version    += 1;
     this.addEvent(this.makeEvent("PassFieldsUpdated", {
+      passId:   this.id.value,
       serial:   this._serialNumber.value,
       tenantId: this._tenantId,
       version:  this._version,
