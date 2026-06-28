@@ -87,7 +87,10 @@ export const registerPassIssuance: ContextModule = async (app, deps) => {
       backgroundColor:    (brand.backgroundColor as string) ?? "rgb(30,40,60)",
       foregroundColor:    (brand.foregroundColor as string) ?? "rgb(255,255,255)",
       labelColor:         (brand.labelColor as string | undefined),
-      webServiceUrl:      deps.config.WALLET_WEB_SERVICE_URL,
+      // Strip any trailing slash: Apple appends "/v1/..." to webServiceURL, so a
+      // trailing slash yields ".../wallet//v1/..." (double slash) which 404s and
+      // breaks device registration -> no APNs push -> the card never updates.
+      webServiceUrl:      deps.config.WALLET_WEB_SERVICE_URL.replace(/\/+$/, ""),
       fieldDefinitions:   [
         ...mapRegion(brand.headerFields, "header"),
         ...mapRegion(brand.primaryFields, "primary"),
