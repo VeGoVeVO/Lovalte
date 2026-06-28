@@ -81,7 +81,7 @@ export function FieldListEditor({
             <button
               type="button"
               className="btn ghost"
-              aria-label={t("Remove field")}
+              aria-label={t("Remove {title} field {n}", { title, n: i + 1 })}
               onClick={() => removeRow(i)}
               style={{ flexShrink: 0, padding: "0.4rem 0.6rem", lineHeight: 0 }}
             >

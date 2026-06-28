@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "./api";
@@ -96,6 +96,7 @@ export function AppShell({ title, children }: { title?: string; children: ReactN
   const qc = useQueryClient();
   const { t } = useT();
   const [moreOpen, setMoreOpen] = useState(false);
+  const moreTriggerRef = useRef<HTMLButtonElement>(null);
   const logout = useMutation({
     mutationFn: () => api.post("/api/v1/auth/logout"),
     onSettled: () => {
@@ -159,8 +160,10 @@ export function AppShell({ title, children }: { title?: string; children: ReactN
           </Link>
           <div style={{ position: "relative" }}>
             <button
+              ref={moreTriggerRef}
               type="button"
               aria-label={t("More")}
+              aria-haspopup="menu"
               aria-expanded={moreOpen}
               onClick={() => setMoreOpen((o) => !o)}
               style={{
@@ -195,7 +198,16 @@ export function AppShell({ title, children }: { title?: string; children: ReactN
                   onClick={() => setMoreOpen(false)}
                   style={{ position: "fixed", inset: 0, zIndex: 55 }}
                 />
-                <div className="lvt-more-menu" role="menu">
+                <div
+                  className="lvt-more-menu"
+                  role="menu"
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") {
+                      setMoreOpen(false);
+                      moreTriggerRef.current?.focus();
+                    }
+                  }}
+                >
                   {MORE.map((m) => (
                     <Link key={m.to} role="menuitem" to={m.to} onClick={() => setMoreOpen(false)}>
                       {t(m.label)}

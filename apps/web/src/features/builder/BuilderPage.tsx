@@ -395,8 +395,11 @@ export function BuilderPage() {
   const isBusy = createMut.isPending || updateMut.isPending;
   const saved = editing !== "new" ? (editing as CardTemplateDTO) : null;
   const isPublished = saved?.status === "published";
-  // storeCard renders secondary + auxiliary from one shared pool of 4.
+  // storeCard renders secondary + auxiliary from one shared pool of 4. Each
+  // region's cap is what's left after the other, so the (n/max) counter is honest.
   const secAuxFull = form.secondaryFields.length + form.auxiliaryFields.length >= 4;
+  const secMax = 4 - form.auxiliaryFields.length;
+  const auxMax = 4 - form.secondaryFields.length;
 
   const colorFields = [
     { label: "Background", id: "bg", field: "bgHex" as keyof Form },
@@ -470,7 +473,7 @@ export function BuilderPage() {
             </legend>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0.6rem" }}>
               {colorFields.map(({ label, id, field }) => (
-                <div key={id}>
+                <div key={id} style={{ minWidth: 0 }}>
                   <label
                     htmlFor={`cp-${id}`}
                     className="eyebrow"
@@ -523,7 +526,7 @@ export function BuilderPage() {
             hint={t("Row beneath the points. Secondary + auxiliary share 4 slots.")}
             fields={form.secondaryFields}
             onChange={(secondaryFields) => patch({ secondaryFields })}
-            max={4}
+            max={secMax}
             addDisabled={secAuxFull}
             labelPlaceholder={t("Label (e.g. REWARD AT)")}
             valuePlaceholder={t("Value (e.g. 10)")}
@@ -533,7 +536,7 @@ export function BuilderPage() {
             hint={t("Row below secondary. Shares the same 4 slots.")}
             fields={form.auxiliaryFields}
             onChange={(auxiliaryFields) => patch({ auxiliaryFields })}
-            max={4}
+            max={auxMax}
             addDisabled={secAuxFull}
             labelPlaceholder={t("Label (e.g. VISITS)")}
             valuePlaceholder={t("Value (e.g. 8)")}

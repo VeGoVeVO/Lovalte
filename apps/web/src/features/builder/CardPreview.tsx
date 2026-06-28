@@ -10,6 +10,7 @@
  *  (responsive down on narrow screens) for true 1:1 sizing.
  *  role="img": screen readers treat it as one graphic. */
 
+import type { CSSProperties } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { useT } from "../../lib/i18n";
 
@@ -44,6 +45,53 @@ interface Props {
  *  the phone, not raw braces. */
 const sample = (v: string, fallback = "—") => (/\{\{.*\}\}/.test(v) ? "120" : v.trim() || fallback);
 
+function FieldCell({
+  f,
+  align = "left",
+  labelStyle,
+  valueStyle,
+}: {
+  f: PreviewField;
+  align?: "left" | "right";
+  labelStyle: CSSProperties;
+  valueStyle: CSSProperties;
+}) {
+  return (
+    <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
+      <div style={{ ...labelStyle, textAlign: align }}>{f.label || "—"}</div>
+      <div style={{ ...valueStyle, textAlign: align }}>{sample(f.value)}</div>
+    </div>
+  );
+}
+
+function FieldRow({
+  fields,
+  labelStyle,
+  valueStyle,
+}: {
+  fields: PreviewField[];
+  labelStyle: CSSProperties;
+  valueStyle: CSSProperties;
+}) {
+  if (fields.length === 0) return null;
+  return (
+    <div
+      style={{
+        display: "flex",
+        gap: 14,
+        padding: "0 16px",
+        justifyContent: fields.length > 1 ? "space-between" : "flex-start",
+      }}
+    >
+      {fields.slice(0, 4).map((f, i) => (
+        <div key={i} style={{ minWidth: 0, flex: fields.length > 1 ? "1 1 0" : "0 1 auto" }}>
+          <FieldCell f={f} labelStyle={labelStyle} valueStyle={valueStyle} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function CardPreview({
   organizationName,
   logoText,
@@ -68,7 +116,7 @@ export function CardPreview({
   const pValue = sample(primaryValue, "0");
   const altText = (barcodeValue && barcodeValue.trim()) || "LVT-000120";
 
-  const labelStyle: React.CSSProperties = {
+  const labelStyle: CSSProperties = {
     fontSize: 9.5,
     lineHeight: 1.1,
     letterSpacing: "0.06em",
@@ -79,7 +127,7 @@ export function CardPreview({
     overflow: "hidden",
     textOverflow: "ellipsis",
   };
-  const valueStyle: React.CSSProperties = {
+  const valueStyle: CSSProperties = {
     fontSize: 14,
     lineHeight: 1.15,
     color: fg,
@@ -88,39 +136,6 @@ export function CardPreview({
     overflow: "hidden",
     textOverflow: "ellipsis",
   };
-
-  const FieldCell = ({
-    f,
-    align = "left" as const,
-  }: {
-    f: PreviewField;
-    align?: "left" | "right";
-  }) => (
-    <div
-      style={{ minWidth: 0, textAlign: align, display: "flex", flexDirection: "column", gap: 2 }}
-    >
-      <div style={{ ...labelStyle, textAlign: align }}>{f.label || "—"}</div>
-      <div style={{ ...valueStyle, textAlign: align }}>{sample(f.value)}</div>
-    </div>
-  );
-
-  const FieldRow = ({ fields }: { fields: PreviewField[] }) =>
-    fields.length === 0 ? null : (
-      <div
-        style={{
-          display: "flex",
-          gap: 14,
-          padding: "0 16px",
-          justifyContent: fields.length > 1 ? "space-between" : "flex-start",
-        }}
-      >
-        {fields.slice(0, 4).map((f, i) => (
-          <div key={i} style={{ minWidth: 0, flex: fields.length > 1 ? "1 1 0" : "0 1 auto" }}>
-            <FieldCell f={f} />
-          </div>
-        ))}
-      </div>
-    );
 
   return (
     <div
@@ -151,12 +166,20 @@ export function CardPreview({
           padding: "14px 16px 10px",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+        <div
+          style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0, flex: "1 1 auto" }}
+        >
           {logoUrl && (
             <img
               src={logoUrl}
               alt=""
-              style={{ height: 30, width: "auto", maxWidth: 160, objectFit: "contain" }}
+              style={{
+                height: 30,
+                width: "auto",
+                maxWidth: 120,
+                objectFit: "contain",
+                flexShrink: 0,
+              }}
             />
           )}
           <span
@@ -174,9 +197,24 @@ export function CardPreview({
           </span>
         </div>
         {headerFields.length > 0 && (
-          <div style={{ display: "flex", gap: 12, flexShrink: 0 }}>
+          <div
+            style={{
+              display: "flex",
+              gap: 12,
+              flex: "0 1 auto",
+              minWidth: 0,
+              maxWidth: "55%",
+              justifyContent: "flex-end",
+            }}
+          >
             {headerFields.slice(0, 3).map((f, i) => (
-              <FieldCell key={i} f={f} align="right" />
+              <FieldCell
+                key={i}
+                f={f}
+                align="right"
+                labelStyle={labelStyle}
+                valueStyle={valueStyle}
+              />
             ))}
           </div>
         )}
@@ -231,8 +269,8 @@ export function CardPreview({
 
       {/* ── Secondary + auxiliary field rows ── */}
       <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: "12px 0 4px" }}>
-        <FieldRow fields={secondaryFields} />
-        <FieldRow fields={auxiliaryFields} />
+        <FieldRow fields={secondaryFields} labelStyle={labelStyle} valueStyle={valueStyle} />
+        <FieldRow fields={auxiliaryFields} labelStyle={labelStyle} valueStyle={valueStyle} />
       </div>
 
       {/* ── Barcode centered on a white quiet-zone, altText below ── */}

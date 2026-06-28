@@ -43,10 +43,17 @@ const templateBodySchema = z
       .default([]),
   })
   // storeCard renders secondary + auxiliary from one shared 4-slot pool.
-  .refine((b) => (b.secondaryFields?.length ?? 0) + (b.auxiliaryFields?.length ?? 0) <= 4, {
-    message: "secondaryFields + auxiliaryFields must be ≤4 (Apple storeCard field pool)",
-    path: ["secondaryFields"],
-  });
+  .refine(
+    (b) => (b.secondaryFields?.length ?? 0) + (b.auxiliaryFields?.length ?? 0) <= 4,
+    (b) => ({
+      message: "secondaryFields + auxiliaryFields must be ≤4 (Apple storeCard field pool)",
+      path: [
+        (b.auxiliaryFields?.length ?? 0) > (b.secondaryFields?.length ?? 0)
+          ? "auxiliaryFields"
+          : "secondaryFields",
+      ],
+    }),
+  );
 
 const idParamSchema = z.object({ id: z.string().uuid() });
 

@@ -396,7 +396,7 @@ export const ES: Record<string, string> = {
   "On the back of the card (tap the ⓘ). Up to 20.":
     "En el reverso de la tarjeta (toca la ⓘ). Hasta 20.",
   "+ Add field": "+ Añadir campo",
-  "Remove field": "Quitar campo",
+  "Remove {title} field {n}": "Quitar el campo {n} de {title}",
   Label: "Etiqueta",
   Value: "Valor",
   "Label (e.g. TIER)": "Etiqueta (p. ej. NIVEL)",
