@@ -37,21 +37,32 @@ const MORE = [
 
 const shellCss = `
 .lvt-mobilehead, .lvt-tabbar { display: none; }
-.lvt-more-menu { position: absolute; top: calc(100% + 6px); right: 0; min-width: 160px; background:#fff;
-  border:1px solid rgba(20,24,32,.1); border-radius:12px; box-shadow:0 16px 40px -16px rgba(16,18,27,.45);
+/* Grid children must be allowed to shrink, else min-width'd cards (.meta 180px)
+   overflow narrow mobile columns and "leak" past the container. */
+.halo .grid-2 > *, .halo .grid-3 > * { min-width: 0; }
+.lvt-more-menu { position: absolute; top: calc(100% + 6px); right: 0; min-width: 168px;
+  background: linear-gradient(180deg, rgba(255,255,255,.72), rgba(255,255,255,.55)), rgba(255,255,255,.40);
+  -webkit-backdrop-filter: blur(20px) saturate(180%); backdrop-filter: blur(20px) saturate(180%);
+  border:1px solid rgba(255,255,255,.6); border-radius:14px; box-shadow:0 16px 40px -16px rgba(16,18,27,.40);
   padding:.3rem; z-index:60; animation:lvtPop .14s ease-out both; }
 .lvt-more-menu a, .lvt-more-menu button { display:block; width:100%; text-align:left; padding:.6rem .7rem;
-  border:0; background:transparent; border-radius:8px; font:inherit; font-size:.92rem; color:var(--text); text-decoration:none; cursor:pointer; }
-.lvt-more-menu a:hover, .lvt-more-menu button:hover { background:#F0F6FA; }
+  border:0; background:transparent; border-radius:9px; font:inherit; font-size:.92rem; color:var(--text); text-decoration:none; cursor:pointer; }
+.lvt-more-menu a:hover, .lvt-more-menu button:hover { background:rgba(140,200,230,.20); }
 @media (max-width: 767px) {
   .lvt-topnav { display: none !important; }
   .lvt-mobilehead { display: flex; align-items:center; justify-content:space-between; gap:.75rem;
     position: sticky; top: 0; z-index: 40; padding: calc(.7rem + env(safe-area-inset-top)) 1rem .7rem;
-    background: rgba(252,252,253,.82); backdrop-filter: blur(14px); border-bottom:1px solid rgba(20,24,32,.06); }
-  .lvt-main { padding-top: 1.25rem !important; padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important; }
+    background: linear-gradient(180deg, rgba(255,255,255,.60), rgba(255,255,255,.40)), rgba(255,255,255,.26);
+    -webkit-backdrop-filter: blur(22px) saturate(180%); backdrop-filter: blur(22px) saturate(180%);
+    border-bottom:1px solid rgba(255,255,255,.5); box-shadow: 0 1px 0 rgba(255,255,255,.5) inset; }
+  .lvt-mobilehead .brand { min-width: 0; }
+  .lvt-mobilehead .brand span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .lvt-main { padding-top: 1.25rem !important; padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important; min-width: 0; }
   .lvt-tabbar { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
-    padding-bottom: env(safe-area-inset-bottom); background: rgba(255,255,255,.86); backdrop-filter: blur(16px);
-    border-top: 1px solid rgba(20,24,32,.08); box-shadow: 0 -6px 24px -16px rgba(16,18,27,.4); }
+    padding-bottom: env(safe-area-inset-bottom);
+    background: linear-gradient(180deg, rgba(255,255,255,.48), rgba(255,255,255,.66)), rgba(255,255,255,.26);
+    -webkit-backdrop-filter: blur(24px) saturate(185%); backdrop-filter: blur(24px) saturate(185%);
+    border-top: 1px solid rgba(255,255,255,.5); box-shadow: 0 -1px 0 rgba(255,255,255,.5) inset, 0 -8px 24px -16px rgba(46,62,92,.22); }
   .lvt-tab { flex:1; min-height:54px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
     color: var(--muted,#6F7684); text-decoration:none; font-size:.62rem; font-weight:500; padding:.45rem 0 .3rem;
     -webkit-tap-highlight-color: transparent; }
@@ -59,6 +70,12 @@ const shellCss = `
   .lvt-tab svg { width:23px; height:23px; }
 }
 @media (prefers-reduced-motion: reduce){ .lvt-more-menu { animation:none; } }
+/* Accessibility: opaque fallback when the user asks for reduced transparency. */
+@media (prefers-reduced-transparency: reduce){
+  .lvt-mobilehead, .lvt-tabbar, .lvt-more-menu {
+    background: rgba(255,255,255,.96) !important;
+    -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+}
 `;
 
 /** Authenticated-app shell. Desktop: top glass nav. Mobile: slim header + a
@@ -105,8 +122,8 @@ export function AppShell({ title, children }: { title?: string; children: ReactN
             <span style={{ fontWeight: 600, color: "var(--text)" }}>Lovalte</span>
           </Link>
           <div style={{ position: "relative" }}>
-            <button type="button" aria-label="More" aria-expanded={moreOpen} onClick={() => setMoreOpen((o) => !o)}
-              style={{ width: 40, height: 40, borderRadius: 10, border: "1px solid rgba(20,24,32,.12)", background: "#fff", color: "var(--text)", display: "grid", placeItems: "center", cursor: "pointer" }}>
+            <button type="button" aria-label={t("More")} aria-expanded={moreOpen} onClick={() => setMoreOpen((o) => !o)}
+              style={{ width: 40, height: 40, borderRadius: 10, border: "1px solid rgba(255,255,255,.55)", background: "rgba(255,255,255,.5)", WebkitBackdropFilter: "blur(14px) saturate(170%)", backdropFilter: "blur(14px) saturate(170%)", color: "var(--text)", display: "grid", placeItems: "center", cursor: "pointer" }}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8" /><circle cx="12" cy="12" r="1.8" /><circle cx="19" cy="12" r="1.8" /></svg>
             </button>
             {moreOpen && (

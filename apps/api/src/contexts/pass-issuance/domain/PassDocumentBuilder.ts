@@ -99,7 +99,10 @@ export class PassDocumentBuilder {
     };
 
     if (template.labelColor) doc.labelColor = template.labelColor;
-    if (template.logoText)   doc.logoText   = template.logoText;
+    // Apple renders logoText (never organizationName) as the brand on the pass
+    // front; default to the org name so a card without explicit logo text still
+    // shows its brand instead of a blank top-left.
+    doc.logoText = template.logoText || template.organizationName;
 
     return doc;
   }

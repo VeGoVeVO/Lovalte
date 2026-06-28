@@ -278,7 +278,8 @@ export function BuilderPage() {
             labelColor={form.lblHex ? toRgb(form.lblHex) : undefined}
             primaryLabel={form.pLabel}
             primaryValue={form.pValue}
-            iconUrl={form.iconRef || undefined}
+            logoUrl={form.logoRef || undefined}
+            stripUrl={form.stripRef || undefined}
           />
           <p className="body" style={{ textAlign: "center", fontSize: "0.8rem", maxWidth: 260, color: "var(--muted)" }}>
             {t("Preview updates as you type. Actual card appearance may vary with uploaded images.")}
