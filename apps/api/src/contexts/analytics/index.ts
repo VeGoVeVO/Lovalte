@@ -65,14 +65,16 @@ export const registerAnalytics: ContextModule = async (
     });
   });
 
-  // RedemptionApplied → redeem
+  // RedemptionApplied → scan (award) or redeem (redeem)
   deps.bus.subscribe("RedemptionApplied", async (event) => {
     const tenantId = extractTenantId(event.payload);
     if (!tenantId) return;
-    await ingest("redeem", tenantId, event.occurredAt, {
+    const action = event.payload["action"] as string | undefined;
+    const type = action === "redeem" ? "redeem" : "scan";
+    await ingest(type, tenantId, event.occurredAt, {
       passId: event.payload["passId"],
-      memberId: event.payload["memberId"],
-      pointsDelta: event.payload["pointsDelta"],
+      pointsDelta: event.payload["delta"],
+      action,
     });
   });
 

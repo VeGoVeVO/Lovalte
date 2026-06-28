@@ -7,12 +7,13 @@ import { useT } from "../../lib/i18n";
 
 // ── types ────────────────────────────────────────────────────────────────────
 type ActivityEntry = {
+  id: string;
   delta: number;
   reason: string;
-  createdAt: string;
+  recordedAt: string;
 };
 type ActivityPage = {
-  items: ActivityEntry[];
+  entries: ActivityEntry[];
   total: number;
   page: number;
   pageSize: number;
@@ -169,7 +170,7 @@ export function MemberDetail({ memberId, onBack }: MemberDetailProps) {
             {t("Loading activity…")}
           </p>
         </GlassCard>
-      ) : !act?.items?.length ? (
+      ) : !act?.entries?.length ? (
         <GlassCard className="feature" style={{ textAlign: "center", padding: "3rem 2rem" }}>
           <p style={{ margin: 0, color: "var(--muted)" }}>{t("No activity recorded yet.")}</p>
         </GlassCard>
@@ -189,14 +190,14 @@ export function MemberDetail({ memberId, onBack }: MemberDetailProps) {
                   </tr>
                 </thead>
                 <tbody>
-                  {act.items.map((entry) => (
+                  {act.entries.map((entry) => (
                     <tr
-                      key={`${entry.createdAt}-${entry.reason}-${entry.delta}`}
+                      key={entry.id}
                       style={{ borderBottom: "1px solid rgba(32,36,42,0.05)" }}
                     >
                       <td style={{ ...TD, color: "var(--muted)", fontSize: "0.85rem",
                         whiteSpace: "nowrap" }}>
-                        {fmt(entry.createdAt)}
+                        {fmt(entry.recordedAt)}
                       </td>
                       <td style={TD}>{entry.reason}</td>
                       <td

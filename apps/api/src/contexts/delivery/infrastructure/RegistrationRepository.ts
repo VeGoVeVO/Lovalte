@@ -67,21 +67,21 @@ export class RegistrationRepository implements IRegistrationRepository {
     since?: Date,
   ): Promise<UpdatedSerialRow[]> {
     const params: unknown[] = [deviceLibraryIdentifier, passTypeIdentifier];
-    const sinceClause = since ? "AND p.updated_at > $3" : "";
+    const sinceClause = since ? "AND p.last_updated > $3" : "";
     if (since) params.push(since);
 
-    const r = await this.pool.query<{ serial_number: string; updated_at: Date }>(
-      `SELECT p.serial_number, p.updated_at
+    const r = await this.pool.query<{ serial_number: string; last_updated: Date }>(
+      `SELECT p.serial_number, p.last_updated
        FROM delivery.registrations reg
-       JOIN delivery.devices d        ON d.id  = reg.device_id
-       JOIN passes p         ON p.id  = reg.pass_id
-       JOIN issuance.pass_types pt    ON pt.id = p.pass_type_id
+       JOIN delivery.devices d ON d.id  = reg.device_id
+       JOIN passes p           ON p.id  = reg.pass_id
+       JOIN pass_types pt      ON pt.id = p.pass_type_id
        WHERE d.device_library_identifier = $1
          AND pt.pass_type_identifier     = $2
          ${sinceClause}`,
       params,
     );
-    return r.rows.map((row) => ({ serialNumber: row.serial_number, updatedAt: row.updated_at }));
+    return r.rows.map((row) => ({ serialNumber: row.serial_number, updatedAt: row.last_updated }));
   }
 
   /**
