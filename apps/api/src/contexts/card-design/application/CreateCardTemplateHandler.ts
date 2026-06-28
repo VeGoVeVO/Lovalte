@@ -27,7 +27,12 @@ export class CreateCardTemplateHandler {
         backFields: input.backFields,
       });
 
-      const rule = new RewardRule(input.pointsPerVisit, input.rewardThreshold, input.tierRules);
+      const rule = new RewardRule(
+        input.pointsPerVisit,
+        input.rewardThreshold,
+        input.tierRules,
+        input.cardType,
+      );
 
       const template = CardTemplate.create(
         CardTemplateId.generate(),

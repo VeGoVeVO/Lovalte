@@ -35,7 +35,12 @@ export class UpdateCardTemplateHandler {
         stripRef: template.brand.stripRef,
       });
 
-      const rule = new RewardRule(input.pointsPerVisit, input.rewardThreshold, input.tierRules);
+      const rule = new RewardRule(
+        input.pointsPerVisit,
+        input.rewardThreshold,
+        input.tierRules,
+        input.cardType,
+      );
 
       template.updateBrand(brand, rule, input.name);
       await this.repo.save(template);

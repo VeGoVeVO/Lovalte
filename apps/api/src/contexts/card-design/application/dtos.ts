@@ -1,4 +1,5 @@
 import type { CardTemplate } from "../domain/CardTemplate";
+import type { LoyaltyType } from "../domain/RewardRule";
 import type { AssetRef } from "./ICardTemplateRepository";
 
 export interface FieldDefinitionInput {
@@ -29,6 +30,7 @@ export interface CreateCardTemplateInput {
   backFields: FieldDefinitionInput[];
   pointsPerVisit: number;
   rewardThreshold: number;
+  cardType?: LoyaltyType;
   tierRules: TierRuleInput[];
 }
 
@@ -62,6 +64,7 @@ export interface CardTemplateDTO {
   rewardRule: {
     pointsPerVisit: number;
     rewardThreshold: number;
+    cardType: LoyaltyType;
     tierRules: TierRuleInput[];
   };
   /** Number of passes issued from this template (cards already in customer wallets). */
@@ -119,6 +122,7 @@ export function toCardTemplateDTO(t: CardTemplate, issuedCount = 0): CardTemplat
     rewardRule: {
       pointsPerVisit: t.rewardRule.pointsPerVisit,
       rewardThreshold: t.rewardRule.rewardThreshold,
+      cardType: t.rewardRule.cardType,
       tierRules: [...t.rewardRule.tierRules],
     },
     createdAt: t.createdAt.toISOString(),

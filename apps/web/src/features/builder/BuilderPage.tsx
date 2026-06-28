@@ -15,6 +15,7 @@ import {
   useDeleteTemplate,
   type CardTemplateDTO,
   type TemplateInput,
+  type LoyaltyType,
 } from "./useTemplates";
 
 // Color helpers: <input type="color"> yields hex; API requires rgb(r,g,b)
@@ -43,6 +44,7 @@ interface Form {
   bgHex: string;
   fgHex: string;
   lblHex: string;
+  cardType: LoyaltyType;
   pLabel: string;
   pKey: string;
   pValue: string;
@@ -57,6 +59,33 @@ interface Form {
   stripRef: string;
 }
 
+// Loyalty mechanics offered by the builder. Each sets the default field label
+// and how the primary value reads in the preview + on the real pass.
+const TYPE_META: Record<
+  LoyaltyType,
+  { name: string; fieldLabel: string; hint: string; sample: (goal: number) => string }
+> = {
+  points: {
+    name: "Points",
+    fieldLabel: "POINTS",
+    hint: "Members earn points and redeem at a threshold. Best for varied spend.",
+    sample: () => "120",
+  },
+  stamps: {
+    name: "Stamps",
+    fieldLabel: "STAMPS",
+    hint: "Collect stamps for a free reward — coffee shops, bakeries, salons.",
+    sample: (goal) => `6 / ${goal}`,
+  },
+  cashback: {
+    name: "Cashback",
+    fieldLabel: "BALANCE",
+    hint: "Earn a spendable money balance customers can read at a glance.",
+    sample: () => "$5.25",
+  },
+};
+const LOYALTY_KEYS: LoyaltyType[] = ["points", "stamps", "cashback"];
+
 const DEF: Form = {
   name: "",
   orgName: "",
@@ -64,6 +93,7 @@ const DEF: Form = {
   bgHex: "#1a1a2e",
   fgHex: "#e0e0f0",
   lblHex: "#9999bb",
+  cardType: "points",
   pLabel: "POINTS",
   pKey: "points",
   pValue: "{{points}}",
@@ -102,6 +132,7 @@ const fromTemplate = (tmpl: CardTemplateDTO): Form => {
     bgHex: toHex(b.backgroundColor),
     fgHex: toHex(b.foregroundColor),
     lblHex: toHex(b.labelColor),
+    cardType: tmpl.rewardRule.cardType ?? "points",
     pLabel: pf.label,
     pKey: pf.key,
     pValue: pf.valueTemplate,
@@ -131,6 +162,7 @@ const toInput = (f: Form): TemplateInput => ({
   backFields: toFields(f.backFields, "bak"),
   pointsPerVisit: f.ppv,
   rewardThreshold: f.rThreshold,
+  cardType: f.cardType,
   tierRules: [],
 });
 
@@ -501,28 +533,63 @@ export function BuilderPage() {
 
           <fieldset style={{ border: "none", margin: 0, padding: 0 }}>
             <legend className="eyebrow" style={{ marginBottom: "0.5rem" }}>
-              {t("Primary field *")}
+              {t("Card type")}
             </legend>
             <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
-                gap: "0.5rem",
-              }}
+              role="radiogroup"
+              aria-label={t("Card type")}
+              style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}
             >
-              <GlassInput
-                value={form.pLabel}
-                placeholder={t("Label (e.g. POINTS)")}
-                aria-label={t("Primary field label")}
-                onChange={(e: CE) => patch({ pLabel: e.target.value })}
-              />
-              <GlassInput
-                value={form.pValue}
-                placeholder={t("Template (e.g. {{points}})")}
-                aria-label={t("Primary field value template")}
-                onChange={(e: CE) => patch({ pValue: e.target.value })}
-              />
+              {LOYALTY_KEYS.map((k) => {
+                const active = form.cardType === k;
+                return (
+                  <button
+                    key={k}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    className="btn ghost"
+                    onClick={() => patch({ cardType: k, pLabel: TYPE_META[k].fieldLabel })}
+                    style={{
+                      flex: "1 1 96px",
+                      padding: "0.5rem 0.6rem",
+                      fontWeight: 600,
+                      borderColor: active ? "#3a86ff" : undefined,
+                      background: active ? "rgba(58,134,255,.12)" : undefined,
+                      color: active ? "#2563eb" : undefined,
+                    }}
+                  >
+                    {t(TYPE_META[k].name)}
+                  </button>
+                );
+              })}
             </div>
+            <p
+              className="body"
+              style={{ fontSize: "0.72rem", color: "var(--muted)", margin: "0.5rem 0 0" }}
+            >
+              {t(TYPE_META[form.cardType].hint)}
+            </p>
+          </fieldset>
+
+          <fieldset style={{ border: "none", margin: 0, padding: 0 }}>
+            <legend className="eyebrow" style={{ marginBottom: "0.5rem" }}>
+              {t("Primary field label *")}
+            </legend>
+            <GlassInput
+              value={form.pLabel}
+              placeholder={t("Label (e.g. POINTS)")}
+              aria-label={t("Primary field label")}
+              onChange={(e: CE) => patch({ pLabel: e.target.value })}
+            />
+            <p
+              className="body"
+              style={{ fontSize: "0.72rem", color: "var(--muted)", margin: "0.5rem 0 0" }}
+            >
+              {t("Shows the member's balance as {sample} on the card.", {
+                sample: TYPE_META[form.cardType].sample(form.rThreshold),
+              })}
+            </p>
           </fieldset>
 
           <FieldListEditor
@@ -697,7 +764,7 @@ export function BuilderPage() {
             foregroundColor={toRgb(form.fgHex)}
             labelColor={form.lblHex ? toRgb(form.lblHex) : undefined}
             primaryLabel={form.pLabel}
-            primaryValue={form.pValue}
+            primaryValue={TYPE_META[form.cardType].sample(form.rThreshold)}
             headerFields={form.headerFields}
             secondaryFields={form.secondaryFields}
             auxiliaryFields={form.auxiliaryFields}

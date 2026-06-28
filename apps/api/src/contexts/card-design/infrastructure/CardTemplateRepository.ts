@@ -3,7 +3,7 @@ import { withTransaction } from "../../../db/pool";
 import { BrandConfig, type FieldDefinition } from "../domain/BrandConfig";
 import { CardTemplate, CardTemplateId, type CardTemplateProps } from "../domain/CardTemplate";
 import { RgbColor } from "../domain/RgbColor";
-import { RewardRule } from "../domain/RewardRule";
+import { RewardRule, type LoyaltyType } from "../domain/RewardRule";
 import type { ICardTemplateRepository, AssetRef } from "../application/ICardTemplateRepository";
 
 type BrandRow = Record<string, unknown>;
@@ -159,6 +159,7 @@ export class CardTemplateRepository implements ICardTemplateRepository {
       rr.pointsPerVisit as number,
       rr.rewardThreshold as number,
       (rr.tierRules as Array<{ label: string; minPoints: number }>) ?? [],
+      (rr.cardType as LoyaltyType | undefined) ?? "points",
     );
 
     const props: CardTemplateProps = {

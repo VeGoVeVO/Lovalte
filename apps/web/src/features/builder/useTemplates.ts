@@ -3,6 +3,9 @@ import { api, type ApiError } from "../../lib/api";
 
 // ── Domain types (mirror the API DTOs) ───────────────────────────────────────
 
+/** Loyalty mechanic: how the primary value is shown (count, stamps fraction, money). */
+export type LoyaltyType = "points" | "stamps" | "cashback";
+
 export interface FieldDef {
   key: string;
   label: string;
@@ -33,6 +36,7 @@ export interface CardTemplateDTO {
   rewardRule: {
     pointsPerVisit: number;
     rewardThreshold: number;
+    cardType: LoyaltyType;
     tierRules: { label: string; minPoints: number }[];
   };
   /** Passes already issued from this template (cards live in customer wallets). */
@@ -55,6 +59,7 @@ export interface TemplateInput {
   backFields: FieldDef[];
   pointsPerVisit: number;
   rewardThreshold: number;
+  cardType: LoyaltyType;
   tierRules: { label: string; minPoints: number }[];
 }
 

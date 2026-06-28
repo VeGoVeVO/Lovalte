@@ -9,6 +9,10 @@ export interface FieldDefinition {
   label: string;
   region: "header" | "primary" | "secondary" | "auxiliary" | "back";
   changeMessage?: string;
+  /** On the primary field: how to format its raw counter (points | stamps | cashback). */
+  loyaltyType?: "points" | "stamps" | "cashback";
+  /** Stamps/points goal used when formatting (e.g. "6 / 10"). */
+  loyaltyGoal?: number;
 }
 
 export interface PassTemplateDto {

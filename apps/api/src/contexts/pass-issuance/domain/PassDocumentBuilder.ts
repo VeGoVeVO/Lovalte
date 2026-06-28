@@ -44,6 +44,19 @@ interface PassFieldEntry {
  *
  * The qrMessage is pre-computed by the application layer (HMAC-SHA256 token).
  */
+/**
+ * Format the raw loyalty counter the way the chosen mechanic displays it.
+ * Mirrors card-design's RewardRule.formatLoyaltyValue (duplicated, not imported,
+ * to keep the two bounded contexts independent).
+ */
+function formatLoyalty(type: "points" | "stamps" | "cashback", raw: unknown, goal: number): string {
+  const n = Number(raw);
+  const safe = Number.isFinite(n) ? n : 0;
+  if (type === "stamps") return `${Math.min(Math.max(safe, 0), goal)} / ${goal}`;
+  if (type === "cashback") return `$${safe.toFixed(2)}`;
+  return String(Math.trunc(safe));
+}
+
 export class PassDocumentBuilder {
   build(pass: Pass, template: PassTemplateDto, qrMessage: string): PassDocument {
     const fieldsByKey = new Map<string, PassFieldValue>(pass.fieldValues.map((fv) => [fv.key, fv]));
@@ -59,7 +72,9 @@ export class PassDocumentBuilder {
       const entry: PassFieldEntry = {
         key: def.key,
         label: def.label,
-        value: fv?.value ?? "",
+        value: def.loyaltyType
+          ? formatLoyalty(def.loyaltyType, fv?.value ?? 0, def.loyaltyGoal ?? 10)
+          : (fv?.value ?? ""),
         ...(def.changeMessage ? { changeMessage: def.changeMessage } : {}),
       };
       if (def.region === "header") header.push(entry);

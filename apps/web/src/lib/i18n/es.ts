@@ -382,6 +382,20 @@ export const ES: Record<string, string> = {
   "Delete card": "Eliminar tarjeta",
   "Deleting…": "Eliminando…",
 
+  // ── Builder: card type ───────────────────────────────────────────────
+  "Card type": "Tipo de tarjeta",
+  Stamps: "Sellos",
+  Cashback: "Reembolso",
+  "Members earn points and redeem at a threshold. Best for varied spend.":
+    "Los clientes acumulan puntos y los canjean al llegar a un umbral. Ideal para gasto variable.",
+  "Collect stamps for a free reward — coffee shops, bakeries, salons.":
+    "Junta sellos para un premio gratis: cafeterías, panaderías, peluquerías.",
+  "Earn a spendable money balance customers can read at a glance.":
+    "Acumula un saldo en dinero que el cliente entiende de un vistazo.",
+  "Primary field label *": "Etiqueta del campo principal *",
+  "Shows the member's balance as {sample} on the card.":
+    "Muestra el saldo del cliente como {sample} en la tarjeta.",
+
   // ── Builder: Wallet fields ───────────────────────────────────────────
   "Header fields": "Campos de cabecera",
   "Secondary fields": "Campos secundarios",

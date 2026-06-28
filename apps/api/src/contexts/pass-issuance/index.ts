@@ -84,7 +84,12 @@ export const registerPassIssuance: ContextModule = async (app, deps) => {
     );
     const row = tpl.rows[0];
     const brand = (row?.config?.brand ?? {}) as Record<string, unknown>;
+    const rewardRule = (row?.config?.rewardRule ?? {}) as Record<string, unknown>;
     const orgName = (brand.organizationName as string) ?? row?.name ?? "Lovalte";
+    // Loyalty mechanic drives how the primary value is formatted on the pass.
+    const loyaltyType =
+      (rewardRule.cardType as "points" | "stamps" | "cashback" | undefined) ?? "points";
+    const loyaltyGoal = Number(rewardRule.rewardThreshold) || 10;
 
     // Snapshot each brand field WITH its Apple pass region. PassDocumentBuilder
     // drops any field whose region is undefined, which is why the points field
@@ -112,7 +117,11 @@ export const registerPassIssuance: ContextModule = async (app, deps) => {
       webServiceUrl: deps.config.WALLET_WEB_SERVICE_URL.replace(/\/+$/, ""),
       fieldDefinitions: [
         ...mapRegion(brand.headerFields, "header"),
-        ...mapRegion(brand.primaryFields, "primary"),
+        ...mapRegion(brand.primaryFields, "primary").map((d) => ({
+          ...d,
+          loyaltyType,
+          loyaltyGoal,
+        })),
         ...mapRegion(brand.secondaryFields, "secondary"),
         ...mapRegion(brand.auxiliaryFields, "auxiliary"),
       ],
