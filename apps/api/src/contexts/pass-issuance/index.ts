@@ -67,6 +67,15 @@ export const registerPassIssuance: ContextModule = async (app, deps) => {
     const brand = ((row?.config?.brand ?? {}) as Record<string, unknown>);
     const orgName = (brand.organizationName as string) ?? row?.name ?? "Lovalte";
 
+    // Snapshot each brand field WITH its Apple pass region. PassDocumentBuilder
+    // drops any field whose region is undefined, which is why the points field
+    // was missing from issued passes (brand.*Fields carry no region).
+    const mapRegion = (arr: unknown, region: FieldDefinition["region"]): FieldDefinition[] =>
+      (Array.isArray(arr) ? arr : []).map((f) => {
+        const o = f as { key: string; label: string };
+        return { key: o.key, label: o.label, region };
+      });
+
     const dto: PassTemplateDto = {
       id:                 templateId,
       tenantId,
@@ -79,7 +88,12 @@ export const registerPassIssuance: ContextModule = async (app, deps) => {
       foregroundColor:    (brand.foregroundColor as string) ?? "rgb(255,255,255)",
       labelColor:         (brand.labelColor as string | undefined),
       webServiceUrl:      deps.config.WALLET_WEB_SERVICE_URL,
-      fieldDefinitions:   ((brand.primaryFields ?? []) as FieldDefinition[]),
+      fieldDefinitions:   [
+        ...mapRegion(brand.headerFields, "header"),
+        ...mapRegion(brand.primaryFields, "primary"),
+        ...mapRegion(brand.secondaryFields, "secondary"),
+        ...mapRegion(brand.auxiliaryFields, "auxiliary"),
+      ],
       imageAssetRefs:     {
         icon:  (brand.iconRef as string) ?? "",
         logo:  (brand.logoRef as string) ?? "",
@@ -103,7 +117,14 @@ export const registerPassIssuance: ContextModule = async (app, deps) => {
     const newBalance = p.newBalance as number;
     const newTier    = p.newTier as string | undefined;
 
-    const passes = await passRepo.findByMemberId(memberId, tenantId);
+    // Resolve the exact pass by passId (the reliable pass<->member link). The
+    // pass's member_id is the enrollment UUID, which differs from the membership
+    // member id, so findByMemberId would not match. Fall back to it only for
+    // legacy events emitted before passId was added.
+    const passId = p.passId as string | undefined;
+    const passes = passId
+      ? [await passRepo.findById(passId, tenantId)].filter((x): x is NonNullable<typeof x> => x !== null)
+      : await passRepo.findByMemberId(memberId, tenantId);
     for (const pass of passes) {
       if (pass.voided) continue;
       const updated = applyEarnedPoints(pass.fieldValues, newBalance, newTier);

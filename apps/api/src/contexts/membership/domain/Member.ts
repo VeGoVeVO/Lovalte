@@ -95,6 +95,7 @@ export class Member extends AggregateRoot<MemberId> {
     this.addEvent(
       this.makeEvent("PointsEarned", {
         memberId: this.id.value,
+        passId: this._passId,
         tenantId: this._tenantId,
         delta,
         newBalance: this._balance.amount,

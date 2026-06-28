@@ -58,21 +58,30 @@ export const registerMembership: ContextModule = async (app, deps) => {
   });
 
   // RedemptionApplied (from Scanning & Redemption context) → award/redeem points.
+  // The scan identifies the card by passId (the wallet barcode), so resolve the
+  // member it enrolled, then apply the points delta to that member.
   deps.bus.subscribe("RedemptionApplied", async (event) => {
     const payload = event.payload as {
-      memberId: string;
+      passId: string;
       tenantId: string;
       delta: number;
-      reason: string;
-      referenceId?: string;
+      action: string;
     };
-    await applyPoints.execute({
-      memberId: payload.memberId,
+    const member = await memberRepo.findByPassId(payload.passId, payload.tenantId);
+    if (!member) {
+      app.log.warn({ passId: payload.passId }, "RedemptionApplied: no member for passId");
+      return;
+    }
+    const r = await applyPoints.execute({
+      memberId: member.id.value,
       tenantId: payload.tenantId,
       delta: payload.delta,
-      reason: payload.reason,
-      referenceId: payload.referenceId,
+      reason: payload.action,
+      referenceId: payload.passId,
     });
+    if (!r.ok) {
+      app.log.error({ err: r.error, passId: payload.passId }, "ApplyPoints failed after RedemptionApplied");
+    }
   });
 
   // ── Routes ─────────────────────────────────────────────────────────────────

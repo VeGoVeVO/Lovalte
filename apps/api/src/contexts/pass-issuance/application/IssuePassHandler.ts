@@ -71,7 +71,18 @@ export class IssuePassHandler {
     const authToken = AuthenticationToken.fromRaw(randomBytes(32).toString("hex"));
     const now       = this.clock.now();
 
-    const fieldValues = (cmd.fieldValues ?? []).map(fv => ({ ...fv }));
+    // Seed field values from the template so the pass actually carries its
+    // fields (e.g. POINTS = 0). Without a seeded value the storeCard field is
+    // empty and applyEarnedPoints (which maps existing values) has nothing to
+    // update, so the balance would never appear on the pass.
+    const fieldValues =
+      cmd.fieldValues && cmd.fieldValues.length > 0
+        ? cmd.fieldValues.map(fv => ({ ...fv }))
+        : template.fieldDefinitions.map(d => ({
+            key:   d.key,
+            label: d.label,
+            value: (d.key === "points" || d.key === "balance" ? 0 : "") as string | number,
+          }));
     const pass = Pass.issue({
       passTypeId:   cmd.passTypeId,
       memberId:     cmd.memberId,
