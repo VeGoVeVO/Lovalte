@@ -10,7 +10,6 @@ const NAV: { to: string; label: string }[] = [
   { to: "/app/builder", label: "Builder" },
   { to: "/app/members", label: "Members" },
   { to: "/app/staff", label: "Staff" },
-  { to: "/app/analytics", label: "Analytics" },
   { to: "/app/issue", label: "Issue" },
   { to: "/app/scan", label: "Scan" },
 ];
@@ -46,7 +45,6 @@ const TABS = [
 ];
 const MORE = [
   { to: "/app/staff", label: "Staff" },
-  { to: "/app/analytics", label: "Analytics" },
 ];
 
 const shellCss = `

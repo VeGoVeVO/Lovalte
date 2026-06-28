@@ -5,7 +5,6 @@ import { LovalteLanding } from "./features/marketing/LovalteLanding";
 import { RequireAuth } from "./lib/auth";
 import { LoginPage } from "./features/auth/LoginPage";
 import { SignupPage } from "./features/auth/SignupPage";
-import { DashboardPage } from "./features/dashboard/DashboardPage";
 import { BuilderPage } from "./features/builder/BuilderPage";
 import { AnalyticsPage } from "./features/analytics/AnalyticsPage";
 import { MembersPage } from "./features/members/MembersPage";
@@ -28,9 +27,8 @@ export function App() {
         <Route path="/enroll" element={<EnrollPage />} />
 
         <Route element={<RequireAuth />}>
-          <Route path="/app" element={<DashboardPage />} />
+          <Route path="/app" element={<AnalyticsPage />} />
           <Route path="/app/builder" element={<BuilderPage />} />
-          <Route path="/app/analytics" element={<AnalyticsPage />} />
           <Route path="/app/members" element={<MembersPage />} />
           <Route path="/app/staff" element={<StaffPage />} />
           <Route path="/app/issue" element={<IssuePassPage />} />
