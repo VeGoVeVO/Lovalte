@@ -31,6 +31,7 @@ export interface CreateCardTemplateInput {
   pointsPerVisit: number;
   rewardThreshold: number;
   cardType?: LoyaltyType;
+  stampIcon?: string;
   tierRules: TierRuleInput[];
 }
 
@@ -52,6 +53,7 @@ export interface BrandDTO {
   iconRef?: string;
   logoRef?: string;
   stripRef?: string;
+  stampIcon?: string;
 }
 
 export interface CardTemplateDTO {
@@ -118,6 +120,7 @@ export function toCardTemplateDTO(t: CardTemplate, issuedCount = 0): CardTemplat
       iconRef: b.iconRef,
       logoRef: b.logoRef,
       stripRef: b.stripRef,
+      stampIcon: b.stampIcon,
     },
     rewardRule: {
       pointsPerVisit: t.rewardRule.pointsPerVisit,

@@ -25,6 +25,7 @@ export class CreateCardTemplateHandler {
         secondaryFields: input.secondaryFields,
         auxiliaryFields: input.auxiliaryFields,
         backFields: input.backFields,
+        stampIcon: input.stampIcon,
       });
 
       const rule = new RewardRule(

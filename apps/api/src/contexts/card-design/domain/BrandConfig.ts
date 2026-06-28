@@ -23,6 +23,8 @@ export interface BrandConfigParams {
   iconRef?: string;
   logoRef?: string;
   stripRef?: string;
+  /** Lucide icon name used for stamp cards' stamp marks (builder/preview). */
+  stampIcon?: string;
 }
 
 /**
@@ -44,6 +46,7 @@ export class BrandConfig {
   readonly iconRef: string | undefined;
   readonly logoRef: string | undefined;
   readonly stripRef: string | undefined;
+  readonly stampIcon: string | undefined;
 
   constructor(p: BrandConfigParams) {
     const name = (p.organizationName ?? "").trim();
@@ -66,6 +69,7 @@ export class BrandConfig {
     this.iconRef = p.iconRef;
     this.logoRef = p.logoRef;
     this.stripRef = p.stripRef;
+    this.stampIcon = p.stampIcon;
   }
 
   /**
@@ -112,6 +116,7 @@ export class BrandConfig {
       iconRef: this.iconRef,
       logoRef: this.logoRef,
       stripRef: this.stripRef,
+      stampIcon: this.stampIcon,
     };
   }
 
@@ -130,6 +135,7 @@ export class BrandConfig {
       iconRef: this.iconRef ?? null,
       logoRef: this.logoRef ?? null,
       stripRef: this.stripRef ?? null,
+      stampIcon: this.stampIcon ?? null,
     };
   }
 }

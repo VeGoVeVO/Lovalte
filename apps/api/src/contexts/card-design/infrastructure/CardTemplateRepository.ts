@@ -153,6 +153,7 @@ export class CardTemplateRepository implements ICardTemplateRepository {
       iconRef: (b.iconRef as string | null) ?? undefined,
       logoRef: (b.logoRef as string | null) ?? undefined,
       stripRef: (b.stripRef as string | null) ?? undefined,
+      stampIcon: (b.stampIcon as string | null) ?? undefined,
     });
 
     const rule = new RewardRule(

@@ -39,6 +39,7 @@ const templateBodySchema = z
     pointsPerVisit: z.number().int().min(1),
     rewardThreshold: z.number().int().min(1),
     cardType: z.enum(["points", "stamps", "cashback"]).optional(),
+    stampIcon: z.string().max(64).optional(),
     tierRules: z
       .array(z.object({ label: z.string().min(1), minPoints: z.number().int().min(0) }))
       .default([]),
@@ -131,6 +132,7 @@ export function registerCardDesignRoutes(
       pointsPerVisit: body.pointsPerVisit,
       rewardThreshold: body.rewardThreshold,
       cardType: body.cardType,
+      stampIcon: body.stampIcon,
       tierRules: body.tierRules ?? [],
     });
     if (!r.ok) throw r.error;
@@ -177,6 +179,7 @@ export function registerCardDesignRoutes(
       pointsPerVisit: body.pointsPerVisit,
       rewardThreshold: body.rewardThreshold,
       cardType: body.cardType,
+      stampIcon: body.stampIcon,
       tierRules: body.tierRules ?? [],
     });
     if (!r.ok) throw r.error;

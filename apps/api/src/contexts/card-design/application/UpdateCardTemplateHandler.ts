@@ -33,6 +33,7 @@ export class UpdateCardTemplateHandler {
         iconRef: template.brand.iconRef,
         logoRef: template.brand.logoRef,
         stripRef: template.brand.stripRef,
+        stampIcon: input.stampIcon ?? template.brand.stampIcon,
       });
 
       const rule = new RewardRule(

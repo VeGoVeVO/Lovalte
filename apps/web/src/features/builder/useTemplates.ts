@@ -32,6 +32,7 @@ export interface CardTemplateDTO {
     iconRef?: string;
     logoRef?: string;
     stripRef?: string;
+    stampIcon?: string;
   };
   rewardRule: {
     pointsPerVisit: number;
@@ -60,6 +61,7 @@ export interface TemplateInput {
   pointsPerVisit: number;
   rewardThreshold: number;
   cardType: LoyaltyType;
+  stampIcon?: string;
   tierRules: { label: string; minPoints: number }[];
 }
 
