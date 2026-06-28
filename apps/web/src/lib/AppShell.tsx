@@ -43,9 +43,7 @@ const TABS = [
   { to: "/app/issue", label: "Issue", icon: "ticket" },
   { to: "/app/scan", label: "Scan", icon: "scan" },
 ];
-const MORE = [
-  { to: "/app/staff", label: "Staff" },
-];
+const MORE = [{ to: "/app/staff", label: "Staff" }];
 
 const shellCss = `
 .lvt-mobilehead, .lvt-tabbar { display: none; }
@@ -223,10 +221,18 @@ export function AppShell({ title, children }: { title?: string; children: ReactN
 
         <main
           className="container lvt-rise lvt-main"
-          style={{ paddingTop: "2.5rem", paddingBottom: "5rem" }}
+          style={{ paddingTop: "1.25rem", paddingBottom: "5rem" }}
         >
           {title ? (
-            <h1 className="section" style={{ marginBottom: "2rem", textAlign: "center" }}>
+            <h1
+              className="cardt"
+              style={{
+                margin: "0 0 1.1rem",
+                fontSize: "clamp(1.2rem, 1rem + 1vw, 1.5rem)",
+                fontWeight: 600,
+                letterSpacing: "-0.015em",
+              }}
+            >
               {title}
             </h1>
           ) : null}

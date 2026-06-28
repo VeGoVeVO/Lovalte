@@ -1,15 +1,24 @@
-/** Faithful preview of the Apple Wallet storeCard this template produces.
- *  Mirrors Apple's real layout so "what you build" matches "what's on the phone":
- *    - brand (logoText, or org name as fallback) + optional logo image, TOP-LEFT
- *    - primary field value, overlaid on the strip image when one is set
- *    - the QR barcode CENTERED at the bottom on a white quiet-zone
- *  Note: Apple does NOT render organizationName on the pass front and storeCards
- *  have no thumbnail slot, so neither is shown here.
- *  role="img" so screen readers treat it as a single decorative graphic. */
+/** 1:1 preview of the Apple Wallet **storeCard** this template produces.
+ *  Mirrors Apple's real front layout (PassKit Package Format Reference) so
+ *  "what you build" matches "what's on the phone":
+ *    - logo image + logoText TOP-LEFT; up to 3 header fields TOP-RIGHT
+ *    - primary field (1) large, overlaid on the strip image when one is set
+ *    - secondary then auxiliary field rows beneath (shared 4-slot pool)
+ *    - the barcode CENTERED at the bottom on a white quiet-zone, altText below
+ *  Apple does NOT render organizationName, a thumbnail, or any gradient over the
+ *  strip on a storeCard, so none are shown. Rendered at the 375pt canvas width
+ *  (responsive down on narrow screens) for true 1:1 sizing.
+ *  role="img": screen readers treat it as one graphic. */
 
+import { QRCodeSVG } from "qrcode.react";
 import { useT } from "../../lib/i18n";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif";
+
+export interface PreviewField {
+  label: string;
+  value: string;
+}
 
 interface Props {
   organizationName: string;
@@ -17,51 +26,23 @@ interface Props {
   backgroundColor: string;
   foregroundColor: string;
   labelColor?: string;
+  /** The single storeCard primary field. */
   primaryLabel: string;
   primaryValue: string;
-  /** Public URL of the uploaded logo (shown top-left), if any. */
+  headerFields?: PreviewField[];
+  secondaryFields?: PreviewField[];
+  auxiliaryFields?: PreviewField[];
+  /** Public URL of the uploaded logo (top-left), if any. */
   logoUrl?: string;
-  /** Public URL of the uploaded strip banner (3:1), if any. */
+  /** Public URL of the uploaded strip banner (375:144), if any. */
   stripUrl?: string;
+  /** Value encoded in the barcode + shown as altText (sample member number). */
+  barcodeValue?: string;
 }
 
-/** Decorative QR-looking matrix: 3 finder patterns + deterministic modules. */
-function Qr({ size = 120, fg = "#0b0b0b" }: { size?: number; fg?: string }) {
-  const N = 21;
-  const cell = size / N;
-  const isFinder = (r: number, c: number) =>
-    (r < 7 && c < 7) || (r < 7 && c >= N - 7) || (r >= N - 7 && c < 7);
-  const rects: React.ReactNode[] = [];
-  for (let r = 0; r < N; r++)
-    for (let c = 0; c < N; c++) {
-      if (isFinder(r, c)) continue;
-      if ((r * 31 + c * 17 + (r ^ c) * 7) % 5 < 2)
-        rects.push(
-          <rect key={`${r}-${c}`} x={c * cell} y={r * cell} width={cell} height={cell} fill={fg} />,
-        );
-    }
-  const finder = (ox: number, oy: number) => (
-    <g key={`${ox}_${oy}`}>
-      <rect x={ox * cell} y={oy * cell} width={7 * cell} height={7 * cell} fill={fg} />
-      <rect
-        x={(ox + 1) * cell}
-        y={(oy + 1) * cell}
-        width={5 * cell}
-        height={5 * cell}
-        fill="#fff"
-      />
-      <rect x={(ox + 2) * cell} y={(oy + 2) * cell} width={3 * cell} height={3 * cell} fill={fg} />
-    </g>
-  );
-  return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="presentation">
-      {rects}
-      {finder(0, 0)}
-      {finder(N - 7, 0)}
-      {finder(0, N - 7)}
-    </svg>
-  );
-}
+/** Replace a "{{template}}" placeholder with a sample so the preview reads like
+ *  the phone, not raw braces. */
+const sample = (v: string, fallback = "—") => (/\{\{.*\}\}/.test(v) ? "120" : v.trim() || fallback);
 
 export function CardPreview({
   organizationName,
@@ -71,16 +52,75 @@ export function CardPreview({
   labelColor,
   primaryLabel,
   primaryValue,
+  headerFields = [],
+  secondaryFields = [],
+  auxiliaryFields = [],
   logoUrl,
   stripUrl,
+  barcodeValue,
 }: Props) {
   const { t } = useT();
-  const lbl = labelColor || foregroundColor;
+  const fg = foregroundColor || "rgb(255,255,255)";
+  const bg = backgroundColor || "rgb(26,26,46)";
+  const lbl = labelColor || fg;
   // Apple renders logoText (not organizationName); fall back so it is never blank.
   const brand = (logoText && logoText.trim()) || organizationName || t("Your Business");
-  // A "{{template}}" value is replaced with the member's number on the real pass;
-  // show a sample so the preview reads like the phone, not raw braces.
-  const value = /\{\{.*\}\}/.test(primaryValue) ? "120" : primaryValue || "0";
+  const pValue = sample(primaryValue, "0");
+  const altText = (barcodeValue && barcodeValue.trim()) || "LVT-000120";
+
+  const labelStyle: React.CSSProperties = {
+    fontSize: 9.5,
+    lineHeight: 1.1,
+    letterSpacing: "0.06em",
+    textTransform: "uppercase",
+    color: lbl,
+    fontWeight: 600,
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+  };
+  const valueStyle: React.CSSProperties = {
+    fontSize: 14,
+    lineHeight: 1.15,
+    color: fg,
+    fontWeight: 600,
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+  };
+
+  const FieldCell = ({
+    f,
+    align = "left" as const,
+  }: {
+    f: PreviewField;
+    align?: "left" | "right";
+  }) => (
+    <div
+      style={{ minWidth: 0, textAlign: align, display: "flex", flexDirection: "column", gap: 2 }}
+    >
+      <div style={{ ...labelStyle, textAlign: align }}>{f.label || "—"}</div>
+      <div style={{ ...valueStyle, textAlign: align }}>{sample(f.value)}</div>
+    </div>
+  );
+
+  const FieldRow = ({ fields }: { fields: PreviewField[] }) =>
+    fields.length === 0 ? null : (
+      <div
+        style={{
+          display: "flex",
+          gap: 14,
+          padding: "0 16px",
+          justifyContent: fields.length > 1 ? "space-between" : "flex-start",
+        }}
+      >
+        {fields.slice(0, 4).map((f, i) => (
+          <div key={i} style={{ minWidth: 0, flex: fields.length > 1 ? "1 1 0" : "0 1 auto" }}>
+            <FieldCell f={f} />
+          </div>
+        ))}
+      </div>
+    );
 
   return (
     <div
@@ -90,10 +130,10 @@ export function CardPreview({
       })}
       style={{
         width: "100%",
-        maxWidth: 320,
-        background: backgroundColor || "rgb(26,26,46)",
-        color: foregroundColor || "rgb(224,224,240)",
-        borderRadius: 16,
+        maxWidth: 375,
+        background: bg,
+        color: fg,
+        borderRadius: 13,
         overflow: "hidden",
         fontFamily: FONT,
         userSelect: "none",
@@ -101,25 +141,30 @@ export function CardPreview({
           "0 1px 0 rgba(255,255,255,.10) inset, 0 24px 60px -28px rgba(0,0,0,.55), 0 6px 18px -10px rgba(0,0,0,.35)",
       }}
     >
-      {/* ── Header: logo / brand top-left (header fields would sit top-right) ── */}
+      {/* ── Header: logo + logoText (left) · header fields (right) ── */}
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "center",
+          alignItems: "flex-start",
           gap: 12,
-          padding: "13px 16px 11px",
+          padding: "14px 16px 10px",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
           {logoUrl && (
-            <img src={logoUrl} alt="" style={{ height: 26, width: "auto", objectFit: "contain" }} />
+            <img
+              src={logoUrl}
+              alt=""
+              style={{ height: 30, width: "auto", maxWidth: 160, objectFit: "contain" }}
+            />
           )}
           <span
             style={{
-              fontSize: "0.95rem",
+              fontSize: 14,
               fontWeight: 600,
               letterSpacing: "-0.01em",
+              color: fg,
               whiteSpace: "nowrap",
               overflow: "hidden",
               textOverflow: "ellipsis",
@@ -128,15 +173,22 @@ export function CardPreview({
             {brand}
           </span>
         </div>
+        {headerFields.length > 0 && (
+          <div style={{ display: "flex", gap: 12, flexShrink: 0 }}>
+            {headerFields.slice(0, 3).map((f, i) => (
+              <FieldCell key={i} f={f} align="right" />
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* ── Strip band + primary overlaid, OR primary on the background ── */}
+      {/* ── Primary field — overlaid on the strip image, or on the background ── */}
       {stripUrl ? (
         <div
           style={{
             position: "relative",
             width: "100%",
-            aspectRatio: "375 / 123",
+            aspectRatio: "375 / 144",
             overflow: "hidden",
           }}
         >
@@ -145,103 +197,59 @@ export function CardPreview({
             alt=""
             style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
           />
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              background: "linear-gradient(180deg, rgba(0,0,0,0) 40%, rgba(0,0,0,.42))",
-            }}
-          />
-          <div
-            style={{
-              position: "absolute",
-              left: 16,
-              bottom: 10,
-              textShadow: "0 1px 3px rgba(0,0,0,.5)",
-            }}
-          >
+          <div style={{ position: "absolute", left: 16, bottom: 12, right: 16, minWidth: 0 }}>
+            <div style={{ ...labelStyle, color: lbl }}>{primaryLabel || "POINTS"}</div>
             <div
               style={{
-                fontSize: "0.58rem",
-                letterSpacing: "0.18em",
-                textTransform: "uppercase",
-                color: "#fff",
-                opacity: 0.92,
-                fontWeight: 600,
-              }}
-            >
-              {primaryLabel || "POINTS"}
-            </div>
-            <div
-              style={{
-                fontSize: "1.7rem",
+                fontSize: 30,
                 fontWeight: 700,
                 lineHeight: 1,
-                color: "#fff",
-                letterSpacing: "-0.03em",
+                color: fg,
+                letterSpacing: "-0.02em",
               }}
             >
-              {value}
+              {pValue}
             </div>
           </div>
         </div>
       ) : (
-        <div style={{ padding: "4px 16px 14px" }}>
+        <div style={{ padding: "2px 16px 12px" }}>
+          <div style={{ ...labelStyle, marginBottom: 4 }}>{primaryLabel || "POINTS"}</div>
           <div
             style={{
-              fontSize: "0.58rem",
-              letterSpacing: "0.18em",
-              textTransform: "uppercase",
-              color: lbl,
-              fontWeight: 600,
-              marginBottom: 5,
-            }}
-          >
-            {primaryLabel || "POINTS"}
-          </div>
-          <div
-            style={{
-              fontSize: "2.1rem",
+              fontSize: 34,
               fontWeight: 700,
               lineHeight: 1,
-              letterSpacing: "-0.035em",
+              color: fg,
+              letterSpacing: "-0.03em",
             }}
           >
-            {value}
+            {pValue}
           </div>
         </div>
       )}
 
-      {/* ── Barcode centered at the bottom on a white quiet-zone ── */}
+      {/* ── Secondary + auxiliary field rows ── */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: "12px 0 4px" }}>
+        <FieldRow fields={secondaryFields} />
+        <FieldRow fields={auxiliaryFields} />
+      </div>
+
+      {/* ── Barcode centered on a white quiet-zone, altText below ── */}
       <div
         style={{
-          padding: "14px 16px 18px",
+          padding: "12px 16px 18px",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          gap: 7,
+          gap: 6,
         }}
       >
-        <div
-          style={{
-            background: "#fff",
-            borderRadius: 10,
-            padding: 11,
-            lineHeight: 0,
-            boxShadow: "0 2px 8px -4px rgba(0,0,0,.4)",
-          }}
-        >
-          <Qr size={120} />
+        <div style={{ background: "#fff", borderRadius: 6, padding: 10, lineHeight: 0 }}>
+          <QRCodeSVG value={altText} size={118} bgColor="#ffffff" fgColor="#0b0b0b" level="M" />
         </div>
-        <div
-          style={{
-            fontSize: "0.62rem",
-            letterSpacing: "0.04em",
-            color: foregroundColor,
-            opacity: 0.62,
-          }}
-        >
-          {brand}
+        <div style={{ fontSize: 11, letterSpacing: "0.06em", color: fg, opacity: 0.7 }}>
+          {altText}
         </div>
       </div>
     </div>

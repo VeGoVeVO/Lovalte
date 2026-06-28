@@ -23,24 +23,30 @@ const fieldDefSchema = z.object({
   changeMessage: z.string().optional(),
 });
 
-const templateBodySchema = z.object({
-  name: z.string().min(1).max(100),
-  organizationName: z.string().min(1).max(64),
-  logoText: z.string().max(24).optional(),
-  backgroundColor: z.string().regex(rgbPattern, "Must be rgb(r, g, b) format"),
-  foregroundColor: z.string().regex(rgbPattern, "Must be rgb(r, g, b) format"),
-  labelColor: z.string().regex(rgbPattern, "Must be rgb(r, g, b) format").optional(),
-  headerFields: z.array(fieldDefSchema).max(3).default([]),
-  primaryFields: z.array(fieldDefSchema).length(1),
-  secondaryFields: z.array(fieldDefSchema).max(4).default([]),
-  auxiliaryFields: z.array(fieldDefSchema).max(4).default([]),
-  backFields: z.array(fieldDefSchema).default([]),
-  pointsPerVisit: z.number().int().min(1),
-  rewardThreshold: z.number().int().min(1),
-  tierRules: z
-    .array(z.object({ label: z.string().min(1), minPoints: z.number().int().min(0) }))
-    .default([]),
-});
+const templateBodySchema = z
+  .object({
+    name: z.string().min(1).max(100),
+    organizationName: z.string().min(1).max(64),
+    logoText: z.string().max(24).optional(),
+    backgroundColor: z.string().regex(rgbPattern, "Must be rgb(r, g, b) format"),
+    foregroundColor: z.string().regex(rgbPattern, "Must be rgb(r, g, b) format"),
+    labelColor: z.string().regex(rgbPattern, "Must be rgb(r, g, b) format").optional(),
+    headerFields: z.array(fieldDefSchema).max(3).default([]),
+    primaryFields: z.array(fieldDefSchema).length(1),
+    secondaryFields: z.array(fieldDefSchema).max(4).default([]),
+    auxiliaryFields: z.array(fieldDefSchema).max(4).default([]),
+    backFields: z.array(fieldDefSchema).max(20).default([]),
+    pointsPerVisit: z.number().int().min(1),
+    rewardThreshold: z.number().int().min(1),
+    tierRules: z
+      .array(z.object({ label: z.string().min(1), minPoints: z.number().int().min(0) }))
+      .default([]),
+  })
+  // storeCard renders secondary + auxiliary from one shared 4-slot pool.
+  .refine((b) => (b.secondaryFields?.length ?? 0) + (b.auxiliaryFields?.length ?? 0) <= 4, {
+    message: "secondaryFields + auxiliaryFields must be ≤4 (Apple storeCard field pool)",
+    path: ["secondaryFields"],
+  });
 
 const idParamSchema = z.object({ id: z.string().uuid() });
 

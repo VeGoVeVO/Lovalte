@@ -69,11 +69,13 @@ export class BrandConfig {
   }
 
   /**
-   * Domain-level validation run before publishing. Enforces Apple Wallet constraints:
+   * Domain-level validation run before publishing. Enforces what Apple's
+   * storeCard pass style actually renders (PassKit Package Format Reference):
    * - headerFields ≤ 3
    * - exactly 1 primaryField
-   * - secondaryFields + auxiliaryFields ≤ 4 (QR barcode occupies space)
-   * - iconRef must be registered
+   * - secondaryFields + auxiliaryFields ≤ 4 (storeCard shares one 4-slot pool)
+   * - backFields ≤ 20 (Apple allows unlimited; this is a boundary guard)
+   * - iconRef must be registered (icon is required for every pass)
    */
   validate(): void {
     if (this.headerFields.length > 3) {
@@ -84,7 +86,10 @@ export class BrandConfig {
     }
     const combined = this.secondaryFields.length + this.auxiliaryFields.length;
     if (combined > 4) {
-      throw new DomainError("secondaryFields + auxiliaryFields must be ≤4 when using a QR barcode");
+      throw new DomainError("secondaryFields + auxiliaryFields must be ≤4 (storeCard field pool)");
+    }
+    if (this.backFields.length > 20) {
+      throw new DomainError("backFields max 20");
     }
     if (!this.iconRef) {
       throw new DomainError("iconRef is required before publishing");

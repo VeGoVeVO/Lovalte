@@ -4,6 +4,7 @@ import { GlassCard, GlassButton, GlassInput, ColorPicker } from "../../design-sy
 import { CardPreview } from "./CardPreview";
 import { AssetField } from "./AssetField";
 import { DeleteTemplateModal } from "./DeleteTemplateModal";
+import { FieldListEditor, type FieldRow } from "./FieldListEditor";
 import { useT } from "../../lib/i18n";
 import {
   useTemplates,
@@ -45,6 +46,10 @@ interface Form {
   pLabel: string;
   pKey: string;
   pValue: string;
+  headerFields: FieldRow[];
+  secondaryFields: FieldRow[];
+  auxiliaryFields: FieldRow[];
+  backFields: FieldRow[];
   ppv: number;
   rThreshold: number;
   iconRef: string;
@@ -62,12 +67,30 @@ const DEF: Form = {
   pLabel: "POINTS",
   pKey: "points",
   pValue: "{{points}}",
+  headerFields: [],
+  secondaryFields: [],
+  auxiliaryFields: [],
+  backFields: [],
   ppv: 1,
   rThreshold: 10,
   iconRef: "",
   logoRef: "",
   stripRef: "",
 };
+
+// API FieldDef <-> editor FieldRow (label/value). Drop the API key; we regenerate
+// unique, region-prefixed keys on submit so Apple never sees a duplicate.
+type ApiField = { key: string; label: string; valueTemplate: string };
+const toRows = (fields?: ApiField[]): FieldRow[] =>
+  (fields ?? []).map((f) => ({ label: f.label, value: f.valueTemplate }));
+const toFields = (rows: FieldRow[], prefix: string): ApiField[] =>
+  rows
+    .filter((r) => r.label.trim() && r.value.trim())
+    .map((r, i) => ({
+      key: `${prefix}${i}`,
+      label: r.label.trim(),
+      valueTemplate: r.value.trim(),
+    }));
 
 const fromTemplate = (tmpl: CardTemplateDTO): Form => {
   const b = tmpl.brand;
@@ -82,6 +105,10 @@ const fromTemplate = (tmpl: CardTemplateDTO): Form => {
     pLabel: pf.label,
     pKey: pf.key,
     pValue: pf.valueTemplate,
+    headerFields: toRows(b.headerFields),
+    secondaryFields: toRows(b.secondaryFields),
+    auxiliaryFields: toRows(b.auxiliaryFields),
+    backFields: toRows(b.backFields),
     ppv: tmpl.rewardRule.pointsPerVisit,
     rThreshold: tmpl.rewardRule.rewardThreshold,
     iconRef: b.iconRef ?? "",
@@ -97,11 +124,11 @@ const toInput = (f: Form): TemplateInput => ({
   backgroundColor: toRgb(f.bgHex),
   foregroundColor: toRgb(f.fgHex),
   labelColor: f.lblHex ? toRgb(f.lblHex) : undefined,
-  headerFields: [],
+  headerFields: toFields(f.headerFields, "hdr"),
   primaryFields: [{ key: f.pKey, label: f.pLabel, valueTemplate: f.pValue }],
-  secondaryFields: [],
-  auxiliaryFields: [],
-  backFields: [],
+  secondaryFields: toFields(f.secondaryFields, "sec"),
+  auxiliaryFields: toFields(f.auxiliaryFields, "aux"),
+  backFields: toFields(f.backFields, "bak"),
   pointsPerVisit: f.ppv,
   rewardThreshold: f.rThreshold,
   tierRules: [],
@@ -116,6 +143,17 @@ const Lbl = ({ htmlFor, text }: { htmlFor: string; text: string }) => (
     {text}
   </label>
 );
+
+// Edit view: form + live preview side-by-side on desktop, stacked on mobile
+// with the preview pinned to the top so it stays visible while you type.
+const EDIT_CSS = `
+.lvt-edit-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); gap: 2rem; align-items: start; }
+.lvt-edit-preview { position: sticky; top: 6rem; }
+@media (max-width: 900px) {
+  .lvt-edit-grid { grid-template-columns: 1fr; gap: 1.5rem; }
+  .lvt-edit-preview { position: static; top: auto; order: -1; }
+}
+`;
 
 export function BuilderPage() {
   const { t } = useT();
@@ -357,6 +395,8 @@ export function BuilderPage() {
   const isBusy = createMut.isPending || updateMut.isPending;
   const saved = editing !== "new" ? (editing as CardTemplateDTO) : null;
   const isPublished = saved?.status === "published";
+  // storeCard renders secondary + auxiliary from one shared pool of 4.
+  const secAuxFull = form.secondaryFields.length + form.auxiliaryFields.length >= 4;
 
   const colorFields = [
     { label: "Background", id: "bg", field: "bgHex" as keyof Form },
@@ -376,10 +416,8 @@ export function BuilderPage() {
           {t("← Back")}
         </GlassButton>
       </div>
-      <div
-        className="grid-3"
-        style={{ gridTemplateColumns: "1fr 1fr", gap: "2rem", alignItems: "start" }}
-      >
+      <style>{EDIT_CSS}</style>
+      <div className="lvt-edit-grid">
         {/* Form */}
         <GlassCard
           className="feature"
@@ -471,6 +509,45 @@ export function BuilderPage() {
             </div>
           </fieldset>
 
+          <FieldListEditor
+            title={t("Header fields")}
+            hint={t("Small, shown top-right of the card. Up to 3.")}
+            fields={form.headerFields}
+            onChange={(headerFields) => patch({ headerFields })}
+            max={3}
+            labelPlaceholder={t("Label (e.g. TIER)")}
+            valuePlaceholder={t("Value (e.g. Gold)")}
+          />
+          <FieldListEditor
+            title={t("Secondary fields")}
+            hint={t("Row beneath the points. Secondary + auxiliary share 4 slots.")}
+            fields={form.secondaryFields}
+            onChange={(secondaryFields) => patch({ secondaryFields })}
+            max={4}
+            addDisabled={secAuxFull}
+            labelPlaceholder={t("Label (e.g. REWARD AT)")}
+            valuePlaceholder={t("Value (e.g. 10)")}
+          />
+          <FieldListEditor
+            title={t("Auxiliary fields")}
+            hint={t("Row below secondary. Shares the same 4 slots.")}
+            fields={form.auxiliaryFields}
+            onChange={(auxiliaryFields) => patch({ auxiliaryFields })}
+            max={4}
+            addDisabled={secAuxFull}
+            labelPlaceholder={t("Label (e.g. VISITS)")}
+            valuePlaceholder={t("Value (e.g. 8)")}
+          />
+          <FieldListEditor
+            title={t("Back fields")}
+            hint={t("On the back of the card (tap the ⓘ). Up to 20.")}
+            fields={form.backFields}
+            onChange={(backFields) => patch({ backFields })}
+            max={20}
+            labelPlaceholder={t("Label (e.g. Terms)")}
+            valuePlaceholder={t("Value")}
+          />
+
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
             <div>
               <Lbl htmlFor="f-ppv" text={t("Points per visit")} />
@@ -502,7 +579,9 @@ export function BuilderPage() {
               <AssetField
                 kind="icon"
                 label={t("Icon *")}
-                hint={t("Required to publish. Pick a Lucide icon or upload a 29×29 px PNG.")}
+                hint={t(
+                  "Required. Square, no transparency. Pick a Lucide icon or upload 87×87 px PNG.",
+                )}
                 value={form.iconRef}
                 iconColor={toRgb(form.fgHex)}
                 onChange={(url) => patch({ iconRef: url })}
@@ -510,14 +589,16 @@ export function BuilderPage() {
               <AssetField
                 kind="logo"
                 label={t("Logo")}
-                hint={t("Shown top-left on the pass. Upload ≤160×50 px PNG.")}
+                hint={t(
+                  "Top-left of the pass. PNG up to 160×50 pt (upload 320×100 px for retina).",
+                )}
                 value={form.logoRef}
                 onChange={(url) => patch({ logoRef: url })}
               />
               <AssetField
                 kind="strip"
                 label={t("Strip")}
-                hint={t("Full-width banner. Upload 375×144 px PNG.")}
+                hint={t("Full-width banner behind the points. PNG 375×144 pt (upload 750×288 px).")}
                 value={form.stripRef}
                 onChange={(url) => patch({ stripRef: url })}
               />
@@ -576,9 +657,8 @@ export function BuilderPage() {
 
         {/* Live preview */}
         <div
+          className="lvt-edit-preview"
           style={{
-            position: "sticky",
-            top: "6rem",
             display: "flex",
             flexDirection: "column",
             gap: "1rem",
@@ -596,6 +676,9 @@ export function BuilderPage() {
             labelColor={form.lblHex ? toRgb(form.lblHex) : undefined}
             primaryLabel={form.pLabel}
             primaryValue={form.pValue}
+            headerFields={form.headerFields}
+            secondaryFields={form.secondaryFields}
+            auxiliaryFields={form.auxiliaryFields}
             logoUrl={form.logoRef || undefined}
             stripUrl={form.stripRef || undefined}
           />

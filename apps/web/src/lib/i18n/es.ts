@@ -381,4 +381,35 @@ export const ES: Record<string, string> = {
     "Al eliminarla, esas tarjetas se desactivan: cada una se actualiza en el Apple Wallet del cliente a una tarjeta de Lovalte obsoleta que le indica que ya no funciona y que la elimine, y deja de acumular puntos. Esta acción no se puede deshacer.",
   "Delete card": "Eliminar tarjeta",
   "Deleting…": "Eliminando…",
+
+  // ── Builder: Wallet fields ───────────────────────────────────────────
+  "Header fields": "Campos de cabecera",
+  "Secondary fields": "Campos secundarios",
+  "Auxiliary fields": "Campos auxiliares",
+  "Back fields": "Campos del reverso",
+  "Small, shown top-right of the card. Up to 3.":
+    "Pequeños, arriba a la derecha de la tarjeta. Hasta 3.",
+  "Row beneath the points. Secondary + auxiliary share 4 slots.":
+    "Fila bajo los puntos. Secundarios + auxiliares comparten 4 huecos.",
+  "Row below secondary. Shares the same 4 slots.":
+    "Fila bajo los secundarios. Comparte los mismos 4 huecos.",
+  "On the back of the card (tap the ⓘ). Up to 20.":
+    "En el reverso de la tarjeta (toca la ⓘ). Hasta 20.",
+  "+ Add field": "+ Añadir campo",
+  "Remove field": "Quitar campo",
+  Label: "Etiqueta",
+  Value: "Valor",
+  "Label (e.g. TIER)": "Etiqueta (p. ej. NIVEL)",
+  "Value (e.g. Gold)": "Valor (p. ej. Oro)",
+  "Label (e.g. REWARD AT)": "Etiqueta (p. ej. PREMIO A LOS)",
+  "Value (e.g. 10)": "Valor (p. ej. 10)",
+  "Label (e.g. VISITS)": "Etiqueta (p. ej. VISITAS)",
+  "Value (e.g. 8)": "Valor (p. ej. 8)",
+  "Label (e.g. Terms)": "Etiqueta (p. ej. Condiciones)",
+  "Required. Square, no transparency. Pick a Lucide icon or upload 87×87 px PNG.":
+    "Obligatorio. Cuadrado, sin transparencia. Elige un icono Lucide o sube un PNG de 87×87 px.",
+  "Top-left of the pass. PNG up to 160×50 pt (upload 320×100 px for retina).":
+    "Arriba a la izquierda del pase. PNG hasta 160×50 pt (sube 320×100 px para retina).",
+  "Full-width banner behind the points. PNG 375×144 pt (upload 750×288 px).":
+    "Banner a todo el ancho tras los puntos. PNG 375×144 pt (sube 750×288 px).",
 };
