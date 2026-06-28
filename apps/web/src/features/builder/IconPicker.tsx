@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type UIEvent } from "react";
 import { createPortal } from "react-dom";
 import { DynamicIcon, iconNames } from "lucide-react/dynamic";
 import { Scrollbar } from "../../design-system/halo";
@@ -12,7 +12,7 @@ function pretty(name: string): string {
     .join(" ");
 }
 
-const VISIBLE_CAP = 120;
+const PAGE = 120;
 
 /** Recognisable starters shown before the user searches (filtered to ones that exist). */
 const FEATURED = [
@@ -108,6 +108,7 @@ interface IconPickerProps {
 export function IconPicker({ onPick, onClose }: IconPickerProps) {
   const { t } = useT();
   const [query, setQuery] = useState("");
+  const [count, setCount] = useState(PAGE);
   const dialogRef = useRef<HTMLDivElement>(null);
 
   const all = iconNames as string[];
@@ -118,10 +119,19 @@ export function IconPicker({ onPick, onClose }: IconPickerProps) {
 
   const matches = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return { shown: featured, total: featured.length, mode: "featured" as const };
+    if (!q) return { list: featured, total: featured.length, mode: "featured" as const };
     const list = all.filter((n) => n.includes(q));
-    return { shown: list.slice(0, VISIBLE_CAP), total: list.length, mode: "search" as const };
+    return { list, total: list.length, mode: "search" as const };
   }, [query, all, featured]);
+  // Infinite scroll: reset the window on a new search, grow it near the bottom.
+  useEffect(() => setCount(PAGE), [query]);
+  const shown = matches.list.slice(0, count);
+  const onScroll = (e: UIEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    if (el.scrollHeight - el.scrollTop - el.clientHeight < 320 && count < matches.total) {
+      setCount((c) => c + PAGE);
+    }
+  };
 
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (e.key === "Escape") {
@@ -242,14 +252,10 @@ export function IconPicker({ onPick, onClose }: IconPickerProps) {
                 ? t("No icons match - try another word.")
                 : matches.mode === "featured"
                   ? t("Popular icons · {n} in total - search to find any.", { n: all.length })
-                  : matches.total > VISIBLE_CAP
-                    ? t("Showing {shown} of {total} - keep typing to narrow.", {
-                        shown: VISIBLE_CAP,
-                        total: matches.total,
-                      })
-                    : matches.total === 1
-                      ? t("1 icon.")
-                      : t("{n} icons.", { n: matches.total })}
+                  : t("Showing {shown} of {total} - scroll for more.", {
+                      shown: Math.min(count, matches.total),
+                      total: matches.total,
+                    })}
             </p>
           </div>
           <button
@@ -293,6 +299,7 @@ export function IconPicker({ onPick, onClose }: IconPickerProps) {
 
         {/* Grid */}
         <Scrollbar
+          onScroll={onScroll}
           style={{
             flex: 1,
             padding: "0.25rem 1.25rem 1.25rem",
@@ -300,7 +307,7 @@ export function IconPicker({ onPick, onClose }: IconPickerProps) {
             borderTop: "1px solid rgba(20,24,32,.06)",
           }}
         >
-          {matches.shown.length === 0 ? (
+          {shown.length === 0 ? (
             <p
               style={{
                 textAlign: "center",
@@ -320,7 +327,7 @@ export function IconPicker({ onPick, onClose }: IconPickerProps) {
                 paddingTop: "0.75rem",
               }}
             >
-              {matches.shown.map((name) => (
+              {shown.map((name) => (
                 <button
                   key={name}
                   type="button"
