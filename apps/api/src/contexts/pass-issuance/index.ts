@@ -12,6 +12,23 @@ import { CreateEnrollLinkHandler } from "./application/CreateEnrollLinkHandler";
 import { PublicEnrollHandler } from "./application/PublicEnrollHandler";
 import { registerPassRoutes } from "./presentation/routes";
 
+// Deprecated-card design applied to every pass when its template is deleted: a
+// neutral Lovalte snapshot plus a "no longer valid" message (Spanish, the
+// product locale). The existing icon in the snapshot is kept so the pass stays
+// Apple-valid; voiding greys it out in Wallet.
+const DEPRECATED_FIELD_DEFS: FieldDefinition[] = [
+  { key: "estado", label: "Estado", region: "primary" },
+  { key: "aviso", label: "Aviso", region: "back" },
+];
+const DEPRECATION_VALUES = [
+  { key: "estado", label: "Estado", value: "No válida" },
+  {
+    key: "aviso",
+    label: "Aviso",
+    value: "Esta tarjeta de fidelidad ya no está activa. Puedes eliminarla de tu Apple Wallet.",
+  },
+];
+
 /**
  * Pass-Issuance bounded context.
  *
@@ -151,6 +168,51 @@ export const registerPassIssuance: ContextModule = async (app, deps) => {
       const signed = await getPassPkpass.execute({ passId: pass.id.value, tenantId });
       if (!signed.ok) {
         app.log.error({ err: signed.error }, "Re-sign after PointsEarned failed");
+      }
+    }
+  });
+
+  /**
+   * CardTemplateDeleted - the merchant deleted a card design. Deactivate every
+   * pass issued from it: rebrand the (independent) pass_types snapshot to a
+   * neutral Lovalte "no longer valid" design, then write a deprecation message +
+   * void each pass so it greys out in the customer's Wallet and stops earning.
+   * Passes have no FK to card_templates, so the snapshot + passes survive the
+   * row deletion and can be rewritten here.
+   *
+   * Expected payload: { templateId, tenantId }
+   */
+  deps.bus.subscribe("CardTemplateDeleted", async (event) => {
+    const p = event.payload as Record<string, unknown>;
+    const templateId = p.templateId as string;
+    const tenantId = p.tenantId as string;
+
+    const snap = await templateRepo.findById(templateId, tenantId);
+    if (snap) {
+      await templateRepo.upsert({
+        ...snap,
+        organizationName: "Lovalte",
+        logoText: "Lovalte",
+        description: "Tarjeta de fidelidad no válida",
+        backgroundColor: "rgb(40, 44, 52)",
+        foregroundColor: "rgb(255, 255, 255)",
+        labelColor: "rgb(170, 176, 190)",
+        fieldDefinitions: DEPRECATED_FIELD_DEFS,
+        // keep imageAssetRefs: the existing icon survives and keeps the pass Apple-valid
+      });
+    }
+
+    const passes = await passRepo.findByPassTypeId(templateId, tenantId);
+    for (const pass of passes) {
+      if (pass.voided) continue;
+      pass.updateFields(DEPRECATION_VALUES, deps.clock.now()); // emits PassFieldsUpdated -> APNs push
+      pass.voidPass(deps.clock.now()); // greys the pass out in Wallet
+      await passRepo.save(pass);
+      await deps.bus.publish(pass.pullEvents());
+      // Eagerly re-sign + cache so the device gets the deprecated pass on poll.
+      const signed = await getPassPkpass.execute({ passId: pass.id.value, tenantId });
+      if (!signed.ok) {
+        app.log.error({ err: signed.error }, "Re-sign after CardTemplateDeleted failed");
       }
     }
   });

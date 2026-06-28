@@ -377,8 +377,8 @@ export const ES: Record<string, string> = {
     "1 cliente ya tiene esta tarjeta en su Apple Wallet.",
   "{count} customers already have this card in their Apple Wallet.":
     "{count} clientes ya tienen esta tarjeta en su Apple Wallet.",
-  "Deleting removes the design from your dashboard and stops new sign-ups - but cards already in customer wallets keep working and keep earning points. You just won't be able to issue new ones from this design.":
-    "Al eliminarlo, el diseño desaparece de tu panel y se detienen las nuevas altas, pero las tarjetas que ya están en las carteras de los clientes siguen funcionando y acumulando puntos. Solo dejarás de poder emitir nuevas con este diseño.",
+  "Deleting deactivates those cards: each one updates in the customer's Apple Wallet to a deprecated Lovalte card telling them it no longer works and to remove it, and it stops earning points. This can't be undone.":
+    "Al eliminarla, esas tarjetas se desactivan: cada una se actualiza en el Apple Wallet del cliente a una tarjeta de Lovalte obsoleta que le indica que ya no funciona y que la elimine, y deja de acumular puntos. Esta acción no se puede deshacer.",
   "Delete card": "Eliminar tarjeta",
   "Deleting…": "Eliminando…",
 };

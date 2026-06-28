@@ -35,6 +35,7 @@ export interface IPassRepository {
   findBySerial(serial: string, tenantId: string): Promise<Pass | null>;
   findByMemberId(memberId: string, tenantId: string): Promise<Pass[]>;
   findByMemberAndType(memberId: string, passTypeId: string, tenantId: string): Promise<Pass | null>;
+  findByPassTypeId(passTypeId: string, tenantId: string): Promise<Pass[]>;
   save(pass: Pass): Promise<void>;
 }
 

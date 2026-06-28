@@ -13,6 +13,8 @@ export interface PassDocument {
   foregroundColor: string;
   labelColor?: string;
   logoText?: string;
+  /** Apple greys the pass out and marks it invalid when true. */
+  voided?: boolean;
   webServiceURL: string;
   authenticationToken: string;
   barcodes: Array<{
@@ -94,6 +96,7 @@ export class PassDocumentBuilder {
       },
     };
 
+    if (pass.voided) doc.voided = true;
     if (template.labelColor) doc.labelColor = template.labelColor;
     // Apple renders logoText (never organizationName) as the brand on the pass
     // front; default to the org name so a card without explicit logo text still

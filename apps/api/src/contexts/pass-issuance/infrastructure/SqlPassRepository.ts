@@ -94,6 +94,20 @@ export class SqlPassRepository implements IPassRepository {
     }
   }
 
+  async findByPassTypeId(passTypeId: string, tenantId: string): Promise<Pass[]> {
+    const client = await this.pool.connect();
+    try {
+      await setTenant(client, tenantId);
+      const res = await client.query(
+        `SELECT ${SELECT_COLS} FROM passes WHERE pass_type_id = $1 AND tenant_id = $2`,
+        [passTypeId, tenantId],
+      );
+      return res.rows.map(rowToPass);
+    } finally {
+      client.release();
+    }
+  }
+
   async save(pass: Pass): Promise<void> {
     const client = await this.pool.connect();
     try {
