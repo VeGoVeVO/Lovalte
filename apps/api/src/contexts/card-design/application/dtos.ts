@@ -64,6 +64,8 @@ export interface CardTemplateDTO {
     rewardThreshold: number;
     tierRules: TierRuleInput[];
   };
+  /** Number of passes issued from this template (cards already in customer wallets). */
+  issuedCount: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -90,7 +92,7 @@ export interface PublishResultDTO {
   status: string;
 }
 
-export function toCardTemplateDTO(t: CardTemplate): CardTemplateDTO {
+export function toCardTemplateDTO(t: CardTemplate, issuedCount = 0): CardTemplateDTO {
   const b = t.brand;
   return {
     id: t.id.value,
@@ -98,6 +100,7 @@ export function toCardTemplateDTO(t: CardTemplate): CardTemplateDTO {
     name: t.name,
     status: t.status,
     version: t.version,
+    issuedCount,
     brand: {
       organizationName: b.organizationName,
       logoText: b.logoText,

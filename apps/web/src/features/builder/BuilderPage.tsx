@@ -3,6 +3,7 @@ import { AppShell } from "../../lib/AppShell";
 import { GlassCard, GlassButton, GlassInput, ColorPicker } from "../../design-system/halo";
 import { CardPreview } from "./CardPreview";
 import { AssetField } from "./AssetField";
+import { DeleteTemplateModal } from "./DeleteTemplateModal";
 import { useT } from "../../lib/i18n";
 import {
   useTemplates,
@@ -123,7 +124,7 @@ export function BuilderPage() {
   const [status, setStatus] = useState<string | null>(null);
   const [awaitConfirm, setAwaitConfirm] = useState(false);
 
-  const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [confirmCard, setConfirmCard] = useState<CardTemplateDTO | null>(null);
 
   const templates = useTemplates();
   const createMut = useCreateTemplate();
@@ -243,11 +244,8 @@ export function BuilderPage() {
                 tabIndex={0}
                 style={{ cursor: "pointer" }}
                 aria-label={t("Edit template: {name}", { name: card.name })}
-                onClick={() => {
-                  if (confirmId !== card.id) openEdit(card);
-                }}
+                onClick={() => openEdit(card)}
                 onKeyDown={(e: React.KeyboardEvent) => {
-                  if (confirmId === card.id) return;
                   if (e.key === "Enter" || e.key === " ") openEdit(card);
                 }}
               >
@@ -291,46 +289,44 @@ export function BuilderPage() {
                       {t(card.status)}
                     </span>
                   </div>
-                  {card.status === "draft" && (
-                    <button
-                      type="button"
-                      aria-label={t("Delete template: {name}", { name: card.name })}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setConfirmId(card.id);
-                      }}
-                      style={{
-                        flexShrink: 0,
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer",
-                        padding: "0.3rem",
-                        borderRadius: "0.35rem",
-                        color: "var(--muted)",
-                        lineHeight: 0,
-                        transition: "color 0.15s",
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.color = "#b93333")}
-                      onMouseLeave={(e) => (e.currentTarget.style.color = "var(--muted)")}
+                  <button
+                    type="button"
+                    aria-label={t("Delete template: {name}", { name: card.name })}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setConfirmCard(card);
+                    }}
+                    style={{
+                      flexShrink: 0,
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      padding: "0.3rem",
+                      borderRadius: "0.35rem",
+                      color: "var(--muted)",
+                      lineHeight: 0,
+                      transition: "color 0.15s",
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = "#b93333")}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = "var(--muted)")}
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="15"
+                      height="15"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
                     >
-                      <svg
-                        viewBox="0 0 24 24"
-                        width="15"
-                        height="15"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.7"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        aria-hidden="true"
-                      >
-                        <polyline points="3 6 5 6 21 6" />
-                        <path d="M19 6l-1 14H6L5 6" />
-                        <path d="M10 11v6M14 11v6" />
-                        <path d="M9 6V4h6v2" />
-                      </svg>
-                    </button>
-                  )}
+                      <polyline points="3 6 5 6 21 6" />
+                      <path d="M19 6l-1 14H6L5 6" />
+                      <path d="M10 11v6M14 11v6" />
+                      <path d="M9 6V4h6v2" />
+                    </svg>
+                  </button>
                 </div>
                 <p className="body" style={{ margin: "0.4rem 0 0" }}>
                   {card.brand.organizationName}
@@ -338,63 +334,20 @@ export function BuilderPage() {
                 <p className="body" style={{ margin: "0.2rem 0 0", fontSize: "0.82rem" }}>
                   v{card.version} · {new Date(card.updatedAt).toLocaleDateString()}
                 </p>
-                {confirmId === card.id && (
-                  <div
-                    role="group"
-                    aria-label={t("Confirm delete")}
-                    onClick={(e) => e.stopPropagation()}
-                    onKeyDown={(e) => e.stopPropagation()}
-                    style={{
-                      marginTop: "0.9rem",
-                      paddingTop: "0.75rem",
-                      borderTop: "1px solid rgba(185,51,51,0.2)",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.6rem",
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <span
-                      className="body"
-                      style={{ fontSize: "0.82rem", color: "#b93333", flexGrow: 1 }}
-                    >
-                      {t("Delete this draft?")}
-                    </span>
-                    <button
-                      type="button"
-                      className="btn ghost"
-                      style={{ padding: "0.3rem 0.7rem", fontSize: "0.8rem" }}
-                      onClick={() => setConfirmId(null)}
-                    >
-                      {t("Cancel")}
-                    </button>
-                    <button
-                      type="button"
-                      disabled={deleteMut.isPending}
-                      aria-busy={deleteMut.isPending}
-                      style={{
-                        padding: "0.3rem 0.7rem",
-                        fontSize: "0.8rem",
-                        borderRadius: "0.5rem",
-                        background: "rgba(185,51,51,0.1)",
-                        border: "1px solid rgba(185,51,51,0.35)",
-                        color: "#b93333",
-                        cursor: "pointer",
-                        fontWeight: 500,
-                        opacity: deleteMut.isPending ? 0.6 : 1,
-                      }}
-                      onClick={async () => {
-                        await deleteMut.mutateAsync(card.id);
-                        setConfirmId(null);
-                      }}
-                    >
-                      {deleteMut.isPending ? t("Deleting…") : t("Delete")}
-                    </button>
-                  </div>
-                )}
               </GlassCard>
             ))}
           </div>
+        )}
+        {confirmCard && (
+          <DeleteTemplateModal
+            card={confirmCard}
+            busy={deleteMut.isPending}
+            onCancel={() => setConfirmCard(null)}
+            onConfirm={async () => {
+              await deleteMut.mutateAsync(confirmCard.id);
+              setConfirmCard(null);
+            }}
+          />
         )}
       </AppShell>
     );

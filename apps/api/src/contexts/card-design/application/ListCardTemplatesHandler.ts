@@ -12,6 +12,10 @@ export class ListCardTemplatesHandler {
 
   async execute(input: ListCardTemplatesInput): Promise<Result<CardTemplateDTO[]>> {
     const templates = await this.repo.findAllByTenant(input.tenantId, input.status);
-    return ok(templates.map(toCardTemplateDTO));
+    const counts = await this.repo.countIssuedByTemplateIds(
+      input.tenantId,
+      templates.map((t) => t.id.value),
+    );
+    return ok(templates.map((t) => toCardTemplateDTO(t, counts.get(t.id.value) ?? 0)));
   }
 }

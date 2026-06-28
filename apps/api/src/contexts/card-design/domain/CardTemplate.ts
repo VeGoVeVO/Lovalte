@@ -114,13 +114,13 @@ export class CardTemplate extends AggregateRoot<CardTemplateId> {
   }
 
   /**
-   * Delete this template. Only allowed in draft status.
+   * Delete this template. Allowed in any status: the pass-issuance snapshot
+   * (pass_types), card images, and issued passes are independent of this row
+   * (no FK back to card_templates), so deleting never breaks a card already in
+   * a customer's Wallet - it only stops new passes being issued from this design.
    * Emits CardTemplateDeleted.
    */
   delete(): void {
-    if (this._status !== "draft") {
-      throw new DomainError("Only draft templates can be deleted", "TEMPLATE_NOT_DRAFT");
-    }
     this.addEvent(
       this.makeEvent("CardTemplateDeleted", {
         templateId: this.id.value,

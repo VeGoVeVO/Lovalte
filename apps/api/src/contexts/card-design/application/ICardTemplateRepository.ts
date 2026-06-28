@@ -18,6 +18,8 @@ export interface ICardTemplateRepository {
   /** Insert an asset ref record (audit log entry). */
   registerAsset(asset: Omit<AssetRef, "id" | "createdAt">): Promise<AssetRef>;
   findAssetsByTemplate(templateId: string, tenantId: string): Promise<AssetRef[]>;
-  /** Hard-delete a draft template and its asset refs. */
+  /** Hard-delete a template and its asset refs (any status; issued passes are unaffected). */
   delete(id: string, tenantId: string): Promise<void>;
+  /** Count issued passes per template id (passes whose pass_type_id matches the template). */
+  countIssuedByTemplateIds(tenantId: string, templateIds: string[]): Promise<Map<string, number>>;
 }

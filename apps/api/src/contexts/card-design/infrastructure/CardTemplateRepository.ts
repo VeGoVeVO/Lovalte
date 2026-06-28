@@ -105,11 +105,33 @@ export class CardTemplateRepository implements ICardTemplateRepository {
         id,
         tenantId,
       ]);
-      await client.query(
-        `DELETE FROM card_templates WHERE id = $1 AND tenant_id = $2 AND status = 'draft'`,
-        [id, tenantId],
-      );
+      // Any status: card_images and the pass-issuance snapshot have no FK back
+      // here, so issued passes keep working after the template row is gone.
+      await client.query(`DELETE FROM card_templates WHERE id = $1 AND tenant_id = $2`, [
+        id,
+        tenantId,
+      ]);
     });
+  }
+
+  // ponytail: cross-context read of pass-issuance's `passes` table (count only).
+  // Cleaner long-term = a PassIssued/PassDeleted projection owned by this
+  // context; a read-only COUNT through a named port is the pragmatic ceiling.
+  async countIssuedByTemplateIds(
+    tenantId: string,
+    templateIds: string[],
+  ): Promise<Map<string, number>> {
+    const counts = new Map<string, number>();
+    if (templateIds.length === 0) return counts;
+    const res = await this.pool.query<{ pass_type_id: string; n: string }>(
+      `SELECT pass_type_id, count(*)::text AS n
+         FROM passes
+        WHERE tenant_id = $1 AND pass_type_id = ANY($2::uuid[])
+        GROUP BY pass_type_id`,
+      [tenantId, templateIds],
+    );
+    for (const row of res.rows) counts.set(row.pass_type_id, Number(row.n));
+    return counts;
   }
 
   private rowToTemplate(row: Record<string, unknown>): CardTemplate {

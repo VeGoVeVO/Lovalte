@@ -229,8 +229,9 @@ export function registerCardDesignRoutes(
   );
 
   /**
-   * DELETE /api/v1/card-templates/:id - permanently delete a draft template.
-   * Published templates cannot be deleted.
+   * DELETE /api/v1/card-templates/:id - permanently delete a card design (any
+   * status). Passes already issued from it keep working (independent snapshot);
+   * only new issuance from this design stops.
    */
   app.delete("/api/v1/card-templates/:id", { preHandler: ownerManager }, async (req, reply) => {
     const auth = getAuth(req);

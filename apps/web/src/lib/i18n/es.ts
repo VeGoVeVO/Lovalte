@@ -367,4 +367,18 @@ export const ES: Record<string, string> = {
   // ── Misc ─────────────────────────────────────────────────────────────
   "Add member": "Añadir cliente",
   "← Back": "← Volver",
+
+  // ── Delete card design ───────────────────────────────────────────────
+  "Delete template: {name}": "Eliminar plantilla: {name}",
+  "Delete “{name}”?": "¿Eliminar “{name}”?",
+  "Nothing has been issued from this design yet, so it will be permanently deleted. This can't be undone.":
+    "Aún no se ha emitido ninguna tarjeta con este diseño, así que se eliminará de forma permanente. Esta acción no se puede deshacer.",
+  "1 customer already has this card in their Apple Wallet.":
+    "1 cliente ya tiene esta tarjeta en su Apple Wallet.",
+  "{count} customers already have this card in their Apple Wallet.":
+    "{count} clientes ya tienen esta tarjeta en su Apple Wallet.",
+  "Deleting removes the design from your dashboard and stops new sign-ups - but cards already in customer wallets keep working and keep earning points. You just won't be able to issue new ones from this design.":
+    "Al eliminarlo, el diseño desaparece de tu panel y se detienen las nuevas altas, pero las tarjetas que ya están en las carteras de los clientes siguen funcionando y acumulando puntos. Solo dejarás de poder emitir nuevas con este diseño.",
+  "Delete card": "Eliminar tarjeta",
+  "Deleting…": "Eliminando…",
 };

@@ -35,6 +35,8 @@ export interface CardTemplateDTO {
     rewardThreshold: number;
     tierRules: { label: string; minPoints: number }[];
   };
+  /** Passes already issued from this template (cards live in customer wallets). */
+  issuedCount: number;
   createdAt: string;
   updatedAt: string;
 }
