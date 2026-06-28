@@ -19,7 +19,12 @@ echo "==> Running database migrations"
 $C run --rm api node dist/db/migrate.js
 
 echo "==> Starting / updating services"
-$C up -d
+# An interrupted recreate can leave a half-renamed container (e.g.
+# <hash>_lovalte-api-1) that blocks the next `up` with a name conflict. Clear
+# any non-running project containers first; the live ones are untouched.
+stale=$(docker ps -aq --filter "name=lovalte-" --filter "status=created" --filter "status=exited" --filter "status=dead")
+[ -n "$stale" ] && docker rm -f $stale || true
+$C up -d --remove-orphans
 
 echo "==> Pruning old images"
 docker image prune -f
