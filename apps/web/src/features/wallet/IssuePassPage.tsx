@@ -110,8 +110,14 @@ export function IssuePassPage() {
   };
 
   return (
-    <AppShell title={t("Issue a Wallet Pass")}>
+    <AppShell>
       <div style={{ maxWidth: 540, margin: "0 auto" }}>
+        <h1
+          className="cardt"
+          style={{ margin: "0 0 0.9rem", fontSize: "clamp(1.1rem,1rem + 0.5vw,1.3rem)", fontWeight: 600, letterSpacing: "-0.01em" }}
+        >
+          {t("Issue a Wallet Pass")}
+        </h1>
         <GlassCard light className="waitlist">
           <p className="body" style={{ marginBottom: "1.5rem" }}>
             {t(

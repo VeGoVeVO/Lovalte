@@ -23,9 +23,7 @@ export function BuilderPage() {
 
   if (editing) {
     return (
-      <AppShell
-        title={editing === "new" ? t("New card") : t("Edit: {name}", { name: editing.name })}
-      >
+      <AppShell>
         <CardEditor initial={editing} onClose={() => setEditing(null)} />
       </AppShell>
     );
@@ -33,8 +31,11 @@ export function BuilderPage() {
 
   const list = templates.data ?? [];
   return (
-    <AppShell title={t("Card Builder")}>
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "1.5rem" }}>
+    <AppShell>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", marginBottom: "1.5rem", flexWrap: "wrap" }}>
+        <h1 className="cardt" style={{ margin: 0, fontSize: "clamp(1.1rem,1rem + 0.5vw,1.3rem)", fontWeight: 600, letterSpacing: "-0.01em" }}>
+          {t("Card Builder")}
+        </h1>
         <GlassButton type="button" onClick={() => setEditing("new")}>
           {t("+ New card")}
         </GlassButton>

@@ -291,20 +291,23 @@ export function CardCanvas({
             onSelect("business");
           }}
           style={{
-            fontSize: 17,
+            flex: 1,
+            fontSize: 15,
             fontWeight: 700,
-            whiteSpace: "nowrap",
             overflow: "hidden",
             textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
             ...ring("business"),
           }}
         >
           {brand}
         </span>
-        <div style={{ marginLeft: "auto", textAlign: "right", flexShrink: 0 }}>
-          <div style={labelStyle}>{TYPE_META[doc.type].primaryLabel}</div>
-          <div style={{ fontSize: 14, fontWeight: 700 }}>{sampleValue(doc)}</div>
-        </div>
+        {doc.headerFields.length > 0 && (
+          <div style={{ textAlign: "right", flexShrink: 0 }}>
+            <div style={labelStyle}>{doc.headerFields[0]?.label}</div>
+            <div style={{ fontSize: 13, fontWeight: 600 }}>{doc.headerFields[0]?.value}</div>
+          </div>
+        )}
       </div>
 
       {doc.type === "stamps" ? (
@@ -373,38 +376,46 @@ export function CardCanvas({
         />
       )}
 
-      <div
-        onClick={(e) => {
-          if (!editable) return;
-          e.stopPropagation();
-          onSelect("primary");
-        }}
-        style={{ padding: "12px 16px 4px", ...ring("primary") }}
-      >
-        <div style={{ display: "flex", gap: 18, flexWrap: "wrap" }}>
+      {/* Primary field — large, below the strip (Apple Wallet accurate) */}
+      {doc.type !== "stamps" && (
+        <div
+          onClick={(e) => {
+            if (!editable) return;
+            e.stopPropagation();
+            onSelect("primary");
+          }}
+          style={{ padding: "10px 16px 4px", ...ring("primary") }}
+        >
+          <div style={{ ...labelStyle }}>{doc.primaryLabel}</div>
+          <div style={{ fontSize: 30, fontWeight: 800, lineHeight: 1, marginTop: 3, letterSpacing: "-0.02em" }}>
+            {sampleValue(doc)}
+          </div>
+        </div>
+      )}
+
+      {/* Secondary fields row */}
+      {(doc.type === "stamps"
+        ? [{ id: "g", label: t("UNTIL REWARD"), value: String(doc.stampsGoal) }]
+        : doc.fields
+      ).length > 0 && (
+        <div style={{ display: "flex", gap: 18, padding: "8px 16px 4px", flexWrap: "wrap" }}>
           {(doc.type === "stamps"
             ? [{ id: "g", label: t("UNTIL REWARD"), value: String(doc.stampsGoal) }]
             : doc.fields
           )
-            .slice(0, 3)
+            .slice(0, 4)
             .map((fld) => (
               <div key={fld.id} style={{ minWidth: 0 }}>
                 <div style={{ ...labelStyle, fontSize: 9 }}>{fld.label}</div>
-                <div
-                  style={{
-                    fontSize: doc.type === "stamps" ? 28 : 15,
-                    fontWeight: 700,
-                    marginTop: 2,
-                  }}
-                >
+                <div style={{ fontSize: doc.type === "stamps" ? 22 : 14, fontWeight: 700, marginTop: 2 }}>
                   {fld.value}
                 </div>
               </div>
             ))}
         </div>
-      </div>
+      )}
 
-      <div style={{ flex: 1, minHeight: 10 }} />
+      <div style={{ flex: 1, minHeight: 6 }} />
 
       <div style={{ display: "flex", justifyContent: "center", padding: "8px 0 16px" }}>
         <div style={{ background: "#fff", padding: 9, borderRadius: 8, lineHeight: 0 }}>
