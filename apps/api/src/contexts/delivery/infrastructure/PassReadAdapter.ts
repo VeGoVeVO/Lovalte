@@ -8,26 +8,32 @@ interface PassRow {
   pass_type_identifier: string;
   authentication_token: string;
   updated_at: Date;
-  pkpass_s3_key: string | null;
+  version: number;
 }
 
 /**
  * Read-only adapter for passes.
  * The delivery context must NOT import the pass-issuance domain; it reads the
  * shared table directly with parameterised SQL, returning a DTO.
+ *
+ * Columns: the passes table exposes `last_updated` (monotonic update tag) and
+ * `version`; there is no `updated_at`/`pkpass_s3_key` (the signed buffer lives
+ * in Redis keyed by serial+version, not S3).
  */
 export class PassReadAdapter implements IPassReadPort {
   constructor(private readonly pool: Pool) {}
 
-  async findBySerial(serialNumber: string): Promise<PassReadDTO | null> {
-    const result = await this.pool.query<PassRow>(
-      `SELECT p.id,
+  private static readonly COLS = `p.id,
               p.tenant_id,
               p.serial_number,
               pt.pass_type_identifier,
               p.authentication_token,
-              p.updated_at,
-              p.pkpass_s3_key
+              p.last_updated AS updated_at,
+              p.version`;
+
+  async findBySerial(serialNumber: string): Promise<PassReadDTO | null> {
+    const result = await this.pool.query<PassRow>(
+      `SELECT ${PassReadAdapter.COLS}
        FROM passes p
        JOIN pass_types pt ON pt.id = p.pass_type_id
        WHERE p.serial_number = $1
@@ -39,13 +45,7 @@ export class PassReadAdapter implements IPassReadPort {
 
   async findById(passId: string): Promise<PassReadDTO | null> {
     const result = await this.pool.query<PassRow>(
-      `SELECT p.id,
-              p.tenant_id,
-              p.serial_number,
-              pt.pass_type_identifier,
-              p.authentication_token,
-              p.updated_at,
-              p.pkpass_s3_key
+      `SELECT ${PassReadAdapter.COLS}
        FROM passes p
        JOIN pass_types pt ON pt.id = p.pass_type_id
        WHERE p.id = $1
@@ -63,7 +63,7 @@ export class PassReadAdapter implements IPassReadPort {
       passTypeIdentifier: row.pass_type_identifier,
       authenticationToken: row.authentication_token,
       updatedAt: row.updated_at,
-      pkpassS3Key: row.pkpass_s3_key,
+      version: row.version,
     };
   }
 }

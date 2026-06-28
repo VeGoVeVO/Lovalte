@@ -138,6 +138,15 @@ export const registerPassIssuance: ContextModule = async (app, deps) => {
       });
       if (!r.ok) {
         app.log.error({ err: r.error }, "UpdatePassFields failed after PointsEarned");
+        continue;
+      }
+      // Eagerly re-sign + cache the NEW pass version so the Wallet web service
+      // (delivery getpass) can serve it the moment the device polls after the
+      // APNs push. Without this the new version is never in Redis -> getpass
+      // 503s -> the card visually never refreshes.
+      const signed = await getPassPkpass.execute({ passId: pass.id.value, tenantId });
+      if (!signed.ok) {
+        app.log.error({ err: signed.error }, "Re-sign after PointsEarned failed");
       }
     }
   });

@@ -24,7 +24,7 @@ export const registerDelivery: ContextModule = async (app, deps) => {
   const deviceRepo = new DeviceRepository(deps.pool);
   const regRepo = new RegistrationRepository(deps.pool);
   const passRead = new PassReadAdapter(deps.pool);
-  const passBinary = new PassBinaryAdapter();
+  const passBinary = new PassBinaryAdapter(deps.redis);
   const apns = new ApnsAdapter();
 
   // Application handlers

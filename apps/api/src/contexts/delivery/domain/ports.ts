@@ -64,7 +64,7 @@ export interface PassReadDTO {
   passTypeIdentifier: string;
   authenticationToken: string;
   updatedAt: Date;
-  pkpassS3Key: string | null;
+  version: number;
 }
 
 export interface IPassReadPort {
@@ -77,6 +77,6 @@ export interface IPassReadPort {
 // ---------------------------------------------------------------------------
 
 export interface IPassBinaryPort {
-  /** Return the signed .pkpass bytes from object storage, or null if not cached. */
-  get(s3Key: string): Promise<Buffer | null>;
+  /** Return the signed .pkpass bytes for (serial, version) from the cache, or null. */
+  get(serialNumber: string, version: number): Promise<Buffer | null>;
 }

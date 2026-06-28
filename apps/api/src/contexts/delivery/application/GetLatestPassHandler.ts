@@ -41,10 +41,7 @@ export class GetLatestPassHandler {
       }
     }
 
-    let buffer: Buffer | null = null;
-    if (pass.pkpassS3Key) {
-      buffer = await this.binary.get(pass.pkpassS3Key);
-    }
+    const buffer = await this.binary.get(pass.serialNumber, pass.version);
 
     return ok({
       status: 200,

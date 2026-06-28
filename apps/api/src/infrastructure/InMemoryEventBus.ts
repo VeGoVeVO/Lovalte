@@ -16,7 +16,15 @@ export class InMemoryEventBus implements DomainEventBus {
     for (const event of events) {
       const list = this.handlers.get(event.name) ?? [];
       for (const handler of list) {
-        await handler(event);
+        try {
+          await handler(event);
+        } catch (err) {
+          // Isolate subscribers: a failing side effect (APNs push, re-sign,
+          // projection) must not break the publishing command or sibling
+          // subscribers. Log and continue. ponytail: swap for an outbox + retry
+          // when contexts move to a real broker.
+          console.error(`[event-bus] subscriber for "${event.name}" failed:`, err);
+        }
       }
     }
   }
