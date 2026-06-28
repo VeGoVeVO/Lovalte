@@ -115,3 +115,11 @@ export function useRegisterAsset() {
     onSuccess: () => qc.invalidateQueries({ queryKey: QK }),
   });
 }
+
+export function useDeleteTemplate() {
+  const qc = useQueryClient();
+  return useMutation<void, ApiError, string>({
+    mutationFn: (id) => api.del(`/api/v1/card-templates/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: QK }),
+  });
+}

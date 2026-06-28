@@ -9,6 +9,7 @@ import { ListCardTemplatesHandler } from "./application/ListCardTemplatesHandler
 import { RegisterAssetRefHandler } from "./application/RegisterAssetRefHandler";
 import { StoreImageHandler } from "./application/StoreImageHandler";
 import { GetImageHandler } from "./application/GetImageHandler";
+import { DeleteCardTemplateHandler } from "./application/DeleteCardTemplateHandler";
 import { registerCardDesignRoutes } from "./presentation/routes";
 
 /**
@@ -36,6 +37,7 @@ export const registerCardDesign: ContextModule = async (app, deps) => {
     registerAsset: new RegisterAssetRefHandler(repo),
     storeImage: new StoreImageHandler(imageRepo),
     getImage: new GetImageHandler(imageRepo),
+    deleteTemplate: new DeleteCardTemplateHandler(repo, deps.bus),
   };
 
   // Subscribe to cross-context events consumed by this context.

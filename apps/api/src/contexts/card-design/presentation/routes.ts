@@ -11,6 +11,7 @@ import type { ListCardTemplatesHandler } from "../application/ListCardTemplatesH
 import type { RegisterAssetRefHandler } from "../application/RegisterAssetRefHandler";
 import type { StoreImageHandler } from "../application/StoreImageHandler";
 import type { GetImageHandler } from "../application/GetImageHandler";
+import type { DeleteCardTemplateHandler } from "../application/DeleteCardTemplateHandler";
 
 const rgbPattern = /^rgb\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*\)$/;
 
@@ -83,6 +84,7 @@ export interface CardDesignHandlers {
   registerAsset: RegisterAssetRefHandler;
   storeImage: StoreImageHandler;
   getImage: GetImageHandler;
+  deleteTemplate: DeleteCardTemplateHandler;
 }
 
 export function registerCardDesignRoutes(
@@ -222,6 +224,18 @@ export function registerCardDesignRoutes(
       return reply.status(201).send(r.value);
     }
   );
+
+  /**
+   * DELETE /api/v1/card-templates/:id - permanently delete a draft template.
+   * Published templates cannot be deleted.
+   */
+  app.delete("/api/v1/card-templates/:id", { preHandler: ownerManager }, async (req, reply) => {
+    const auth = getAuth(req);
+    const { id } = parse(idParamSchema, req.params);
+    const r = await h.deleteTemplate.execute({ templateId: id, tenantId: auth.tenantId });
+    if (!r.ok) throw r.error;
+    return reply.status(204).send();
+  });
 
   /**
    * GET /api/v1/images/:id - public, unauthenticated serve of stored card art by

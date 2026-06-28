@@ -99,6 +99,20 @@ export class CardTemplateRepository implements ICardTemplateRepository {
     return res.rows.map((r) => this.rowToAsset(r));
   }
 
+  async delete(id: string, tenantId: string): Promise<void> {
+    await withTransaction(this.pool, async (client: PoolClient) => {
+      await client.query(`SELECT set_config('app.current_tenant', $1, true)`, [tenantId]);
+      await client.query(
+        `DELETE FROM template_assets WHERE template_id = $1 AND tenant_id = $2`,
+        [id, tenantId]
+      );
+      await client.query(
+        `DELETE FROM card_templates WHERE id = $1 AND tenant_id = $2 AND status = 'draft'`,
+        [id, tenantId]
+      );
+    });
+  }
+
   private rowToTemplate(row: Record<string, unknown>): CardTemplate {
     const cfg = row.config as { brand: BrandRow; rewardRule: RewardRow };
     const b = cfg.brand;

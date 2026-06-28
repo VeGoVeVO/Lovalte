@@ -117,6 +117,19 @@ export class CardTemplate extends AggregateRoot<CardTemplateId> {
   }
 
   /**
+   * Delete this template. Only allowed in draft status.
+   * Emits CardTemplateDeleted.
+   */
+  delete(): void {
+    if (this._status !== "draft") {
+      throw new DomainError("Only draft templates can be deleted", "TEMPLATE_NOT_DRAFT");
+    }
+    this.addEvent(
+      this.makeEvent("CardTemplateDeleted", { templateId: this.id.value, tenantId: this._tenantId })
+    );
+  }
+
+  /**
    * Publish this template. Runs domain validation (field counts, colors, required icon),
    * increments version, transitions to published, emits CardTemplatePublished.
    */
