@@ -317,30 +317,27 @@ export function CardCanvas({
   const { t } = useT();
   const editable = !readOnly;
 
-  // Contextual recolour as a small wheel anchored at a point. Background: clicking
-  // the card opens the wheel straight away (open:true). Text/label: focusing the
-  // text shows just a swatch (open:false) that opens the wheel on tap.
-  type ColorRole = "bg" | "fg" | "label";
-  const [colorChip, setColorChip] = useState<{
-    role: ColorRole;
-    x: number;
-    y: number;
-    open: boolean;
-  } | null>(null);
-  const wheelOpen = useRef(false);
+  // Two INDEPENDENT recolour surfaces so they never cross-fire:
+  //  • bgChip   — clicking the card background; wheel opens immediately.
+  //  • textChip — focusing a text; a swatch appears that opens the wheel on tap.
+  const [bgChip, setBgChip] = useState<{ x: number; y: number } | null>(null);
+  const [textChip, setTextChip] = useState<{ role: "fg" | "label"; x: number; y: number } | null>(
+    null,
+  );
+  const bgWheelOpen = useRef(false);
+  const textWheelOpen = useRef(false);
   const blurTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const themeColor = (role: ColorRole) =>
-    role === "bg" ? doc.theme.bg : role === "fg" ? doc.theme.fg : doc.theme.label;
   const colorProps = (role: "fg" | "label") => ({
     colorRole: role,
     onColorFocus: (r: "fg" | "label", el: HTMLElement) => {
       clearTimeout(blurTimer.current);
       const rc = el.getBoundingClientRect();
-      setColorChip({ role: r, x: rc.left, y: rc.top, open: false });
+      setBgChip(null);
+      setTextChip({ role: r, x: rc.left, y: rc.top });
     },
     onColorBlur: () => {
       blurTimer.current = setTimeout(() => {
-        if (!wheelOpen.current) setColorChip(null);
+        if (!textWheelOpen.current) setTextChip(null);
       }, 200);
     },
   });
@@ -451,10 +448,11 @@ export function CardCanvas({
     <div
       onClick={(e) => {
         if (!editable) return;
-        // Clicking the card background = pick the BG colour; the wheel opens straight
-        // away at the click point (no extra popover chrome).
+        // Clicking the card background = pick the BG colour; the wheel opens at the
+        // click point. (Children that handle their own clicks stopPropagation.)
         clearTimeout(blurTimer.current);
-        setColorChip({ role: "bg", x: e.clientX, y: e.clientY, open: true });
+        setTextChip(null);
+        setBgChip({ x: e.clientX, y: e.clientY });
       }}
       style={{
         width: "100%",
@@ -480,7 +478,10 @@ export function CardCanvas({
             <button
               type="button"
               aria-label={t("Add logo")}
-              onClick={(e) => onAddLogo(e.currentTarget.getBoundingClientRect())}
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddLogo(e.currentTarget.getBoundingClientRect());
+              }}
               style={{
                 width: 34,
                 height: 34,
@@ -762,34 +763,55 @@ export function CardCanvas({
         </div>
       </div>
       {editable &&
-        colorChip &&
+        bgChip &&
         createPortal(
           <div
             className="lvt-tc-chip"
             onMouseDown={(e) => e.preventDefault()}
             style={{
               position: "fixed",
-              left: Math.min(Math.max(8, colorChip.x), window.innerWidth - 160),
-              top: Math.max(8, colorChip.y - 46),
+              left: Math.min(Math.max(8, bgChip.x), window.innerWidth - 160),
+              top: Math.max(8, bgChip.y - 46),
               zIndex: 2400,
               width: 150,
             }}
           >
             <ColorPicker
-              key={`${colorChip.role}-${colorChip.x}-${colorChip.y}`}
-              ariaLabel={
-                colorChip.role === "bg"
-                  ? t("Background")
-                  : colorChip.role === "fg"
-                    ? t("Text colour")
-                    : t("Label colour")
-              }
-              value={themeColor(colorChip.role)}
-              defaultOpen={colorChip.open}
-              onChange={(v) => dispatch("theme.set", { key: colorChip.role, value: v })}
+              key={`bg-${bgChip.x}-${bgChip.y}`}
+              ariaLabel={t("Background")}
+              value={doc.theme.bg}
+              defaultOpen
+              onChange={(v) => dispatch("theme.set", { key: "bg", value: v })}
               onOpenChange={(o) => {
-                if (!o && wheelOpen.current) setColorChip(null);
-                wheelOpen.current = o;
+                if (!o && bgWheelOpen.current) setBgChip(null);
+                bgWheelOpen.current = o;
+              }}
+            />
+          </div>,
+          document.body,
+        )}
+      {editable &&
+        textChip &&
+        createPortal(
+          <div
+            className="lvt-tc-chip"
+            onMouseDown={(e) => e.preventDefault()}
+            style={{
+              position: "fixed",
+              left: Math.min(Math.max(8, textChip.x), window.innerWidth - 160),
+              top: Math.max(8, textChip.y - 46),
+              zIndex: 2400,
+              width: 150,
+            }}
+          >
+            <ColorPicker
+              key={`${textChip.role}-${textChip.x}-${textChip.y}`}
+              ariaLabel={textChip.role === "fg" ? t("Text colour") : t("Label colour")}
+              value={textChip.role === "fg" ? doc.theme.fg : doc.theme.label}
+              onChange={(v) => dispatch("theme.set", { key: textChip.role, value: v })}
+              onOpenChange={(o) => {
+                if (!o && textWheelOpen.current) setTextChip(null);
+                textWheelOpen.current = o;
               }}
             />
           </div>,

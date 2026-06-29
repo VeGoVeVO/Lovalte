@@ -193,10 +193,26 @@ export function ColorPicker({
 
   const place = () => {
     const rc = triggerRef.current?.getBoundingClientRect();
-    if (rc) setRect({ left: rc.left, top: rc.bottom + 6 });
+    if (!rc) return;
+    const W = 248;
+    const H = popRef.current?.offsetHeight || 360;
+    const pad = 8;
+    // Clamp horizontally so the wheel never runs off the right/left edge.
+    const left = Math.max(pad, Math.min(rc.left, window.innerWidth - W - pad));
+    // Prefer below; flip above if it would overflow the bottom; clamp as last resort.
+    let top = rc.bottom + 6;
+    if (top + H > window.innerHeight - pad) {
+      const above = rc.top - H - 6;
+      top = above >= pad ? above : Math.max(pad, window.innerHeight - H - pad);
+    }
+    setRect({ left, top });
   };
   useLayoutEffect(() => {
-    if (open) place();
+    if (!open) return;
+    place();
+    // Re-place once the popup's real height is measured (flip decision needs it).
+    const id = requestAnimationFrame(place);
+    return () => cancelAnimationFrame(id);
   }, [open]);
 
   useEffect(() => {
