@@ -1,4 +1,4 @@
-import { useRef, useState, type CSSProperties } from "react";
+import { useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { DynamicIcon } from "lucide-react/dynamic";
 import { useUploadImage, fileToDataUrl, validateImageFile } from "./useImages";
@@ -9,12 +9,15 @@ import { stampLayout, STRIP_RATIO, GRID_LEFT } from "./stampStrip";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif";
 
-export type SlotKind = Slot | "business" | "primary" | null;
+/** Every editable component on the card. Clicking one selects + opens its editor. */
+export type SlotKind =
+  "logo" | "name" | "colors" | "hero" | "stamps" | "primary" | "header" | "fields" | "back" | null;
 
 interface Props {
   doc: CardDoc;
   selected?: SlotKind;
-  onSelect?: (s: SlotKind) => void;
+  /** Select a component to edit; `anchor` is the clicked element the popover attaches to. */
+  onSelect?: (s: SlotKind, anchor?: HTMLElement | null) => void;
   /** dispatch a builder tool (image.set / image.move). */
   dispatch?: (toolId: string, args?: Record<string, unknown>) => void;
   width?: number;
@@ -23,7 +26,6 @@ interface Props {
 }
 
 const sampleValue = (doc: CardDoc) => {
-  if (doc.type === "stamps") return `6 / ${doc.stampsGoal}`;
   if (doc.type === "cashback") return "$5.25";
   return "120";
 };
@@ -55,7 +57,7 @@ function ImgSlot({
   active: boolean;
   label: string;
   editable: boolean;
-  onSelect: () => void;
+  onSelect: (anchor: HTMLElement) => void;
   dispatch: (toolId: string, args?: Record<string, unknown>) => void;
 }) {
   const { t } = useT();
@@ -107,7 +109,7 @@ function ImgSlot({
         "aria-label": src ? t("Move {label}", { label }) : t("Add {label}", { label }),
         onClick: (e: React.MouseEvent) => {
           e.stopPropagation();
-          onSelect();
+          onSelect(e.currentTarget as HTMLElement);
           if (!src) inputRef.current?.click();
         },
         onKeyDown: (e: React.KeyboardEvent) => {
@@ -220,13 +222,13 @@ function ImgSlot({
   );
 }
 
-/** "rgb(r, g, b)" -> "rgba(r, g, b, a)" for the faint empty-stamp ring. */
+/** "rgb(r, g, b)" -> "rgba(r, g, b, a)" for faint marks/rings. */
 const fade = (rgb: string, a: number) => rgb.replace("rgb(", "rgba(").replace(")", `, ${a})`);
 
 /**
- * The stamp grid on the strip band — every slot is a clearly visible ring when
- * empty and a filled disc (with the icon knocked out) when earned, so a fresh
- * card shows its empty stamps. Same layout (stampLayout) as the baked frames.
+ * The stamp grid on the strip band — every empty slot shows the chosen icon faint
+ * and every earned slot a filled disc with the icon knocked out (highlighted), so
+ * a fresh card reads as "coffee x N". Same layout (stampLayout) as the baked frames.
  */
 function StampGrid({
   doc,
@@ -241,6 +243,7 @@ function StampGrid({
 }) {
   const { cols, rows } = stampLayout(doc.stampsGoal);
   const dot = Math.max(16, Math.round(((width * (1 - GRID_LEFT)) / cols) * 0.62));
+  const icon = Math.round(dot * 0.62);
   return (
     <div
       aria-hidden
@@ -271,23 +274,30 @@ function StampGrid({
             />
           );
         }
+        if (got) {
+          return (
+            <div
+              key={i}
+              style={{
+                width: dot,
+                height: dot,
+                borderRadius: "50%",
+                background: fg,
+                display: "grid",
+                placeItems: "center",
+              }}
+            >
+              <DynamicIcon name={doc.stampIcon as never} size={icon} color={bg} />
+            </div>
+          );
+        }
         return (
-          <div
+          <DynamicIcon
             key={i}
-            style={{
-              width: dot,
-              height: dot,
-              borderRadius: "50%",
-              display: "grid",
-              placeItems: "center",
-              background: got ? fg : "transparent",
-              border: got ? "none" : `2px solid ${fade(fg, 0.5)}`,
-            }}
-          >
-            {got && (
-              <DynamicIcon name={doc.stampIcon as never} size={Math.round(dot * 0.58)} color={bg} />
-            )}
-          </div>
+            name={doc.stampIcon as never}
+            size={Math.round(dot * 0.85)}
+            color={fade(fg, 0.4)}
+          />
         );
       })}
     </div>
@@ -296,7 +306,7 @@ function StampGrid({
 
 const NOOP = () => {};
 
-/** The interactive 1:1 Wallet card the merchant edits directly. */
+/** The interactive 1:1 Wallet card the merchant edits by clicking its parts. */
 export function CardCanvas({
   doc,
   selected = null,
@@ -319,12 +329,59 @@ export function CardCanvas({
     fontWeight: 600,
     whiteSpace: "nowrap",
   };
-  const ring = (k: SlotKind): CSSProperties =>
-    selected === k ? { outline: "2.5px solid #3a86ff", outlineOffset: 3, borderRadius: 6 } : {};
+
+  /** A clickable, highlight-on-select region of the card. */
+  const Region = ({
+    kind,
+    children,
+    style,
+    label,
+  }: {
+    kind: Exclude<SlotKind, null>;
+    children: ReactNode;
+    style?: CSSProperties;
+    label: string;
+  }) => {
+    if (!editable) return <div style={style}>{children}</div>;
+    const on = selected === kind;
+    return (
+      <div
+        role="button"
+        tabIndex={0}
+        aria-label={t("Edit {label}", { label })}
+        onClick={(e) => {
+          e.stopPropagation();
+          onSelect(kind, e.currentTarget);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onSelect(kind, e.currentTarget);
+          }
+        }}
+        style={{
+          cursor: "pointer",
+          borderRadius: 8,
+          outline: on ? "2.5px solid #3a86ff" : "none",
+          outlineOffset: 3,
+          ...style,
+        }}
+      >
+        {children}
+      </div>
+    );
+  };
+
+  const fieldChip = (label: string, value: string) => (
+    <div style={{ minWidth: 0 }}>
+      <div style={{ ...labelStyle, fontSize: 9 }}>{label}</div>
+      <div style={{ fontSize: 14, fontWeight: 700, marginTop: 2 }}>{value}</div>
+    </div>
+  );
 
   return (
     <div
-      onClick={() => editable && onSelect(null)}
+      onClick={(e) => editable && onSelect("colors", e.currentTarget)}
       style={{
         width: "100%",
         maxWidth: width,
@@ -342,6 +399,7 @@ export function CardCanvas({
         transition: "background .35s ease",
       }}
     >
+      {/* Header: logo + business name + header fields (top-right, max 3) */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "13px 15px 11px" }}>
         <div style={{ width: 34, height: 34, flexShrink: 0 }}>
           <ImgSlot
@@ -355,99 +413,95 @@ export function CardCanvas({
             active={selected === "logo"}
             label={t("Logo")}
             editable={editable}
-            onSelect={() => onSelect("logo")}
+            onSelect={(el) => onSelect("logo", el)}
             dispatch={dispatch}
           />
         </div>
-        <span
-          onClick={(e) => {
-            if (!editable) return;
-            e.stopPropagation();
-            onSelect("business");
-          }}
-          style={{
-            flex: 1,
-            fontSize: 15,
-            fontWeight: 700,
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-            ...ring("business"),
-          }}
-        >
-          {brand}
-        </span>
-        {doc.headerFields.length > 0 && (
-          <div style={{ textAlign: "right", flexShrink: 0 }}>
-            <div style={labelStyle}>{doc.headerFields[0]?.label}</div>
-            <div style={{ fontSize: 13, fontWeight: 600 }}>{doc.headerFields[0]?.value}</div>
-          </div>
-        )}
-      </div>
-
-      {doc.type === "stamps" ? (
-        // Stamp strip: theme-bg band + the stamp grid, with the native "X / N"
-        // primary value overlaid bottom-left — a faithful render of the strip.png
-        // the server bakes (Apple has no native stamp widget). WYSIWYG with the
-        // generated frames in stampStrip.ts.
-        <div
-          onClick={(e) => {
-            if (!editable) return;
-            e.stopPropagation();
-            onSelect("primary");
-          }}
-          style={{
-            position: "relative",
-            height: width * STRIP_RATIO,
-            background: bg,
-            overflow: "hidden",
-            cursor: editable ? "pointer" : "default",
-            ...ring("primary"),
-          }}
-        >
-          {doc.hero?.src && (
-            <img
-              src={doc.hero.src}
-              alt=""
-              style={{
-                position: "absolute",
-                inset: 0,
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-              }}
-            />
-          )}
-          <StampGrid doc={doc} fg={fg} bg={bg} width={width} />
-          {/* Native primary value lives on the left; the grid fills the right. */}
-          <div
+        <Region kind="name" label={t("Business name")} style={{ flex: 1, minWidth: 0 }}>
+          <span
             style={{
-              position: "absolute",
-              left: 16,
-              top: 0,
-              bottom: 0,
-              width: `${GRID_LEFT * 100}%`,
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-              textShadow: doc.hero?.src ? "0 1px 6px rgba(0,0,0,.55)" : "none",
+              display: "block",
+              fontSize: 15,
+              fontWeight: 700,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
             }}
           >
+            {brand}
+          </span>
+        </Region>
+        <Region kind="header" label={t("Header fields")} style={{ flexShrink: 0 }}>
+          {doc.headerFields.length > 0 ? (
+            <div style={{ display: "flex", gap: 12, textAlign: "right" }}>
+              {doc.headerFields.slice(0, 3).map((f) => (
+                <div key={f.id}>
+                  <div style={labelStyle}>{f.label}</div>
+                  <div style={{ fontSize: 13, fontWeight: 600 }}>{f.value}</div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            editable && <span style={{ ...labelStyle, opacity: 0.55 }}>＋ {t("Header")}</span>
+          )}
+        </Region>
+      </div>
+
+      {/* Strip: stamp grid (with the "X / N" value) OR hero photo */}
+      {doc.type === "stamps" ? (
+        <Region kind="stamps" label={t("Stamps")} style={{ borderRadius: 0 }}>
+          <div
+            style={{
+              position: "relative",
+              height: width * STRIP_RATIO,
+              background: bg,
+              overflow: "hidden",
+            }}
+          >
+            {doc.hero?.src && (
+              <img
+                src={doc.hero.src}
+                alt=""
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                }}
+              />
+            )}
+            <StampGrid doc={doc} fg={fg} bg={bg} width={width} />
             <div
               style={{
-                fontSize: 30,
-                fontWeight: 800,
-                lineHeight: 1,
-                letterSpacing: "-0.02em",
+                position: "absolute",
+                left: 16,
+                top: 0,
+                bottom: 0,
+                width: `${GRID_LEFT * 100}%`,
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                textShadow: doc.hero?.src ? "0 1px 6px rgba(0,0,0,.55)" : "none",
               }}
             >
-              {doc.stampsEarned} / {doc.stampsGoal}
-            </div>
-            <div style={{ ...labelStyle, fontSize: 11, marginTop: 3 }}>
-              {doc.primaryLabel || "STAMPS"}
+              <div
+                style={{
+                  fontSize: 30,
+                  fontWeight: 800,
+                  lineHeight: 1,
+                  letterSpacing: "-0.02em",
+                  fontVariantNumeric: "tabular-nums",
+                }}
+              >
+                {doc.stampsEarned} / {doc.stampsGoal}
+              </div>
+              <div style={{ ...labelStyle, fontSize: 11, marginTop: 3 }}>
+                {doc.primaryLabel || "STAMPS"}
+              </div>
             </div>
           </div>
-        </div>
+        </Region>
       ) : (
         <ImgSlot
           slot="hero"
@@ -460,22 +514,15 @@ export function CardCanvas({
           active={selected === "hero"}
           label={t("Hero photo")}
           editable={editable}
-          onSelect={() => onSelect("hero")}
+          onSelect={(el) => onSelect("hero", el)}
           dispatch={dispatch}
         />
       )}
 
-      {/* Primary field — large, below the hero (non-stamps; stamps overlay it on the strip) */}
+      {/* Primary value (non-stamps) */}
       {doc.type !== "stamps" && (
-        <div
-          onClick={(e) => {
-            if (!editable) return;
-            e.stopPropagation();
-            onSelect("primary");
-          }}
-          style={{ padding: "10px 16px 4px", ...ring("primary") }}
-        >
-          <div style={{ ...labelStyle }}>{doc.primaryLabel}</div>
+        <Region kind="primary" label={t("Primary field")} style={{ margin: "10px 16px 0" }}>
+          <div style={labelStyle}>{doc.primaryLabel}</div>
           <div
             style={{
               fontSize: 30,
@@ -487,22 +534,35 @@ export function CardCanvas({
           >
             {sampleValue(doc)}
           </div>
-        </div>
+        </Region>
       )}
 
-      {/* Secondary fields row (non-stamps) */}
-      {doc.type !== "stamps" && doc.fields.length > 0 && (
-        <div style={{ display: "flex", gap: 18, padding: "8px 16px 4px", flexWrap: "wrap" }}>
-          {doc.fields.slice(0, 4).map((fld) => (
-            <div key={fld.id} style={{ minWidth: 0 }}>
-              <div style={{ ...labelStyle, fontSize: 9 }}>{fld.label}</div>
-              <div style={{ fontSize: 14, fontWeight: 700, marginTop: 2 }}>{fld.value}</div>
-            </div>
-          ))}
-        </div>
-      )}
+      {/* Secondary fields row (all card types) */}
+      <Region kind="fields" label={t("Fields")} style={{ margin: "10px 16px 0" }}>
+        {doc.fields.length > 0 ? (
+          <div style={{ display: "flex", gap: 18, flexWrap: "wrap" }}>
+            {doc.fields.slice(0, 4).map((f) => (
+              <div key={f.id}>{fieldChip(f.label, f.value)}</div>
+            ))}
+          </div>
+        ) : (
+          editable && <span style={{ ...labelStyle, opacity: 0.55 }}>＋ {t("Add field")}</span>
+        )}
+      </Region>
 
-      <div style={{ flex: 1, minHeight: 6 }} />
+      <div style={{ flex: 1, minHeight: 10 }} />
+
+      {/* Back-of-card fields affordance */}
+      {editable && (
+        <Region kind="back" label={t("Back of card")} style={{ margin: "0 16px 4px" }}>
+          <span style={{ ...labelStyle, opacity: 0.55 }}>
+            ⓘ{" "}
+            {doc.backFields.length > 0
+              ? t("Back ({n})", { n: doc.backFields.length })
+              : t("Back of card")}
+          </span>
+        </Region>
+      )}
 
       <div style={{ display: "flex", justifyContent: "center", padding: "8px 0 16px" }}>
         <div style={{ background: "#fff", padding: 9, borderRadius: 8, lineHeight: 0 }}>

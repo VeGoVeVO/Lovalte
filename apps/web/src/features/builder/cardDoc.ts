@@ -27,8 +27,9 @@ export interface CardDoc {
   hero: ImageLayer | null;
   iconRef: string; // Apple icon (required to publish)
   primaryLabel: string;
-  headerFields: DocField[];
-  fields: DocField[]; // secondary row
+  headerFields: DocField[]; // top-right, max 3
+  fields: DocField[]; // secondary row, max 4
+  backFields: DocField[]; // back of the card, max 20
   stampsGoal: number;
   stampsEarned: number;
   stampIcon: string; // lucide name
@@ -186,6 +187,7 @@ export function initialDoc(type: LoyaltyType): CardDoc {
     primaryLabel: TYPE_META[type].primaryLabel,
     headerFields: [],
     fields: [],
+    backFields: [],
     stampsGoal: 10,
     stampsEarned: 6,
     stampIcon: "coffee",
@@ -217,6 +219,12 @@ export const rgbToHex = (rgb?: string) => {
 // ── Tools: every edit is a named command ──────────────────────────────────────
 export type ToolFn = (doc: CardDoc, args: Record<string, unknown>) => CardDoc;
 const layer = (d: CardDoc, slot: Slot) => d[slot];
+
+/** Apple Wallet storeCard field-count limits per editable list. */
+export const FIELD_CAPS = { headerFields: 3, fields: 4, backFields: 20 } as const;
+export type FieldList = keyof typeof FIELD_CAPS;
+const fieldList = (a: Record<string, unknown>): FieldList =>
+  a.list === "headerFields" || a.list === "backFields" ? a.list : "fields";
 export const TOOLS: Record<string, ToolFn> = {
   "card.useTemplate": (d, a) => ({ ...d, ...(a.apply as Partial<CardDoc>) }),
   "theme.set": (d, a) => ({ ...d, theme: { ...d.theme, [a.key as string]: a.value as string } }),
@@ -249,23 +257,29 @@ export const TOOLS: Record<string, ToolFn> = {
       : d,
   "image.clear": (d, a) => ({ ...d, [a.slot as Slot]: null }),
   "icon.set": (d, a) => ({ ...d, iconRef: a.ref as string }),
-  "field.set": (d, a) => ({
-    ...d,
-    fields: d.fields.map((x) =>
-      x.id === a.id ? { ...x, [a.key as string]: a.value as string } : x,
-    ),
-  }),
-  "field.add": (d) =>
-    d.fields.length >= 3
+  "field.set": (d, a) => {
+    const l = fieldList(a);
+    return {
+      ...d,
+      [l]: d[l].map((x) => (x.id === a.id ? { ...x, [a.key as string]: a.value as string } : x)),
+    };
+  },
+  "field.add": (d, a) => {
+    const l = fieldList(a);
+    return d[l].length >= FIELD_CAPS[l]
       ? d
       : {
           ...d,
-          fields: [
-            ...d.fields,
+          [l]: [
+            ...d[l],
             { id: "f" + Math.round(performance.now()), label: "LABEL", value: "Value" },
           ],
-        },
-  "field.remove": (d, a) => ({ ...d, fields: d.fields.filter((x) => x.id !== a.id) }),
+        };
+  },
+  "field.remove": (d, a) => {
+    const l = fieldList(a);
+    return { ...d, [l]: d[l].filter((x) => x.id !== a.id) };
+  },
   "stamps.goal": (d, a) => {
     const g = Math.max(1, Math.min(12, a.goal as number));
     return { ...d, stampsGoal: g, stampsEarned: Math.min(d.stampsEarned, g) };
@@ -314,7 +328,7 @@ export function docToInput(doc: CardDoc): TemplateInput {
     ],
     secondaryFields: toApiFields(doc.fields, "sec"),
     auxiliaryFields: [],
-    backFields: [],
+    backFields: toApiFields(doc.backFields, "back"),
     pointsPerVisit: 1,
     rewardThreshold: doc.type === "stamps" ? doc.stampsGoal : 10,
     cardType: doc.type,
@@ -348,6 +362,11 @@ export function docFromTemplate(tmpl: CardTemplateDTO): CardDoc {
     })),
     fields: (b.secondaryFields ?? []).map((f) => ({
       id: "s" + f.key,
+      label: f.label,
+      value: f.valueTemplate,
+    })),
+    backFields: (b.backFields ?? []).map((f) => ({
+      id: "b" + f.key,
       label: f.label,
       value: f.valueTemplate,
     })),

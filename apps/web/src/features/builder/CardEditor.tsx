@@ -14,15 +14,18 @@ import {
   TYPE_META,
   LOYALTY_KEYS,
   TOOLS,
+  FIELD_CAPS,
   applyTool,
   initialDoc,
   docToInput,
   docFromTemplate,
   hexToRgb,
   type CardDoc,
+  type FieldList,
 } from "./cardDoc";
 import type { LoyaltyType } from "./useTemplates";
 import { CardCanvas, type SlotKind } from "./CardCanvas";
+import { CardPopover } from "./CardPopover";
 import { AssetField } from "./AssetField";
 import { IconPicker } from "./IconPicker";
 import { useUploadImage } from "./useImages";
@@ -30,6 +33,21 @@ import { renderStampFrames } from "./stampStrip";
 import { svgToPngDataUrl } from "./lucideRaster";
 
 type Step = "type" | "templates" | "editor";
+
+type Dispatch = (toolId: string, args?: Record<string, unknown>) => void;
+
+/** Editor title per selected component (the popover heading). */
+const TITLES: Record<Exclude<SlotKind, null>, string> = {
+  logo: "Logo",
+  name: "Business name",
+  colors: "Colours",
+  hero: "Strip photo",
+  stamps: "Stamps",
+  primary: "Primary field",
+  header: "Header fields",
+  fields: "Fields",
+  back: "Back of the card",
+};
 
 /** A tiny branded square used as the auto Apple icon when no logo was uploaded. */
 function makeIconDataUrl(bg: string, fg: string, name: string): string {
@@ -49,9 +67,10 @@ function makeIconDataUrl(bg: string, fg: string, name: string): string {
 }
 
 const editorCss = `
-.lvt-be-grid { display:grid; grid-template-columns: 1fr minmax(300px,340px); gap:18px; align-items:start; }
-.lvt-be-canvas { display:flex; justify-content:center; padding:14px 0 26px; border-radius:22px;
-  background:radial-gradient(50% 60% at 50% 0%,rgba(169,245,255,.22),transparent),rgba(255,255,255,.45); }
+.lvt-be-stage { max-width: 380px; margin: 0 auto; }
+.lvt-be-canvas { display:flex; justify-content:center; padding:18px 0 8px; border-radius:22px;
+  background:radial-gradient(60% 60% at 50% 0%,rgba(169,245,255,.22),transparent),rgba(255,255,255,.45); }
+.lvt-be-hint { margin:14px auto 0; max-width:18rem; text-align:center; color:var(--muted); font-size:.82rem; text-wrap:balance; }
 .lvt-be-rail { display:flex; gap:16px; overflow-x:auto; scroll-snap-type:x mandatory; padding:10px calc(50% - 130px) 18px;
   -webkit-overflow-scrolling:touch; }
 .lvt-be-rail::-webkit-scrollbar{ display:none; }
@@ -59,10 +78,10 @@ const editorCss = `
   transition:transform .2s; }
 .lvt-be-slide:hover{ transform:translateY(-4px); }
 .lvt-be-iconbtn{ width:38px; height:38px; border-radius:10px; border:1px solid rgba(20,24,40,.12); background:#fff;
-  display:grid; place-items:center; cursor:pointer; }
-.lvt-be-iconbtn.on{ border-color:#3a86ff; background:rgba(58,134,255,.1); color:#2563eb; }
+  display:grid; place-items:center; }
+.lvt-be-eyebrow{ font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin:0 0 6px; display:block; }
+.lvt-be-row{ display:flex; align-items:center; gap:10px; }
 @media (prefers-reduced-motion:reduce){ .lvt-be-slide{ transition:none; } }
-@media (max-width:860px){ .lvt-be-grid{ grid-template-columns:1fr; } .lvt-be-preview{ position:static!important; order:-1; } }
 `;
 
 interface Props {
@@ -71,9 +90,10 @@ interface Props {
 }
 
 /**
- * Canvas card builder: pick a type, swipe a template, then edit the card
- * directly. Every change runs a named tool via dispatch(toolId, args) - the same
- * entry point a future AI builder will call (exposed on window.__builder).
+ * Canvas card builder: pick a type, swipe a template, then edit the card by
+ * clicking its parts — each opens a contextual popover next to that element.
+ * Every change runs a named tool via dispatch(toolId, args) — the same entry
+ * point a future AI builder uses (exposed on window.__builder).
  */
 export function CardEditor({ initial, onClose }: Props) {
   const { t } = useT();
@@ -92,11 +112,12 @@ export function CardEditor({ initial, onClose }: Props) {
   const [idx, setIdx] = useState(existing ? 0 : -1);
   const [savedId, setSavedId] = useState<string | null>(existing?.id ?? null);
   const [sel, setSel] = useState<SlotKind>(null);
+  const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [iconPicker, setIconPicker] = useState(false);
   const doc = hist[idx];
 
-  const dispatch = (toolId: string, args: Record<string, unknown> = {}) => {
+  const dispatch: Dispatch = (toolId, args = {}) => {
     setHist((h) => {
       const cur = h[idx];
       if (!cur) return h;
@@ -110,6 +131,14 @@ export function CardEditor({ initial, onClose }: Props) {
   };
   const undo = () => setIdx((n) => Math.max(0, n - 1));
   const redo = () => setIdx((n) => Math.min(hist.length - 1, n + 1));
+  const select = (s: SlotKind, el?: HTMLElement | null) => {
+    setSel(s);
+    setAnchor(el ?? null);
+  };
+  const closePop = () => {
+    setSel(null);
+    setAnchor(null);
+  };
 
   // Expose the tool API so a future AI builder can drive the exact same build.
   useEffect(() => {
@@ -124,30 +153,32 @@ export function CardEditor({ initial, onClose }: Props) {
     const tpl = TEMPLATES[type].find((x) => x.id === tplId);
     if (!tpl) return;
     seed({ ...initialDoc(type), ...(tpl.apply as object) } as CardDoc);
-    setSel(null);
+    closePop();
     setStep("editor");
   };
 
   /**
-   * Render one strip per stamps-earned count and upload them. The chosen Lucide
-   * icon is rasterized from its live DOM node; uploaded stamp art overrides it.
-   * Returns the frame refs indexed by earned count.
-   * ponytail: regenerates every frame on publish (goal ≤ 12 → ≤ 13 small PNGs);
-   * could hash the design and skip when nothing changed.
+   * Render one strip per stamps-earned count and upload them. The chosen icon is
+   * rasterized in BOTH the foreground (faint, empty mark) and background (knocked
+   * out of the filled, earned disc) colours; uploaded art overrides it.
+   * ponytail: regenerates every frame on publish (goal ≤ 12 → ≤ 13 small PNGs).
    */
   const buildStampFrames = async (): Promise<string[] | undefined> => {
     if (!doc || doc.type !== "stamps") return undefined;
     const svg = stampIconRef.current?.querySelector("svg");
-    // Background colour: the icon is knocked out of the filled (foreground) disc.
-    const stampIconPng = svg
-      ? await svgToPngDataUrl(svg, 174, hexToRgb(doc.theme.bg)).catch(() => null)
-      : null;
+    const [stampIconFgPng, stampIconBgPng] = svg
+      ? await Promise.all([
+          svgToPngDataUrl(svg, 174, hexToRgb(doc.theme.fg)).catch(() => null),
+          svgToPngDataUrl(svg, 174, hexToRgb(doc.theme.bg)).catch(() => null),
+        ])
+      : [null, null];
     const frames = await renderStampFrames({
       goal: doc.stampsGoal,
       bg: doc.theme.bg,
       fg: doc.theme.fg,
       bgRef: doc.hero?.src || null,
-      stampIconPng,
+      stampIconFgPng,
+      stampIconBgPng,
       stampedRef: doc.stampedRef || null,
       unstampedRef: doc.unstampedRef || null,
     });
@@ -170,8 +201,7 @@ export function CardEditor({ initial, onClose }: Props) {
         id = tmpl.id;
         setSavedId(id);
       }
-      // Apple requires an icon. Auto-derive it so the merchant never sets one:
-      // reuse the logo, else generate a tiny branded square from the name.
+      // Apple requires an icon. Auto-derive it: reuse the logo, else a branded square.
       let iconRef = doc.iconRef || doc.logo?.src || "";
       if (!iconRef) {
         const res = await uploadImg.mutateAsync({
@@ -198,7 +228,6 @@ export function CardEditor({ initial, onClose }: Props) {
   };
   const publish = async () => {
     try {
-      // Bake the stamp strip frames first so they ship with the published brand.
       const frames = await buildStampFrames();
       const id = await save(frames);
       if (!id) return;
@@ -345,32 +374,42 @@ export function CardEditor({ initial, onClose }: Props) {
         </GlassButton>
       </div>
 
-      <div className="lvt-be-grid">
-        <div className="lvt-be-canvas lvt-be-preview" style={{ position: "sticky", top: "6rem" }}>
-          <CardCanvas doc={doc} selected={sel} onSelect={setSel} dispatch={dispatch} width={360} />
+      <div className="lvt-be-stage">
+        <div className="lvt-be-canvas">
+          <CardCanvas doc={doc} selected={sel} onSelect={select} dispatch={dispatch} width={340} />
         </div>
-        <div
-          className="glass feature"
-          style={{ padding: "1.1rem", display: "flex", flexDirection: "column", gap: "0.9rem" }}
-        >
-          <Inspector
+        {!sel && <p className="lvt-be-hint">{t("Tap any part of the card to edit it.")}</p>}
+        {status && (
+          <p
+            role="status"
+            aria-live="polite"
+            className="body"
+            style={{
+              textAlign: "center",
+              marginTop: 10,
+              color: /fail|error/i.test(status) ? "#c0392b" : "var(--text)",
+            }}
+          >
+            {status}
+          </p>
+        )}
+      </div>
+
+      <CardPopover
+        anchor={anchor}
+        open={!!sel && !iconPicker}
+        onClose={closePop}
+        title={sel ? t(TITLES[sel]) : ""}
+      >
+        {sel && (
+          <ComponentEditor
             doc={doc}
             sel={sel}
             dispatch={dispatch}
             onPickStampIcon={() => setIconPicker(true)}
           />
-          {status && (
-            <p
-              role="status"
-              aria-live="polite"
-              className="body"
-              style={{ color: /fail|error/i.test(status) ? "#c0392b" : "var(--text)", margin: 0 }}
-            >
-              {status}
-            </p>
-          )}
-        </div>
-      </div>
+        )}
+      </CardPopover>
 
       {iconPicker && (
         <IconPicker
@@ -385,207 +424,268 @@ export function CardEditor({ initial, onClose }: Props) {
   );
 }
 
-function Inspector({
+// ── Per-component editors ─────────────────────────────────────────────────────
+
+function FieldListEditor({
+  doc,
+  list,
+  dispatch,
+}: {
+  doc: CardDoc;
+  list: FieldList;
+  dispatch: Dispatch;
+}) {
+  const { t } = useT();
+  const rows = doc[list];
+  const cap = FIELD_CAPS[list];
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 240 }}>
+      {rows.map((f) => (
+        <div key={f.id} style={{ display: "flex", gap: 6 }}>
+          <input
+            className="input"
+            value={f.label}
+            placeholder={t("Label")}
+            onChange={(e) =>
+              dispatch("field.set", { list, id: f.id, key: "label", value: e.target.value })
+            }
+            style={{ flex: 1, minWidth: 0 }}
+          />
+          <input
+            className="input"
+            value={f.value}
+            placeholder={t("Value")}
+            onChange={(e) =>
+              dispatch("field.set", { list, id: f.id, key: "value", value: e.target.value })
+            }
+            style={{ flex: 1, minWidth: 0 }}
+          />
+          <button
+            type="button"
+            className="btn ghost"
+            aria-label={t("Remove")}
+            onClick={() => dispatch("field.remove", { list, id: f.id })}
+          >
+            ✕
+          </button>
+        </div>
+      ))}
+      {rows.length < cap ? (
+        <button type="button" className="btn ghost" onClick={() => dispatch("field.add", { list })}>
+          ＋ {t("Add field")}
+        </button>
+      ) : (
+        <p className="body" style={{ fontSize: ".72rem", color: "var(--muted)", margin: 0 }}>
+          {t("Maximum {n} reached.", { n: cap })}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function ImageEditor({
+  doc,
+  slot,
+  dispatch,
+}: {
+  doc: CardDoc;
+  slot: "logo" | "hero";
+  dispatch: Dispatch;
+}) {
+  const { t } = useT();
+  const layer = doc[slot];
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10, minWidth: 240 }}>
+      <AssetField
+        kind={slot === "logo" ? "logo" : "strip"}
+        label={slot === "logo" ? t("Logo") : t("Photo")}
+        hint={slot === "logo" ? t("Top-left of the card.") : t("Banner behind the value.")}
+        value={layer?.src ?? ""}
+        onChange={(url) =>
+          url ? dispatch("image.set", { slot, src: url }) : dispatch("image.clear", { slot })
+        }
+      />
+      {layer && (
+        <div>
+          <label className="lvt-be-eyebrow">{t("Fit & zoom")}</label>
+          <input
+            type="range"
+            min={1}
+            max={3}
+            step={0.01}
+            value={layer.scale}
+            onChange={(e) => dispatch("image.scale", { slot, scale: Number(e.target.value) })}
+            style={{ width: "100%" }}
+          />
+          <p className="body" style={{ fontSize: ".72rem", color: "var(--muted)", margin: 0 }}>
+            {t("Drag the image on the card to reposition.")}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ComponentEditor({
   doc,
   sel,
   dispatch,
   onPickStampIcon,
 }: {
   doc: CardDoc;
-  sel: SlotKind;
-  dispatch: (t: string, a?: Record<string, unknown>) => void;
+  sel: Exclude<SlotKind, null>;
+  dispatch: Dispatch;
   onPickStampIcon: () => void;
 }) {
   const { t } = useT();
-  const eyebrow = {
-    fontSize: 11,
-    fontWeight: 700,
-    letterSpacing: ".06em",
-    textTransform: "uppercase" as const,
-    color: "var(--muted)",
-    margin: "0 0 6px",
-  };
 
-  if (sel === "logo" || sel === "hero") {
-    const layer = doc[sel];
+  if (sel === "name") {
     return (
-      <div>
-        <p style={eyebrow}>
-          {t("Editing {label}", { label: sel === "logo" ? t("Logo") : t("Hero photo") })}
-        </p>
-        <label style={eyebrow}>{t("Fit & zoom")}</label>
-        <input
-          type="range"
-          min={1}
-          max={3}
-          step={0.01}
-          value={layer?.scale ?? 1}
-          disabled={!layer}
-          onChange={(e) => dispatch("image.scale", { slot: sel, scale: Number(e.target.value) })}
-          style={{ width: "100%" }}
+      <input
+        className="input"
+        autoFocus
+        value={doc.logoText}
+        maxLength={24}
+        placeholder={t("e.g. Abba Java")}
+        onChange={(e) => dispatch("text.logoText", { value: e.target.value })}
+        style={{ minWidth: 240 }}
+      />
+    );
+  }
+
+  if (sel === "colors") {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 240 }}>
+        <ColorPicker
+          ariaLabel={t("Background")}
+          value={doc.theme.bg}
+          onChange={(v) => dispatch("theme.set", { key: "bg", value: v })}
         />
-        <p className="body" style={{ fontSize: ".75rem", color: "var(--muted)" }}>
-          {layer
-            ? t("Drag the photo on the card to reposition.")
-            : t("Click the slot on the card to add a photo.")}
-        </p>
-        {layer && (
-          <button
-            type="button"
-            className="btn ghost"
-            onClick={() => dispatch("image.clear", { slot: sel })}
-          >
-            {t("Remove photo")}
-          </button>
-        )}
+        <ColorPicker
+          ariaLabel={t("Text")}
+          value={doc.theme.fg}
+          onChange={(v) => dispatch("theme.set", { key: "fg", value: v })}
+        />
+        <ColorPicker
+          ariaLabel={t("Labels")}
+          value={doc.theme.label}
+          onChange={(v) => dispatch("theme.set", { key: "label", value: v })}
+        />
       </div>
     );
   }
 
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "0.9rem" }}>
-      <div>
-        <label style={eyebrow}>{t("Business name")}</label>
+  if (sel === "logo") return <ImageEditor doc={doc} slot="logo" dispatch={dispatch} />;
+  if (sel === "hero") return <ImageEditor doc={doc} slot="hero" dispatch={dispatch} />;
+
+  if (sel === "primary") {
+    return (
+      <div style={{ minWidth: 240 }}>
+        <label className="lvt-be-eyebrow">{t("Label")}</label>
         <input
           className="input"
-          value={doc.logoText}
-          maxLength={24}
-          placeholder={t("e.g. Abba Java")}
-          onChange={(e) => dispatch("text.logoText", { value: e.target.value })}
+          autoFocus
+          value={doc.primaryLabel}
+          maxLength={16}
+          placeholder={t("e.g. POINTS")}
+          onChange={(e) => dispatch("text.primaryLabel", { value: e.target.value })}
         />
       </div>
+    );
+  }
 
+  if (sel === "header")
+    return <FieldListEditor doc={doc} list="headerFields" dispatch={dispatch} />;
+  if (sel === "fields") return <FieldListEditor doc={doc} list="fields" dispatch={dispatch} />;
+  if (sel === "back") return <FieldListEditor doc={doc} list="backFields" dispatch={dispatch} />;
+
+  // sel === "stamps"
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12, minWidth: 248 }}>
       <div>
-        <label style={eyebrow}>{t("Colors")}</label>
-        <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-          <ColorPicker
-            ariaLabel={t("Background")}
-            value={doc.theme.bg}
-            onChange={(v) => dispatch("theme.set", { key: "bg", value: v })}
+        <label className="lvt-be-eyebrow">{t("Label")}</label>
+        <input
+          className="input"
+          value={doc.primaryLabel}
+          maxLength={16}
+          placeholder="STAMPS"
+          onChange={(e) => dispatch("text.primaryLabel", { value: e.target.value })}
+        />
+      </div>
+      <div>
+        <label className="lvt-be-eyebrow">{t("Stamps to reward")}</label>
+        <div className="lvt-be-row">
+          <button
+            type="button"
+            className="btn ghost"
+            aria-label={t("Fewer")}
+            onClick={() => dispatch("stamps.goal", { goal: doc.stampsGoal - 1 })}
+          >
+            −
+          </button>
+          <strong style={{ minWidth: 24, textAlign: "center", fontVariantNumeric: "tabular-nums" }}>
+            {doc.stampsGoal}
+          </strong>
+          <button
+            type="button"
+            className="btn ghost"
+            aria-label={t("More")}
+            onClick={() => dispatch("stamps.goal", { goal: doc.stampsGoal + 1 })}
+          >
+            ＋
+          </button>
+        </div>
+      </div>
+      <div>
+        <label className="lvt-be-eyebrow">{t("Stamp icon")}</label>
+        <div className="lvt-be-row">
+          <span className="lvt-be-iconbtn">
+            <DynamicIcon name={doc.stampIcon as never} size={20} />
+          </span>
+          <button type="button" className="btn ghost" onClick={onPickStampIcon}>
+            {t("Choose icon")}
+          </button>
+        </div>
+      </div>
+      <div>
+        <label className="lvt-be-eyebrow">{t("Background image (optional)")}</label>
+        <AssetField
+          kind="strip"
+          label={t("Background")}
+          hint={t("Fills the strip behind the stamps.")}
+          value={doc.hero?.src ?? ""}
+          onChange={(url) =>
+            url
+              ? dispatch("image.set", { slot: "hero", src: url })
+              : dispatch("image.clear", { slot: "hero" })
+          }
+        />
+      </div>
+      <div>
+        <label className="lvt-be-eyebrow">{t("Stamp art (optional)")}</label>
+        <p
+          className="body"
+          style={{ fontSize: ".72rem", color: "var(--muted)", margin: "0 0 .5rem" }}
+        >
+          {t("Upload your own stamp images to replace the icon.")}
+        </p>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <AssetField
+            kind="strip"
+            label={t("Stamped")}
+            hint={t("Shown for collected stamps.")}
+            value={doc.stampedRef}
+            onChange={(url) => dispatch("stamps.art", { slot: "stamped", ref: url })}
           />
-          <ColorPicker
-            ariaLabel={t("Text")}
-            value={doc.theme.fg}
-            onChange={(v) => dispatch("theme.set", { key: "fg", value: v })}
-          />
-          <ColorPicker
-            ariaLabel={t("Labels")}
-            value={doc.theme.label}
-            onChange={(v) => dispatch("theme.set", { key: "label", value: v })}
+          <AssetField
+            kind="strip"
+            label={t("Unstamped")}
+            hint={t("Shown for empty stamps.")}
+            value={doc.unstampedRef}
+            onChange={(url) => dispatch("stamps.art", { slot: "unstamped", ref: url })}
           />
         </div>
       </div>
-
-      {doc.type === "stamps" ? (
-        <>
-          <div>
-            <label style={eyebrow}>{t("Background image (optional)")}</label>
-            <AssetField
-              kind="strip"
-              label={t("Background")}
-              hint={t("Fills the strip behind the stamps.")}
-              value={doc.hero?.src ?? ""}
-              onChange={(url) =>
-                url
-                  ? dispatch("image.set", { slot: "hero", src: url })
-                  : dispatch("image.clear", { slot: "hero" })
-              }
-            />
-          </div>
-          <div>
-            <label style={eyebrow}>{t("Stamp icon")}</label>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <span className="lvt-be-iconbtn on">
-                <DynamicIcon name={doc.stampIcon as never} size={20} />
-              </span>
-              <button type="button" className="btn ghost" onClick={onPickStampIcon}>
-                {t("Choose icon")}
-              </button>
-            </div>
-          </div>
-          <div>
-            <label style={eyebrow}>{t("Stamps to reward")}</label>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <button
-                type="button"
-                className="btn ghost"
-                onClick={() => dispatch("stamps.goal", { goal: doc.stampsGoal - 1 })}
-              >
-                −
-              </button>
-              <strong style={{ minWidth: 24, textAlign: "center" }}>{doc.stampsGoal}</strong>
-              <button
-                type="button"
-                className="btn ghost"
-                onClick={() => dispatch("stamps.goal", { goal: doc.stampsGoal + 1 })}
-              >
-                ＋
-              </button>
-            </div>
-          </div>
-          <div>
-            <label style={eyebrow}>{t("Stamp art (optional)")}</label>
-            <p
-              className="body"
-              style={{ fontSize: ".72rem", color: "var(--muted)", margin: "0 0 .5rem" }}
-            >
-              {t("Upload your own stamp images to replace the icon.")}
-            </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              <AssetField
-                kind="strip"
-                label={t("Stamped")}
-                hint={t("Shown for collected stamps.")}
-                value={doc.stampedRef}
-                onChange={(url) => dispatch("stamps.art", { slot: "stamped", ref: url })}
-              />
-              <AssetField
-                kind="strip"
-                label={t("Unstamped")}
-                hint={t("Shown for empty stamps.")}
-                value={doc.unstampedRef}
-                onChange={(url) => dispatch("stamps.art", { slot: "unstamped", ref: url })}
-              />
-            </div>
-          </div>
-        </>
-      ) : (
-        <div>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <label style={eyebrow}>{t("Fields")}</label>
-            <button type="button" className="btn ghost" onClick={() => dispatch("field.add")}>
-              ＋ {t("Add")}
-            </button>
-          </div>
-          {doc.fields.map((fl) => (
-            <div key={fl.id} style={{ display: "flex", gap: 6, marginTop: 6 }}>
-              <input
-                className="input"
-                value={fl.label}
-                onChange={(e) =>
-                  dispatch("field.set", { id: fl.id, key: "label", value: e.target.value })
-                }
-                style={{ flex: 1 }}
-              />
-              <input
-                className="input"
-                value={fl.value}
-                onChange={(e) =>
-                  dispatch("field.set", { id: fl.id, key: "value", value: e.target.value })
-                }
-                style={{ flex: 1 }}
-              />
-              <button
-                type="button"
-                className="btn ghost"
-                onClick={() => dispatch("field.remove", { id: fl.id })}
-              >
-                ✕
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }

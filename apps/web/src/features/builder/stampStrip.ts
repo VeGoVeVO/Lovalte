@@ -46,9 +46,10 @@ export interface StampStripInput {
   fg: string;
   /** Optional background image ref drawn cover-fit behind the stamps. */
   bgRef?: string | null;
-  /** Pre-rendered PNG of the stamp icon in the BACKGROUND colour (knocked out of
-   *  the filled disc on stamped marks). */
-  stampIconPng?: string | null;
+  /** Stamp icon pre-rendered in the FOREGROUND colour (the faint, not-yet-earned
+   *  mark) and in the BACKGROUND colour (knocked out of the filled, earned disc). */
+  stampIconFgPng?: string | null;
+  stampIconBgPng?: string | null;
   /** Uploaded stamp art refs that override the Lucide icon (optional). */
   stampedRef?: string | null;
   unstampedRef?: string | null;
@@ -63,9 +64,10 @@ function drawCover(ctx: CanvasRenderingContext2D, img: HTMLImageElement, w: numb
 }
 
 /**
- * Draw one stamp mark. Unstamped = a clearly visible ring (so a fresh card shows
- * its empty stamps); stamped = a filled disc with the icon knocked out in the
- * background colour. Uploaded art (when present) replaces both states.
+ * Draw one stamp mark. Unstamped = the chosen icon, faint (so a fresh card still
+ * reads as "coffee x N"); stamped = a filled disc with the icon knocked out in
+ * the background colour (highlighted). Uploaded art replaces both states. With no
+ * icon at all it degrades to a faint ring / filled disc.
  */
 function drawMark(
   ctx: CanvasRenderingContext2D,
@@ -75,6 +77,7 @@ function drawMark(
   r: number,
   fg: string,
   art: HTMLImageElement | null,
+  iconFg: HTMLImageElement | null,
   iconBg: HTMLImageElement | null,
 ) {
   if (art) {
@@ -82,19 +85,26 @@ function drawMark(
     ctx.drawImage(art, cx - r, cy - r, s, s);
     return;
   }
-  ctx.beginPath();
-  ctx.arc(cx, cy, r, 0, Math.PI * 2);
   if (earned) {
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
     ctx.fillStyle = fg;
     ctx.fill();
     if (iconBg) {
       const s = r * 1.15;
       ctx.drawImage(iconBg, cx - s / 2, cy - s / 2, s, s);
     }
+  } else if (iconFg) {
+    ctx.globalAlpha = 0.4;
+    const s = r * 1.7;
+    ctx.drawImage(iconFg, cx - s / 2, cy - s / 2, s, s);
+    ctx.globalAlpha = 1;
   } else {
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
     ctx.lineWidth = Math.max(2, r * 0.13);
     ctx.strokeStyle = fg;
-    ctx.globalAlpha = 0.5;
+    ctx.globalAlpha = 0.4;
     ctx.stroke();
     ctx.globalAlpha = 1;
   }
@@ -110,11 +120,12 @@ export async function renderStampFrames(input: StampStripInput): Promise<string[
   const fg = hexToRgb(input.fg);
   const bg = hexToRgb(input.bg);
 
-  const [bgImg, stampedArt, unstampedArt, icon] = await Promise.all([
+  const [bgImg, stampedArt, unstampedArt, iconFg, iconBg] = await Promise.all([
     input.bgRef ? loadImage(input.bgRef).catch(() => null) : null,
     input.stampedRef ? loadImage(input.stampedRef).catch(() => null) : null,
     input.unstampedRef ? loadImage(input.unstampedRef).catch(() => null) : null,
-    input.stampIconPng ? loadImage(input.stampIconPng).catch(() => null) : null,
+    input.stampIconFgPng ? loadImage(input.stampIconFgPng).catch(() => null) : null,
+    input.stampIconBgPng ? loadImage(input.stampIconBgPng).catch(() => null) : null,
   ]);
 
   // Apple draws the primary value ("X / N") left-aligned over the strip, so the
@@ -148,7 +159,17 @@ export async function renderStampFrames(input: StampStripInput): Promise<string[
       const rowPad = ((cols - rowCount) * cellW) / 2;
       const cx = gridLeft + rowPad + cellW * col + cellW / 2;
       const cy = gridTop + cellH * row + cellH / 2;
-      drawMark(ctx, i < earned, cx, cy, r, fg, i < earned ? stampedArt : unstampedArt, icon);
+      drawMark(
+        ctx,
+        i < earned,
+        cx,
+        cy,
+        r,
+        fg,
+        i < earned ? stampedArt : unstampedArt,
+        iconFg,
+        iconBg,
+      );
     }
     frames.push(canvas.toDataURL("image/png"));
   }
