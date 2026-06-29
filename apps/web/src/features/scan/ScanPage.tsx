@@ -120,7 +120,7 @@ export function ScanPage() {
         }}
       >
         {/* Context line */}
-        <p className="body" style={{ textAlign: "left" }}>
+        <p className="body" style={{ textAlign: "center" }}>
           {showManualFallback
             ? status === "denied"
               ? t("Camera access was denied. Paste the QR token below to continue.")

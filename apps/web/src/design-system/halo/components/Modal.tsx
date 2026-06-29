@@ -34,8 +34,8 @@ const CSS = `
      that read these vars (and the scoped .btn/.input below) theme themselves. */
   --text:#20242A; --muted:#5b6170; --border:rgba(28,36,56,.12);
   --card:rgba(255,255,255,.55); --r-input:14px;
-  width: 100%; max-height: 90vh; overflow-y: auto;
-  display: flex; flex-direction: column; gap: 1rem;
+  width: 100%; max-height: 90vh;
+  display: flex; flex-direction: column;
   padding: clamp(1.3rem, 4vw, 1.8rem);
   border-radius: 22px;
   background: linear-gradient(180deg, rgba(255,255,255,.86), rgba(255,255,255,.72));
@@ -51,6 +51,11 @@ const CSS = `
 .lvt-modal-panel::before { top: -40%; left: -25%; width: 70%; height: 70%; background: #A9F5FF; opacity: .34; }
 .lvt-modal-panel::after  { bottom: -45%; right: -25%; width: 75%; height: 75%; background: #FFDDF4; opacity: .42; }
 .lvt-modal-panel > * { position: relative; z-index: 1; }
+/* Children scroll here only when they actually exceed the panel's max-height, so
+   the decorative orbs (clipped by the panel's overflow:hidden) never trigger a
+   phantom scrollbar on short dialogs. */
+.lvt-modal-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 1rem; }
 .lvt-modal-title { margin: 0; display: flex; align-items: center; gap: .6rem; }
 .lvt-modal-mark { flex: 0 0 auto; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; }
 .lvt-modal-mark.danger { color: #b93333; background: rgba(185,51,51,.12); border: 1px solid rgba(185,51,51,.28); }
@@ -160,7 +165,7 @@ export function Modal({
         style={{ maxWidth }}
         onClick={(e) => e.stopPropagation()}
       >
-        {children}
+        <div className="lvt-modal-scroll">{children}</div>
       </div>
     </div>,
     document.body,

@@ -125,7 +125,7 @@ export function IssuePassPage() {
           padding: "clamp(1.25rem, 4vw, 2rem)",
         }}
       >
-        <p className="body">
+        <p className="body" style={{ textAlign: "center" }}>
           {t(
             "Pick a published card, then let customers self-enroll by scanning a QR - each scan creates a unique member automatically. No member IDs to type.",
           )}
@@ -156,7 +156,9 @@ export function IssuePassPage() {
           <>
             <TemplateSelect templates={templates} value={templateId} onChange={onPickTemplate} />
 
-            <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+            <div
+              style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", justifyContent: "center" }}
+            >
               <GlassButton
                 type="button"
                 onClick={makeQr}

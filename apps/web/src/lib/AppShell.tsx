@@ -49,6 +49,9 @@ const shellCss = `
 .lvt-mobilehead, .lvt-tabbar { display: none; }
 /* Narrow pages (forms/lists): title + content share one centered column. */
 .lvt-narrow { max-width: 600px; margin: 0 auto; }
+/* App <section> must not inherit the landing page's huge padding-block
+   (.halo section, ~136px) — that leaked giant gaps into Analytics/Issue. */
+.halo .lvt-main section { padding-block: 0; }
 /* Grid children must be allowed to shrink, else min-width'd cards (.meta 180px)
    overflow narrow mobile columns and "leak" past the container. */
 .halo .grid-2 > *, .halo .grid-3 > * { min-width: 0; }
@@ -255,6 +258,7 @@ export function AppShell({
                   fontSize: "clamp(1.2rem, 1rem + 1vw, 1.5rem)",
                   fontWeight: 600,
                   letterSpacing: "-0.015em",
+                  textAlign: narrow ? "center" : undefined,
                 }}
               >
                 {title}

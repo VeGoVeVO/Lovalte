@@ -312,11 +312,30 @@ export function AnalyticsPage() {
   const metricLabel = METRICS.find((m) => m.value === metric)?.label ?? metric;
 
   return (
-    <AppShell title={t("Analytics")}>
+    <AppShell>
       <style>{layoutCss}</style>
 
-      {/* team toggle */}
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "1.5rem" }}>
+      {/* header: title + team toggle share one row */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "1rem",
+          marginBottom: "1.5rem",
+        }}
+      >
+        <h1
+          className="cardt"
+          style={{
+            margin: 0,
+            fontSize: "clamp(1.2rem, 1rem + 1vw, 1.5rem)",
+            fontWeight: 600,
+            letterSpacing: "-0.015em",
+          }}
+        >
+          {t("Analytics")}
+        </h1>
         <button
           type="button"
           className="btn"

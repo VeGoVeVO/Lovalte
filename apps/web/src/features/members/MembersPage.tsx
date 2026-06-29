@@ -85,7 +85,7 @@ function CardPicker({ onPick }: { onPick: (card: CardLite) => void }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-      <p className="body" style={{ margin: 0, color: "var(--muted)" }}>
+      <p className="body" style={{ margin: 0, color: "var(--muted)", textAlign: "center" }}>
         {t("Pick a card to see its members.")}
       </p>
       {cards.map((c) => (

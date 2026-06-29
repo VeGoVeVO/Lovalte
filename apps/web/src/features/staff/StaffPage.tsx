@@ -142,8 +142,10 @@ export function StaffPage() {
       >
         {/* ── Invite form ──────────────────────────────────────── */}
         <GlassCard light className="feature" aria-label={t("Invite team member")}>
-          <h3 className="cardt">{t("Invite team member")}</h3>
-          <p className="body">
+          <h3 className="cardt" style={{ textAlign: "center" }}>
+            {t("Invite team member")}
+          </h3>
+          <p className="body" style={{ textAlign: "center" }}>
             {t("Owners and managers can invite staff or additional managers.")}
           </p>
 
@@ -264,7 +266,9 @@ export function StaffPage() {
 
         {/* ── Team list ─────────────────────────────────────────── */}
         <GlassCard light className="feature" aria-label={t("Team members")}>
-          <h3 className="cardt">{t("Team members")}</h3>
+          <h3 className="cardt" style={{ textAlign: "center" }}>
+            {t("Team members")}
+          </h3>
 
           {isLoading ? (
             <p className="body" aria-busy="true" aria-live="polite">

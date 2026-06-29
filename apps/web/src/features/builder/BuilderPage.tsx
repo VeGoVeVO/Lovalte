@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { AppShell } from "../../lib/AppShell";
 import { GlassCard, GlassButton } from "../../design-system/halo";
 import { useT } from "../../lib/i18n";
@@ -7,6 +7,35 @@ import { DeleteTemplateModal } from "./DeleteTemplateModal";
 import { CardEditor } from "./CardEditor";
 
 type EditTarget = CardTemplateDTO | "new" | null;
+
+/**
+ * Shows the full card name on one line, shrinking the font to fit its column.
+ * If it can't fit even at the floor size, it wraps — so the whole name is always
+ * visible (never truncated). Cards are fixed-width, so a one-shot fit is enough.
+ */
+function FitText({ text }: { text: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const MAX = 1.3;
+  const MIN = 0.95;
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    let size = MAX;
+    el.style.whiteSpace = "nowrap";
+    el.style.fontSize = `${size}rem`;
+    let guard = 40;
+    while (el.scrollWidth > el.clientWidth && size > MIN && guard-- > 0) {
+      size -= 0.04;
+      el.style.fontSize = `${size}rem`;
+    }
+    el.style.whiteSpace = el.scrollWidth > el.clientWidth ? "normal" : "nowrap";
+  }, [text]);
+  return (
+    <span ref={ref} style={{ display: "block", fontSize: `${MAX}rem`, lineHeight: 1.15 }}>
+      {text}
+    </span>
+  );
+}
 
 /**
  * Card Builder. The list of card designs + the canvas builder (CardEditor) for
@@ -32,13 +61,25 @@ export function BuilderPage() {
   const list = templates.data ?? [];
   return (
     <AppShell>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", marginBottom: "1.5rem", flexWrap: "wrap" }}>
-        <h1 className="cardt" style={{ margin: 0, fontSize: "clamp(1.1rem,1rem + 0.5vw,1.3rem)", fontWeight: 600, letterSpacing: "-0.01em" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1.5rem" }}>
+        <div style={{ flex: 1 }} aria-hidden="true" />
+        <h1
+          className="cardt"
+          style={{
+            margin: 0,
+            textAlign: "center",
+            fontSize: "clamp(1.1rem,1rem + 0.5vw,1.3rem)",
+            fontWeight: 600,
+            letterSpacing: "-0.01em",
+          }}
+        >
           {t("Card Builder")}
         </h1>
-        <GlassButton type="button" onClick={() => setEditing("new")}>
-          {t("+ New card")}
-        </GlassButton>
+        <div style={{ flex: 1, display: "flex", justifyContent: "flex-end" }}>
+          <GlassButton type="button" onClick={() => setEditing("new")}>
+            {t("+ New card")}
+          </GlassButton>
+        </div>
       </div>
 
       {templates.isLoading && (
@@ -62,7 +103,7 @@ export function BuilderPage() {
       {list.length > 0 && (
         <div
           className="grid-3"
-          style={{ gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))" }}
+          style={{ gridTemplateColumns: "repeat(auto-fill, 260px)", justifyContent: "center" }}
         >
           {list.map((card) => (
             <GlassCard
@@ -87,17 +128,9 @@ export function BuilderPage() {
                   gap: "0.5rem",
                 }}
               >
-                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", minWidth: 0 }}>
-                  <h2
-                    className="cardt"
-                    style={{
-                      margin: 0,
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {card.name}
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", minWidth: 0, flex: 1 }}>
+                  <h2 className="cardt" style={{ margin: 0, flex: 1, minWidth: 0 }}>
+                    <FitText text={card.name} />
                   </h2>
                   <span
                     style={{
@@ -153,10 +186,7 @@ export function BuilderPage() {
                   </svg>
                 </button>
               </div>
-              <p className="body" style={{ margin: "0.4rem 0 0" }}>
-                {card.brand.organizationName}
-              </p>
-              <p className="body" style={{ margin: "0.2rem 0 0", fontSize: "0.82rem" }}>
+              <p className="body" style={{ margin: "0.6rem 0 0", fontSize: "0.82rem" }}>
                 v{card.version} · {new Date(card.updatedAt).toLocaleDateString()}
               </p>
             </GlassCard>
