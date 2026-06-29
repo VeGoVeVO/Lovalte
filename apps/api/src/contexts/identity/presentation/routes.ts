@@ -57,6 +57,9 @@ export function registerIdentityRoutes(
   handlers: IdentityHandlers,
 ): void {
   const secret = deps.config.SESSION_SECRET;
+  const adminEmail = deps.config.ADMIN_EMAIL.toLowerCase();
+  const isAdminEmail = (email: string): boolean =>
+    email.toLowerCase().trim() === adminEmail;
 
   // POST /api/v1/auth/signup - create a new tenant + owner account
   app.post("/api/v1/auth/signup", async (req, reply) => {
@@ -65,7 +68,13 @@ export function registerIdentityRoutes(
     if (!r.ok) throw r.error;
     setSessionCookie(
       reply,
-      { userId: r.value.userId, tenantId: r.value.tenantId, role: "owner" },
+      {
+        userId: r.value.userId,
+        tenantId: r.value.tenantId,
+        role: "owner",
+        email: input.email,
+        isAdmin: isAdminEmail(input.email),
+      },
       secret,
     );
     return reply.status(201).send({ data: r.value });
@@ -78,7 +87,13 @@ export function registerIdentityRoutes(
     if (!r.ok) throw r.error;
     setSessionCookie(
       reply,
-      { userId: r.value.userId, tenantId: r.value.tenantId, role: r.value.role },
+      {
+        userId: r.value.userId,
+        tenantId: r.value.tenantId,
+        role: r.value.role,
+        email: r.value.email,
+        isAdmin: isAdminEmail(r.value.email),
+      },
       secret,
     );
     return reply.status(200).send({
@@ -87,6 +102,7 @@ export function registerIdentityRoutes(
         tenantId: r.value.tenantId,
         email: r.value.email,
         role: r.value.role,
+        isAdmin: isAdminEmail(r.value.email),
       },
     });
   });
@@ -108,7 +124,13 @@ export function registerIdentityRoutes(
     if (!r.ok) throw r.error;
     setSessionCookie(
       reply,
-      { userId: r.value.userId, tenantId: r.value.tenantId, role: r.value.role },
+      {
+        userId: r.value.userId,
+        tenantId: r.value.tenantId,
+        role: r.value.role,
+        email: r.value.email,
+        isAdmin: isAdminEmail(r.value.email),
+      },
       secret,
     );
     return reply.status(200).send({ data: r.value });

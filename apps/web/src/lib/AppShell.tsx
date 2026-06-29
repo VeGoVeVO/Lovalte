@@ -2,6 +2,7 @@ import { useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "./api";
+import { useSession } from "./auth";
 import { haloCss } from "../design-system/halo";
 import { useT, LanguageSwitcher } from "./i18n";
 
@@ -12,6 +13,7 @@ const NAV: { to: string; label: string }[] = [
   { to: "/app/staff", label: "Staff" },
   { to: "/app/issue", label: "Issue" },
   { to: "/app/scan", label: "Scan" },
+  { to: "/support", label: "Support" },
 ];
 
 // Mobile: a 5-item native-style bottom tab bar (the daily-driver sections).
@@ -43,7 +45,10 @@ const TABS = [
   { to: "/app/issue", label: "Issue", icon: "ticket" },
   { to: "/app/scan", label: "Scan", icon: "scan" },
 ];
-const MORE = [{ to: "/app/staff", label: "Staff" }];
+const MORE = [
+  { to: "/app/staff", label: "Staff" },
+  { to: "/support", label: "Support" },
+];
 
 const shellCss = `
 .lvt-mobilehead, .lvt-tabbar { display: none; }
@@ -110,8 +115,14 @@ export function AppShell({
   const loc = useLocation();
   const qc = useQueryClient();
   const { t } = useT();
+  const { data: session } = useSession();
   const [moreOpen, setMoreOpen] = useState(false);
   const moreTriggerRef = useRef<HTMLButtonElement>(null);
+
+  // The platform super-admin gets an extra cross-tenant "Admin" entry.
+  const ADMIN_LINK = { to: "/admin", label: "Admin" };
+  const navLinks = session?.isAdmin ? [...NAV, ADMIN_LINK] : NAV;
+  const moreLinks = session?.isAdmin ? [...MORE, ADMIN_LINK] : MORE;
   const logout = useMutation({
     mutationFn: () => api.post("/api/v1/auth/logout"),
     onSettled: () => {
@@ -135,7 +146,7 @@ export function AppShell({
                 <span className="dot" aria-hidden="true" /> Lovalte
               </Link>
               <div className="navlinks">
-                {NAV.map((n) => (
+                {navLinks.map((n) => (
                   <Link key={n.to} to={n.to}>
                     {t(n.label)}
                   </Link>
@@ -177,7 +188,6 @@ export function AppShell({
               ref={moreTriggerRef}
               type="button"
               aria-label={t("More")}
-              aria-haspopup="menu"
               aria-expanded={moreOpen}
               onClick={() => setMoreOpen((o) => !o)}
               style={{
@@ -212,9 +222,10 @@ export function AppShell({
                   onClick={() => setMoreOpen(false)}
                   style={{ position: "fixed", inset: 0, zIndex: 55 }}
                 />
+                {/* Plain link list (no role="menu" — that ARIA pattern needs full
+                    arrow-key roving which we don't implement; Tab + Escape is enough). */}
                 <div
                   className="lvt-more-menu"
-                  role="menu"
                   onKeyDown={(e) => {
                     if (e.key === "Escape") {
                       setMoreOpen(false);
@@ -222,8 +233,8 @@ export function AppShell({
                     }
                   }}
                 >
-                  {MORE.map((m) => (
-                    <Link key={m.to} role="menuitem" to={m.to} onClick={() => setMoreOpen(false)}>
+                  {moreLinks.map((m) => (
+                    <Link key={m.to} to={m.to} onClick={() => setMoreOpen(false)}>
                       {t(m.label)}
                     </Link>
                   ))}
@@ -231,7 +242,6 @@ export function AppShell({
                     <LanguageSwitcher />
                   </div>
                   <button
-                    role="menuitem"
                     onClick={() => {
                       setMoreOpen(false);
                       logout.mutate();

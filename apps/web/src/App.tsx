@@ -2,13 +2,15 @@ import { Routes, Route } from "react-router-dom";
 import { globalCss, AmbientBackground } from "./design-system/halo";
 import { APP_VERSION } from "./version";
 import { LovalteLanding } from "./features/marketing/LovalteLanding";
-import { RequireAuth } from "./lib/auth";
+import { RequireAuth, RequireAdmin } from "./lib/auth";
 import { LoginPage } from "./features/auth/LoginPage";
 import { SignupPage } from "./features/auth/SignupPage";
 import { BuilderPage } from "./features/builder/BuilderPage";
 import { AnalyticsPage } from "./features/analytics/AnalyticsPage";
 import { MembersPage } from "./features/members/MembersPage";
 import { StaffPage } from "./features/staff/StaffPage";
+import { SupportPage } from "./features/support/SupportPage";
+import { AdminPage } from "./features/admin/AdminPage";
 import { IssuePassPage } from "./features/wallet/IssuePassPage";
 import { EnrollPage } from "./features/wallet/EnrollPage";
 import { ScanPage } from "./features/scan/ScanPage";
@@ -33,6 +35,11 @@ export function App() {
           <Route path="/app/staff" element={<StaffPage />} />
           <Route path="/app/issue" element={<IssuePassPage />} />
           <Route path="/app/scan" element={<ScanPage />} />
+          <Route path="/support" element={<SupportPage />} />
+        </Route>
+
+        <Route element={<RequireAdmin />}>
+          <Route path="/admin" element={<AdminPage />} />
         </Route>
 
         <Route path="*" element={<LovalteLanding />} />

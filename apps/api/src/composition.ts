@@ -7,6 +7,7 @@ import { registerScanning } from "./contexts/scanning";
 import { registerDelivery } from "./contexts/delivery";
 import { registerAnalytics } from "./contexts/analytics";
 import { registerGoogleWallet } from "./contexts/google-wallet";
+import { registerSupport } from "./contexts/support";
 
 /** Composition root: the ordered set of bounded-context modules mounted on the API.
  *  Contexts never import each other - they integrate via deps.bus (DomainEventBus). */
@@ -19,4 +20,5 @@ export const contextModules: ContextModule[] = [
   registerDelivery,
   registerAnalytics,
   registerGoogleWallet,
+  registerSupport,
 ];

@@ -7,6 +7,9 @@ export interface AuthContext {
   userId: string;
   tenantId: string;
   role: Role;
+  email: string;
+  /** Platform super-admin (a single configured email). Cross-tenant support desk. */
+  isAdmin: boolean;
 }
 
 const COOKIE = "lovalte_session";
@@ -25,7 +28,25 @@ export function verifySession(token: string, secret: string): AuthContext | null
   if (mac.length !== expected.length) return null;
   if (!crypto.timingSafeEqual(Buffer.from(mac), Buffer.from(expected))) return null;
   try {
-    return JSON.parse(Buffer.from(body, "base64url").toString("utf8")) as AuthContext;
+    const ctx = JSON.parse(Buffer.from(body, "base64url").toString("utf8")) as Partial<AuthContext>;
+    // Require the full current session shape. Tokens issued before the email/isAdmin
+    // fields existed are treated as invalid -> a single clean re-login refreshes them
+    // (and guarantees ticket attribution never sees a missing email).
+    if (
+      typeof ctx.userId !== "string" ||
+      typeof ctx.tenantId !== "string" ||
+      typeof ctx.role !== "string" ||
+      typeof ctx.email !== "string" ||
+      typeof ctx.isAdmin !== "boolean"
+    ) {
+      return null;
+    }
+    // Defense in depth: reject any token carrying a role outside the known set,
+    // even though a valid HMAC means it could only come from our own issuer.
+    if (ctx.role !== "owner" && ctx.role !== "manager" && ctx.role !== "staff") {
+      return null;
+    }
+    return ctx as AuthContext;
   } catch {
     return null;
   }
@@ -55,6 +76,16 @@ export function requireAuth(secret: string, roles?: Role[]): preHandlerHookHandl
     const auth = readAuth(req, secret);
     if (!auth) throw new UnauthorizedError();
     if (roles && !roles.includes(auth.role)) throw new ForbiddenError();
+    (req as FastifyRequest & { auth?: AuthContext }).auth = auth;
+  };
+}
+
+/** Fastify preHandler: require a valid session belonging to the platform admin. */
+export function requireAdmin(secret: string): preHandlerHookHandler {
+  return async (req) => {
+    const auth = readAuth(req, secret);
+    if (!auth) throw new UnauthorizedError();
+    if (!auth.isAdmin) throw new ForbiddenError();
     (req as FastifyRequest & { auth?: AuthContext }).auth = auth;
   };
 }

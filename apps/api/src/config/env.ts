@@ -8,6 +8,9 @@ const schema = z.object({
   REDIS_URL: z.string().url(),
   SESSION_SECRET: z.string().min(16),
   QR_TOKEN_SECRET: z.string().min(16),
+  // Single platform super-admin email. This account (and only this one) sees the
+  // cross-tenant /admin support desk. Env-overridable; defaults to the founder.
+  ADMIN_EMAIL: z.string().email().default("wtsouli@gmail.com"),
   APP_BASE_URL: z.string().url(),
   WALLET_WEB_SERVICE_URL: z.string().url(),
   APPLE_TEAM_ID: z.string().optional(),
