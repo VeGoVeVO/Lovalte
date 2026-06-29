@@ -220,14 +220,27 @@ function ImgSlot({
   );
 }
 
+/** "rgb(r, g, b)" -> "rgba(r, g, b, a)" for the faint empty-stamp ring. */
+const fade = (rgb: string, a: number) => rgb.replace("rgb(", "rgba(").replace(")", `, ${a})`);
+
 /**
- * The stamp grid drawn on the strip band — the chosen Lucide icon (or uploaded
- * stamp art), filled when earned and faint when not. Same layout (stampLayout)
- * as the baked strip frames, so the preview matches the issued card.
+ * The stamp grid on the strip band — every slot is a clearly visible ring when
+ * empty and a filled disc (with the icon knocked out) when earned, so a fresh
+ * card shows its empty stamps. Same layout (stampLayout) as the baked frames.
  */
-function StampGrid({ doc, fg, width }: { doc: CardDoc; fg: string; width: number }) {
+function StampGrid({
+  doc,
+  fg,
+  bg,
+  width,
+}: {
+  doc: CardDoc;
+  fg: string;
+  bg: string;
+  width: number;
+}) {
   const { cols, rows } = stampLayout(doc.stampsGoal);
-  const size = Math.max(11, Math.round(((width * (1 - GRID_LEFT)) / cols) * 0.5));
+  const dot = Math.max(16, Math.round(((width * (1 - GRID_LEFT)) / cols) * 0.62));
   return (
     <div
       aria-hidden
@@ -248,21 +261,33 @@ function StampGrid({ doc, fg, width }: { doc: CardDoc; fg: string; width: number
       {Array.from({ length: doc.stampsGoal }).map((_, i) => {
         const got = i < doc.stampsEarned;
         const art = got ? doc.stampedRef : doc.unstampedRef;
-        return art ? (
-          <img
+        if (art) {
+          return (
+            <img
+              key={i}
+              src={art}
+              alt=""
+              style={{ width: dot, height: dot, objectFit: "contain" }}
+            />
+          );
+        }
+        return (
+          <div
             key={i}
-            src={art}
-            alt=""
-            style={{ width: "78%", height: "78%", objectFit: "contain", opacity: got ? 1 : 0.32 }}
-          />
-        ) : (
-          <DynamicIcon
-            key={i}
-            name={doc.stampIcon as never}
-            size={size}
-            color={fg}
-            style={{ opacity: got ? 1 : 0.22 }}
-          />
+            style={{
+              width: dot,
+              height: dot,
+              borderRadius: "50%",
+              display: "grid",
+              placeItems: "center",
+              background: got ? fg : "transparent",
+              border: got ? "none" : `2px solid ${fade(fg, 0.5)}`,
+            }}
+          >
+            {got && (
+              <DynamicIcon name={doc.stampIcon as never} size={Math.round(dot * 0.58)} color={bg} />
+            )}
+          </div>
         );
       })}
     </div>
@@ -393,7 +418,7 @@ export function CardCanvas({
               }}
             />
           )}
-          <StampGrid doc={doc} fg={fg} width={width} />
+          <StampGrid doc={doc} fg={fg} bg={bg} width={width} />
           {/* Native primary value lives on the left; the grid fills the right. */}
           <div
             style={{

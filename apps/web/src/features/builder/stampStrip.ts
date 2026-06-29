@@ -46,7 +46,8 @@ export interface StampStripInput {
   fg: string;
   /** Optional background image ref drawn cover-fit behind the stamps. */
   bgRef?: string | null;
-  /** Pre-rendered PNG of the Lucide stamp icon, already foreground-coloured. */
+  /** Pre-rendered PNG of the stamp icon in the BACKGROUND colour (knocked out of
+   *  the filled disc on stamped marks). */
   stampIconPng?: string | null;
   /** Uploaded stamp art refs that override the Lucide icon (optional). */
   stampedRef?: string | null;
@@ -61,7 +62,11 @@ function drawCover(ctx: CanvasRenderingContext2D, img: HTMLImageElement, w: numb
   ctx.drawImage(img, (w - dw) / 2, (h - dh) / 2, dw, dh);
 }
 
-/** Draw one stamp mark (filled when earned, faint when not) inside a box. */
+/**
+ * Draw one stamp mark. Unstamped = a clearly visible ring (so a fresh card shows
+ * its empty stamps); stamped = a filled disc with the icon knocked out in the
+ * background colour. Uploaded art (when present) replaces both states.
+ */
 function drawMark(
   ctx: CanvasRenderingContext2D,
   earned: boolean,
@@ -70,32 +75,26 @@ function drawMark(
   r: number,
   fg: string,
   art: HTMLImageElement | null,
-  icon: HTMLImageElement | null,
+  iconBg: HTMLImageElement | null,
 ) {
   if (art) {
-    ctx.globalAlpha = earned ? 1 : 0.32;
     const s = r * 2;
     ctx.drawImage(art, cx - r, cy - r, s, s);
-    ctx.globalAlpha = 1;
     return;
   }
-  if (icon) {
-    ctx.globalAlpha = earned ? 1 : 0.22;
-    const s = r * 1.85;
-    ctx.drawImage(icon, cx - s / 2, cy - s / 2, s, s);
-    ctx.globalAlpha = 1;
-    return;
-  }
-  // Geometric fallback: filled disc when earned, thin ring when not.
   ctx.beginPath();
   ctx.arc(cx, cy, r, 0, Math.PI * 2);
   if (earned) {
     ctx.fillStyle = fg;
     ctx.fill();
+    if (iconBg) {
+      const s = r * 1.15;
+      ctx.drawImage(iconBg, cx - s / 2, cy - s / 2, s, s);
+    }
   } else {
-    ctx.globalAlpha = 0.4;
-    ctx.lineWidth = r * 0.16;
+    ctx.lineWidth = Math.max(2, r * 0.13);
     ctx.strokeStyle = fg;
+    ctx.globalAlpha = 0.5;
     ctx.stroke();
     ctx.globalAlpha = 1;
   }

@@ -138,8 +138,9 @@ export function CardEditor({ initial, onClose }: Props) {
   const buildStampFrames = async (): Promise<string[] | undefined> => {
     if (!doc || doc.type !== "stamps") return undefined;
     const svg = stampIconRef.current?.querySelector("svg");
+    // Background colour: the icon is knocked out of the filled (foreground) disc.
     const stampIconPng = svg
-      ? await svgToPngDataUrl(svg, 174, hexToRgb(doc.theme.fg)).catch(() => null)
+      ? await svgToPngDataUrl(svg, 174, hexToRgb(doc.theme.bg)).catch(() => null)
       : null;
     const frames = await renderStampFrames({
       goal: doc.stampsGoal,
