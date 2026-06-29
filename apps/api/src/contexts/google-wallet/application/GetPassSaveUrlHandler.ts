@@ -52,8 +52,8 @@ export class GetPassSaveUrlHandler {
         cardTitle: pass.organizationName,
         header: pass.logoText ?? pass.organizationName,
         barcode: pass.passId,
-        logoImageUri: pass.imageAssetRefs["logo"],
-        heroImageUri: pass.imageAssetRefs["strip"],
+        logoImageUri: this.absUri(pass.imageAssetRefs["logo"]),
+        heroImageUri: this.absUri(pass.imageAssetRefs["strip"]),
         textModulesData: primary
           ? [{ header: primary.label, body: String(primary.value), id: "balance" }]
           : [],
