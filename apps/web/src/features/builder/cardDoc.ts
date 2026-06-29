@@ -281,7 +281,8 @@ export const TOOLS: Record<string, ToolFn> = {
     return { ...d, [l]: d[l].filter((x) => x.id !== a.id) };
   },
   "stamps.goal": (d, a) => {
-    const g = Math.max(1, Math.min(12, a.goal as number));
+    // Up to 20 stamps; the grid auto-shrinks the marks to fit the strip.
+    const g = Math.max(1, Math.min(20, a.goal as number));
     return { ...d, stampsGoal: g, stampsEarned: Math.min(d.stampsEarned, g) };
   },
   "stamps.earned": (d, a) => ({
@@ -315,6 +316,16 @@ const toApiFields = (rows: DocField[], prefix: string): FieldDef[] =>
     }));
 
 export function docToInput(doc: CardDoc): TemplateInput {
+  // The loyalty counter always has key "points" (so a holder's stored value keeps
+  // mapping across edits). For STAMPS we put it in the secondary region so Wallet
+  // renders "X / N" as a field BELOW the strip; the strip is then pure stamps.
+  // For points/cashback it stays the prominent primary value.
+  const isStamps = doc.type === "stamps";
+  const loyaltyField = {
+    key: "points",
+    label: doc.primaryLabel || TYPE_META[doc.type].primaryLabel,
+    valueTemplate: "{{points}}",
+  };
   return {
     name: doc.logoText.trim() || "Card",
     organizationName: doc.logoText.trim() || "Your Business",
@@ -323,10 +334,10 @@ export function docToInput(doc: CardDoc): TemplateInput {
     foregroundColor: hexToRgb(doc.theme.fg),
     labelColor: hexToRgb(doc.theme.label),
     headerFields: toApiFields(doc.headerFields, "hdr"),
-    primaryFields: [
-      { key: "points", label: doc.primaryLabel || "POINTS", valueTemplate: "{{points}}" },
-    ],
-    secondaryFields: toApiFields(doc.fields, "sec"),
+    primaryFields: isStamps ? [] : [loyaltyField],
+    secondaryFields: isStamps
+      ? [loyaltyField, ...toApiFields(doc.fields, "sec")]
+      : toApiFields(doc.fields, "sec"),
     auxiliaryFields: [],
     backFields: toApiFields(doc.backFields, "back"),
     pointsPerVisit: 1,
@@ -354,17 +365,25 @@ export function docFromTemplate(tmpl: CardTemplateDTO): CardDoc {
     logo: ref(b.logoRef),
     hero: ref(b.stripRef),
     iconRef: b.iconRef ?? "",
-    primaryLabel: b.primaryFields[0]?.label ?? "POINTS",
+    // The loyalty field (key "points") may sit in primary (points/cashback) or
+    // secondary (stamps). Read its label as primaryLabel and keep it OUT of the
+    // editable secondary fields so it doesn't show up as a user-editable row.
+    primaryLabel:
+      b.primaryFields[0]?.label ??
+      (b.secondaryFields ?? []).find((f) => f.key === "points")?.label ??
+      "POINTS",
     headerFields: (b.headerFields ?? []).map((f) => ({
       id: "h" + f.key,
       label: f.label,
       value: f.valueTemplate,
     })),
-    fields: (b.secondaryFields ?? []).map((f) => ({
-      id: "s" + f.key,
-      label: f.label,
-      value: f.valueTemplate,
-    })),
+    fields: (b.secondaryFields ?? [])
+      .filter((f) => f.key !== "points")
+      .map((f) => ({
+        id: "s" + f.key,
+        label: f.label,
+        value: f.valueTemplate,
+      })),
     backFields: (b.backFields ?? []).map((f) => ({
       id: "b" + f.key,
       label: f.label,

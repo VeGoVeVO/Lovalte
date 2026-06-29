@@ -111,6 +111,11 @@ export const registerPassIssuance: ContextModule = async (app, deps) => {
         const o = f as { key: string; label: string };
         return { key: o.key, label: o.label, region };
       });
+    // The loyalty counter (key "points") is formatted "X / N" by PassDocumentBuilder
+    // wherever it sits: primary (points/cashback) or secondary (stamps — the count
+    // shows below the strip). Tag it by KEY so the formatting follows the field.
+    const tagLoyalty = (d: FieldDefinition): FieldDefinition =>
+      d.key === "points" ? { ...d, loyaltyType, loyaltyGoal } : d;
 
     const dto: PassTemplateDto = {
       id: templateId,
@@ -129,12 +134,8 @@ export const registerPassIssuance: ContextModule = async (app, deps) => {
       webServiceUrl: deps.config.WALLET_WEB_SERVICE_URL.replace(/\/+$/, ""),
       fieldDefinitions: [
         ...mapRegion(brand.headerFields, "header"),
-        ...mapRegion(brand.primaryFields, "primary").map((d) => ({
-          ...d,
-          loyaltyType,
-          loyaltyGoal,
-        })),
-        ...mapRegion(brand.secondaryFields, "secondary"),
+        ...mapRegion(brand.primaryFields, "primary").map(tagLoyalty),
+        ...mapRegion(brand.secondaryFields, "secondary").map(tagLoyalty),
         ...mapRegion(brand.auxiliaryFields, "auxiliary"),
       ],
       imageAssetRefs: {

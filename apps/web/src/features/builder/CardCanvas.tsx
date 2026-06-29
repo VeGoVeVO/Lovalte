@@ -228,7 +228,12 @@ function StampGrid({
   width: number;
 }) {
   const { cols, rows } = stampLayout(doc.stampsGoal);
-  const dot = Math.max(16, Math.round(((width * (1 - GRID_LEFT)) / cols) * 0.62));
+  // Size each mark from the ACTUAL cell (matches the baked strip): the cells abut
+  // and the mark is 72% of the smaller cell side, so more stamps simply render
+  // smaller and always fit the thin band — no overflow at 10 columns.
+  const gridW = width * (1 - GRID_LEFT - 0.04); // left GRID_LEFT + right 4% margins
+  const gridH = width * STRIP_RATIO * 0.72; // 14% top + 14% bottom reserved
+  const dot = Math.max(10, Math.floor(Math.min(gridW / cols, gridH / rows) * 0.72));
   const icon = Math.round(dot * 0.62);
   return (
     <div
@@ -242,7 +247,6 @@ function StampGrid({
         display: "grid",
         gridTemplateColumns: `repeat(${cols}, 1fr)`,
         gridTemplateRows: `repeat(${rows}, 1fr)`,
-        gap: "6%",
         placeItems: "center",
         pointerEvents: "none",
       }}
@@ -548,40 +552,6 @@ export function CardCanvas({
           >
             <StampGrid doc={doc} fg={fg} bg={bg} width={width} />
           </Region>
-          <Region
-            kind="reward"
-            label={t("Reward")}
-            style={{
-              position: "absolute",
-              left: 12,
-              top: 0,
-              bottom: 0,
-              width: `${GRID_LEFT * 100}%`,
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-              textShadow: doc.hero?.src ? "0 1px 6px rgba(0,0,0,.55)" : "none",
-            }}
-          >
-            <div
-              style={{
-                fontSize: 30,
-                fontWeight: 800,
-                lineHeight: 1,
-                letterSpacing: "-0.02em",
-                fontVariantNumeric: "tabular-nums",
-              }}
-            >
-              {doc.stampsEarned} / {doc.stampsGoal}
-            </div>
-            <Editable
-              value={doc.primaryLabel}
-              ph="STAMPS"
-              ariaLabel={t("Label")}
-              onInput={(v) => dispatch("text.primaryLabel", { value: v })}
-              style={{ ...labelStyle, fontSize: 11, marginTop: 3, display: "block" }}
-            />
-          </Region>
         </div>
       ) : (
         <ImgSlot
@@ -635,6 +605,37 @@ export function CardCanvas({
           alignItems: "flex-start",
         }}
       >
+        {/* Stamps: the "X / N" count is the first field (far left) — label is
+            edited inline, the value opens the reward popover to change the goal. */}
+        {doc.type === "stamps" && (
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 3, minWidth: 0 }}>
+            <div>
+              <Editable
+                value={doc.primaryLabel}
+                ph="STAMPS"
+                ariaLabel={t("Label")}
+                onInput={(v) => dispatch("text.primaryLabel", { value: v })}
+                style={{ ...labelStyle, fontSize: 9, display: "block" }}
+              />
+              <Region
+                kind="reward"
+                label={t("Reward")}
+                style={{ display: "inline-block", marginTop: 2 }}
+              >
+                <span
+                  style={{
+                    fontSize: 18,
+                    fontWeight: 800,
+                    letterSpacing: "-0.02em",
+                    fontVariantNumeric: "tabular-nums",
+                  }}
+                >
+                  {doc.stampsEarned} / {doc.stampsGoal}
+                </span>
+              </Region>
+            </div>
+          </div>
+        )}
         {doc.fields.slice(0, 4).map((f) => (
           <div
             key={f.id}

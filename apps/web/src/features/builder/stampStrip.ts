@@ -12,21 +12,25 @@ export const STRIP_H = 369;
 /** Preview band aspect (height = width * this) — matches the generated strip. */
 export const STRIP_RATIO = STRIP_H / STRIP_W;
 /**
- * Fraction of the strip width reserved on the LEFT for Apple's native primary
- * value; the stamp grid fills the remainder on the right. Shared by the renderer
- * and the preview so they line up.
+ * Small side margin for the stamp grid. The count ("X / N") now lives in a field
+ * BELOW the strip (not overlaid on the left), so the grid spans the full strip.
+ * Shared by the renderer and the preview so they line up.
  */
-export const GRID_LEFT = 0.4;
+export const GRID_LEFT = 0.04;
+
+export const STAMPS_MAX = 20;
 
 /**
- * Grid shape for `goal` stamps: at most 6 per row, balanced into 1–2 rows so the
- * marks stay large. Shared by the DOM preview and the canvas renderer so the two
- * never drift. Pure. Invariant: cols ≤ 6 and cols*rows ≥ goal (every stamp fits).
+ * Grid shape for `goal` stamps (1–20): one row up to 5, otherwise two rows. Cols
+ * grow (up to 10) as the goal rises, and the mark radius is derived from the cell
+ * size — so more stamps simply render smaller and always fit the thin strip.
+ * Shared by the DOM preview and the canvas renderer so the two never drift. Pure.
+ * Invariant: cols*rows ≥ goal (every stamp fits).
  */
 export function stampLayout(goal: number): { cols: number; rows: number } {
-  const n = Math.max(1, Math.min(30, Math.trunc(goal) || 1));
-  const cols = n <= 6 ? n : Math.ceil(n / 2);
-  return { cols, rows: Math.ceil(n / cols) };
+  const n = Math.max(1, Math.min(STAMPS_MAX, Math.trunc(goal) || 1));
+  const rows = n <= 5 ? 1 : 2;
+  return { cols: Math.ceil(n / rows), rows };
 }
 
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -116,7 +120,7 @@ function drawMark(
  * drawn by Wallet on top, so the strip carries only the grid.
  */
 export async function renderStampFrames(input: StampStripInput): Promise<string[]> {
-  const goal = Math.max(1, Math.min(30, Math.trunc(input.goal) || 1));
+  const goal = Math.max(1, Math.min(STAMPS_MAX, Math.trunc(input.goal) || 1));
   const fg = hexToRgb(input.fg);
   const bg = hexToRgb(input.bg);
 
@@ -128,9 +132,9 @@ export async function renderStampFrames(input: StampStripInput): Promise<string[
     input.stampIconBgPng ? loadImage(input.stampIconBgPng).catch(() => null) : null,
   ]);
 
-  // Apple draws the primary value ("X / N") left-aligned over the strip, so the
-  // grid lives in the RIGHT region — the two never collide. Must match LEFT_RESERVE
-  // in CardCanvas's StampGrid so the preview equals the issued card.
+  // The count is shown as a field below the strip, so the grid spans the full
+  // strip (small GRID_LEFT margin). Must match CardCanvas's StampGrid so the
+  // preview equals the issued card.
   const { cols, rows } = stampLayout(goal);
   const gridLeft = STRIP_W * GRID_LEFT;
   const gridRight = STRIP_W * 0.96;
