@@ -25,9 +25,6 @@ const rectAnchor = (el: HTMLElement): PopAnchor => {
   const r = el.getBoundingClientRect();
   return { getBoundingClientRect: () => r };
 };
-const pointAnchor = (x: number, y: number): PopAnchor => ({
-  getBoundingClientRect: () => new DOMRect(x, y, 0, 0),
-});
 
 interface Props {
   doc: CardDoc;
@@ -320,19 +317,26 @@ export function CardCanvas({
   const { t } = useT();
   const editable = !readOnly;
 
-  // Contextual recolour: focusing a text shows a small swatch near it (NOT the wheel
-  // directly). Tapping the swatch opens the wheel for that text's theme colour.
-  const [colorChip, setColorChip] = useState<{ role: "fg" | "label"; x: number; y: number } | null>(
-    null,
-  );
+  // Contextual recolour as a small wheel anchored at a point. Background: clicking
+  // the card opens the wheel straight away (open:true). Text/label: focusing the
+  // text shows just a swatch (open:false) that opens the wheel on tap.
+  type ColorRole = "bg" | "fg" | "label";
+  const [colorChip, setColorChip] = useState<{
+    role: ColorRole;
+    x: number;
+    y: number;
+    open: boolean;
+  } | null>(null);
   const wheelOpen = useRef(false);
   const blurTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const themeColor = (role: ColorRole) =>
+    role === "bg" ? doc.theme.bg : role === "fg" ? doc.theme.fg : doc.theme.label;
   const colorProps = (role: "fg" | "label") => ({
     colorRole: role,
     onColorFocus: (r: "fg" | "label", el: HTMLElement) => {
       clearTimeout(blurTimer.current);
       const rc = el.getBoundingClientRect();
-      setColorChip({ role: r, x: rc.left, y: rc.top });
+      setColorChip({ role: r, x: rc.left, y: rc.top, open: false });
     },
     onColorBlur: () => {
       blurTimer.current = setTimeout(() => {
@@ -447,9 +451,10 @@ export function CardCanvas({
     <div
       onClick={(e) => {
         if (!editable) return;
-        // Colours = the whole card; anchor to the click POINT so the popover opens
-        // next to the cursor instead of beside the (huge) card element.
-        onSelect("colors", pointAnchor(e.clientX, e.clientY));
+        // Clicking the card background = pick the BG colour; the wheel opens straight
+        // away at the click point (no extra popover chrome).
+        clearTimeout(blurTimer.current);
+        setColorChip({ role: "bg", x: e.clientX, y: e.clientY, open: true });
       }}
       style={{
         width: "100%",
@@ -771,8 +776,16 @@ export function CardCanvas({
             }}
           >
             <ColorPicker
-              ariaLabel={colorChip.role === "fg" ? t("Text colour") : t("Label colour")}
-              value={colorChip.role === "fg" ? doc.theme.fg : doc.theme.label}
+              key={`${colorChip.role}-${colorChip.x}-${colorChip.y}`}
+              ariaLabel={
+                colorChip.role === "bg"
+                  ? t("Background")
+                  : colorChip.role === "fg"
+                    ? t("Text colour")
+                    : t("Label colour")
+              }
+              value={themeColor(colorChip.role)}
+              defaultOpen={colorChip.open}
               onChange={(v) => dispatch("theme.set", { key: colorChip.role, value: v })}
               onOpenChange={(o) => {
                 if (!o && wheelOpen.current) setColorChip(null);
