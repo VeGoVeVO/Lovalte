@@ -2,6 +2,15 @@ import type { CardTemplate } from "../domain/CardTemplate";
 import type { LoyaltyType } from "../domain/RewardRule";
 import type { AssetRef } from "./ICardTemplateRepository";
 
+export interface GoogleOverrides {
+  bg?: string;
+  cardTitle?: string;
+  header?: string;
+  logoSrc?: string;
+  heroSrc?: string;
+  textModules?: Array<{ id: string; header: string; body: string }>;
+}
+
 export interface FieldDefinitionInput {
   key: string;
   label: string;
@@ -39,6 +48,7 @@ export interface CreateCardTemplateInput {
   stampStripRefs?: string[];
   tierRules: TierRuleInput[];
   walletPlatform?: 'apple' | 'google';
+  googleOverrides?: GoogleOverrides;
 }
 
 export interface UpdateCardTemplateInput extends CreateCardTemplateInput {
@@ -78,6 +88,7 @@ export interface CardTemplateDTO {
     tierRules: TierRuleInput[];
   };
   walletPlatform: 'apple' | 'google';
+  googleOverrides?: GoogleOverrides;
   /** Number of passes issued from this template (cards already in customer wallets). */
   issuedCount: number;
   createdAt: string;
@@ -140,6 +151,7 @@ export function toCardTemplateDTO(t: CardTemplate, issuedCount = 0): CardTemplat
       tierRules: [...t.rewardRule.tierRules],
     },
     walletPlatform: t.walletPlatform,
+    googleOverrides: t.googleOverrides,
     createdAt: t.createdAt.toISOString(),
     updatedAt: t.updatedAt.toISOString(),
   };

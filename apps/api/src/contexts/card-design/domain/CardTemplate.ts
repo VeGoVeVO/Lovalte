@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { AggregateRoot, UniqueId } from "../../../kernel";
 import { BrandConfig } from "./BrandConfig";
 import { RewardRule } from "./RewardRule";
+import type { GoogleOverrides } from "../application/dtos";
 
 export class CardTemplateId extends UniqueId {
   static generate(): CardTemplateId {
@@ -22,6 +23,7 @@ export interface CardTemplateProps {
   brand: BrandConfig;
   rewardRule: RewardRule;
   walletPlatform: 'apple' | 'google';
+  googleOverrides?: GoogleOverrides;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -41,6 +43,7 @@ export class CardTemplate extends AggregateRoot<CardTemplateId> {
   private _brand: BrandConfig;
   private _rewardRule: RewardRule;
   private _walletPlatform: 'apple' | 'google';
+  private _googleOverrides?: GoogleOverrides;
   readonly createdAt: Date;
   private _updatedAt: Date;
 
@@ -53,6 +56,7 @@ export class CardTemplate extends AggregateRoot<CardTemplateId> {
     this._brand = props.brand;
     this._rewardRule = props.rewardRule;
     this._walletPlatform = props.walletPlatform;
+    this._googleOverrides = props.googleOverrides;
     this.createdAt = props.createdAt;
     this._updatedAt = props.updatedAt;
   }
@@ -75,6 +79,7 @@ export class CardTemplate extends AggregateRoot<CardTemplateId> {
       brand,
       rewardRule,
       walletPlatform,
+      googleOverrides: undefined,
       createdAt: now,
       updatedAt: now,
     });
@@ -176,7 +181,15 @@ export class CardTemplate extends AggregateRoot<CardTemplateId> {
   get walletPlatform(): 'apple' | 'google' {
     return this._walletPlatform;
   }
+  get googleOverrides(): GoogleOverrides | undefined {
+    return this._googleOverrides;
+  }
   get updatedAt(): Date {
     return this._updatedAt;
+  }
+
+  setGoogleOverrides(ov: GoogleOverrides | undefined): void {
+    this._googleOverrides = ov;
+    this._updatedAt = new Date();
   }
 }

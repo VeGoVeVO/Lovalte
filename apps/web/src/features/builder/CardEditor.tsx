@@ -25,6 +25,8 @@ import {
 } from "./cardDoc";
 import type { LoyaltyType } from "./useTemplates";
 import { CardCanvas, type SlotKind } from "./CardCanvas";
+import { GoogleCardCanvas, type GSlotKind } from "./GoogleCardCanvas";
+import { GoogleComponentEditor } from "./GoogleComponentEditor";
 import { CardPopover, type PopAnchor } from "./CardPopover";
 import { AssetField } from "./AssetField";
 import { IconPicker } from "./IconPicker";
@@ -61,6 +63,16 @@ const SLOT_META: Record<
     sub: "Details on the flip side",
     accent: "#6E86C8",
   },
+};
+
+const G_SLOT_META: Record<
+  Exclude<GSlotKind, null>,
+  { icon: string; title: string; sub: string; accent: string }
+> = {
+  logo:        { icon: "image",   title: "Google logo",   sub: "Brand mark & card title",   accent: "#4285F4" },
+  colors:      { icon: "palette", title: "Background",    sub: "Google card colour",         accent: "#8B7BD8" },
+  hero:        { icon: "image",   title: "Hero image",    sub: "Banner image at card top",   accent: "#34B98A" },
+  textModules: { icon: "list",    title: "Text fields",   sub: "Rows shown on Google card",  accent: "#6E86C8" },
 };
 
 /** A tiny branded square used as the auto Apple icon when no logo was uploaded. */
@@ -103,7 +115,10 @@ const editorCss = `
 .lvt-be-publish:active:not(:disabled){ transform:translateY(0) scale(.97); }
 .lvt-be-publish:disabled { opacity:.55; cursor:default; }
 .lvt-be-publish:focus-visible { outline:none; box-shadow:0 0 0 4px rgba(139,123,216,.45); }
-.lvt-be-stage { width: 100%; max-width: 420px; margin: 0 auto; display:flex; flex-direction:column; align-items:center; }
+.lvt-be-dual-stage { display:flex; gap:24px; justify-content:center; align-items:flex-start; overflow-x:auto; flex-wrap:wrap; }
+.lvt-be-platform-col { display:flex; flex-direction:column; align-items:center; gap:8px; }
+.lvt-be-platform-label { font-size:.72rem; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
+@media(max-width:700px){ .lvt-be-dual-stage { flex-direction:column; align-items:center; } }
 .lvt-be-hint { margin:18px auto 0; max-width:18rem; text-align:center; color:var(--muted); font-size:.82rem; text-wrap:balance; }
 .lvt-ed { outline:none; cursor:text; border-radius:5px; transition:box-shadow .15s ease; }
 .lvt-ed:focus { box-shadow:0 0 0 2px rgba(169,245,255,.85); }
@@ -153,6 +168,7 @@ export function CardEditor({ initial, onClose }: Props) {
   const [idx, setIdx] = useState(existing ? 0 : -1);
   const [savedId, setSavedId] = useState<string | null>(existing?.id ?? null);
   const [sel, setSel] = useState<SlotKind>(null);
+  const [gSel, setGSel] = useState<GSlotKind>(null);
   const [anchor, setAnchor] = useState<PopAnchor>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [iconPicker, setIconPicker] = useState(false);
@@ -178,6 +194,7 @@ export function CardEditor({ initial, onClose }: Props) {
   };
   const closePop = () => {
     setSel(null);
+    setGSel(null);
     setAnchor(null);
   };
 
@@ -282,11 +299,15 @@ export function CardEditor({ initial, onClose }: Props) {
         });
         iconRef = res.url;
       }
-      const assets = [
+      let assets = [
         { kind: "icon" as const, ref: iconRef },
         { kind: "logo" as const, ref: doc.logo?.src ?? "" },
         { kind: "strip" as const, ref: doc.hero?.src ?? "" },
       ].filter((a) => a.ref);
+      if (doc.googleOverrides?.logoSrc && doc.googleOverrides.logoSrc !== doc.logo?.src)
+        assets.push({ kind: "logo" as const, ref: doc.googleOverrides.logoSrc });
+      if (doc.googleOverrides?.heroSrc && doc.googleOverrides.heroSrc !== doc.hero?.src)
+        assets.push({ kind: "strip" as const, ref: doc.googleOverrides.heroSrc });
       // SEQUENTIAL, not Promise.all: each RegisterAssetRef does read-modify-write on
       // the same template config; running them in parallel races and only the last
       // ref survives (that's why the logo never reached the issued pass).
@@ -479,40 +500,62 @@ export function CardEditor({ initial, onClose }: Props) {
         aria-hidden="true"
         tabIndex={-1}
       />
-      <div className="lvt-be-stage">
-        <CardCanvas
-          doc={doc}
-          selected={sel}
-          onSelect={select}
-          dispatch={dispatch}
-          width={340}
-          onAddLogo={addLogo}
-        />
-        {!sel && <p className="lvt-be-hint">{t("Tap any part of the card to edit it.")}</p>}
-        {status && (
-          <p
-            role="status"
-            aria-live="polite"
-            className="body"
-            style={{
-              textAlign: "center",
-              marginTop: 10,
-              color: /fail|error/i.test(status) ? "#c0392b" : "var(--text)",
-            }}
-          >
-            {status}
-          </p>
-        )}
+      <div className="lvt-be-dual-stage">
+        <div className="lvt-be-platform-col">
+          <span className="lvt-be-platform-label">{t("Apple Wallet")}</span>
+          <CardCanvas
+            doc={doc}
+            selected={sel}
+            onSelect={(s, el) => { setGSel(null); select(s, el); }}
+            dispatch={dispatch}
+            width={300}
+            onAddLogo={addLogo}
+          />
+        </div>
+        <div className="lvt-be-platform-col">
+          <span className="lvt-be-platform-label">{t("Google Wallet")}</span>
+          <GoogleCardCanvas
+            doc={doc}
+            selected={gSel}
+            onSelect={(s, el) => { setSel(null); setGSel(s); setAnchor(el ?? null); }}
+            dispatch={dispatch}
+            width={300}
+          />
+        </div>
       </div>
+      {!sel && !gSel && <p className="lvt-be-hint">{t("Tap any part of the card to edit it.")}</p>}
+      {status && (
+        <p
+          role="status"
+          aria-live="polite"
+          className="body"
+          style={{
+            textAlign: "center",
+            marginTop: 10,
+            color: /fail|error/i.test(status) ? "#c0392b" : "var(--text)",
+          }}
+        >
+          {status}
+        </p>
+      )}
 
       <CardPopover
         anchor={anchor}
-        open={!!sel && !iconPicker}
+        open={(!!sel || !!gSel) && !iconPicker}
         onClose={closePop}
-        title={sel ? t(SLOT_META[sel].title) : ""}
-        subtitle={sel ? t(SLOT_META[sel].sub) : undefined}
-        accent={sel ? SLOT_META[sel].accent : undefined}
-        icon={sel ? <DynamicIcon name={SLOT_META[sel].icon as never} size={17} /> : undefined}
+        title={
+          sel ? t(SLOT_META[sel].title) :
+          gSel ? t(G_SLOT_META[gSel].title) : ""
+        }
+        subtitle={
+          sel ? t(SLOT_META[sel].sub) :
+          gSel ? t(G_SLOT_META[gSel].sub) : undefined
+        }
+        accent={sel ? SLOT_META[sel].accent : gSel ? G_SLOT_META[gSel].accent : undefined}
+        icon={
+          sel ? <DynamicIcon name={SLOT_META[sel].icon as never} size={17} /> :
+          gSel ? <DynamicIcon name={G_SLOT_META[gSel].icon as never} size={17} /> : undefined
+        }
       >
         {sel && (
           <ComponentEditor
@@ -522,6 +565,9 @@ export function CardEditor({ initial, onClose }: Props) {
             onPickStampIcon={() => setIconPicker(true)}
             onAddLogo={addLogo}
           />
+        )}
+        {gSel && !sel && (
+          <GoogleComponentEditor doc={doc} sel={gSel} dispatch={dispatch} />
         )}
       </CardPopover>
 

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, type ApiError } from "../../lib/api";
+import type { GoogleOverrides } from "./cardDoc";
 
 // ── Domain types (mirror the API DTOs) ───────────────────────────────────────
 
@@ -43,6 +44,7 @@ export interface CardTemplateDTO {
     cardType: LoyaltyType;
     tierRules: { label: string; minPoints: number }[];
   };
+  googleOverrides?: GoogleOverrides;
   /** Passes already issued from this template (cards live in customer wallets). */
   issuedCount: number;
   createdAt: string;
@@ -72,6 +74,7 @@ export interface TemplateInput {
   stampStripRefs?: string[];
   tierRules: { label: string; minPoints: number }[];
   walletPlatform?: "apple" | "google";
+  googleOverrides?: GoogleOverrides;
 }
 
 // ── Local PUT wrapper (api.ts exposes get/post/del only) ─────────────────────

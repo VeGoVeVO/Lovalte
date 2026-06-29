@@ -49,6 +49,7 @@ export class UpdateCardTemplateHandler {
       );
 
       template.updateBrand(brand, rule, input.name);
+      template.setGoogleOverrides(input.googleOverrides);
       await this.repo.save(template);
       const events = template.pullEvents();
       await this.bus.publish(events);

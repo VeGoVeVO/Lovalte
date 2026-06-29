@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { GlassCard, GlassButton, haloCss } from "../../design-system/halo";
-import { publicEnroll, type PublicEnrollDto } from "./useEnroll";
+import { publicEnroll, fetchGoogleWalletUrl, type PublicEnrollDto } from "./useEnroll";
 import { useT } from "@/lib/i18n";
 
 type State =
@@ -23,7 +23,16 @@ const css = `
 .enroll-wallet:active{ transform:translateY(0); }
 .enroll-wallet:focus-visible{ outline:none; box-shadow:0 0 0 3px rgba(91,167,201,.5); }
 @media (prefers-reduced-motion: reduce){ .enroll-spin{ animation:none; } .enroll-wallet{ transition:none; } }
+.enroll-wallet--google { background:#1a73e8; }
+.enroll-wallet--google:hover { background:#1765cc; }
 `;
+
+function detectWallet(): 'ios' | 'android' | 'unknown' {
+  const ua = navigator.userAgent;
+  if (/iphone|ipad|ipod/i.test(ua)) return 'ios';
+  if (/android/i.test(ua)) return 'android';
+  return 'unknown';
+}
 
 /**
  * Public landing page reached by scanning a merchant's enrollment QR
@@ -34,6 +43,7 @@ const css = `
 export function EnrollPage() {
   const { t } = useT();
   const [state, setState] = useState<State>({ phase: "loading" });
+  const [gwError, setGwError] = useState<string | null>(null);
   const ran = useRef(false); // guard StrictMode double-invoke → avoid double enrollment
 
   useEffect(() => {
@@ -115,65 +125,118 @@ export function EnrollPage() {
               </div>
             )}
 
-            {state.phase === "done" && (
-              <div role="status" aria-live="polite">
-                <div className="enroll-badge" aria-hidden="true">
-                  <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
-                    <path
-                      d="M5 12l5 5L20 7"
-                      stroke="currentColor"
-                      strokeWidth="2.6"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </div>
-                <h1
-                  className="cardt"
-                  style={{ margin: "0 0 .4rem", fontSize: "clamp(1.3rem,5vw,1.6rem)" }}
-                >
-                  {t("You're in! 🎉")}
-                </h1>
-                <p
-                  className="body"
-                  style={{ margin: "0 0 1.5rem", color: "var(--muted, #6F7684)" }}
-                >
-                  {t("Your loyalty card is ready. Add it to Apple Wallet:")}
-                </p>
-                <a
-                  className="enroll-wallet"
-                  href={`/api/v1/public/passes/${state.pass.passId}/pkpass?t=${encodeURIComponent(state.pass.downloadToken)}`}
-                  aria-label={t("Add to Apple Wallet - downloads your pass")}
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <rect
-                      x="2.5"
-                      y="5.5"
-                      width="19"
-                      height="14"
-                      rx="3"
-                      stroke="currentColor"
-                      strokeWidth="1.7"
-                    />
-                    <path d="M2.5 10h19" stroke="currentColor" strokeWidth="1.7" />
-                    <circle cx="17.5" cy="14.5" r="1.4" fill="currentColor" />
-                  </svg>
-                  {t("Add to Apple Wallet")}
-                </a>
-                <p
-                  className="meta"
-                  style={{
-                    marginTop: "1.25rem",
-                    fontSize: ".75rem",
-                    color: "var(--muted, #6F7684)",
-                  }}
-                >
-                  {t(
-                    "On iPhone this opens straight in Wallet. If nothing happens, open this page in Safari.",
+            {state.phase === "done" && (() => {
+              const wallet = detectWallet();
+              const appleHref = `/api/v1/public/passes/${state.pass.passId}/pkpass?t=${encodeURIComponent(state.pass.downloadToken)}`;
+              return (
+                <div role="status" aria-live="polite">
+                  <div className="enroll-badge" aria-hidden="true">
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
+                      <path
+                        d="M5 12l5 5L20 7"
+                        stroke="currentColor"
+                        strokeWidth="2.6"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </div>
+                  <h1
+                    className="cardt"
+                    style={{ margin: "0 0 .4rem", fontSize: "clamp(1.3rem,5vw,1.6rem)" }}
+                  >
+                    {t("You're in! 🎉")}
+                  </h1>
+                  <p
+                    className="body"
+                    style={{ margin: "0 0 1.5rem", color: "var(--muted, #6F7684)" }}
+                  >
+                    {t("Your loyalty card is ready.")}
+                  </p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: ".75rem", alignItems: "center" }}>
+                    {(wallet === 'ios' || wallet === 'unknown') && (
+                      <a
+                        className="enroll-wallet"
+                        href={appleHref}
+                        aria-label={t("Add to Apple Wallet - downloads your pass")}
+                      >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                          <rect
+                            x="2.5"
+                            y="5.5"
+                            width="19"
+                            height="14"
+                            rx="3"
+                            stroke="currentColor"
+                            strokeWidth="1.7"
+                          />
+                          <path d="M2.5 10h19" stroke="currentColor" strokeWidth="1.7" />
+                          <circle cx="17.5" cy="14.5" r="1.4" fill="currentColor" />
+                        </svg>
+                        {t("Add to Apple Wallet")}
+                      </a>
+                    )}
+                    {(wallet === 'android' || wallet === 'unknown') && (
+                      <button
+                        className="enroll-wallet enroll-wallet--google"
+                        aria-label={t("Save to Google Wallet")}
+                        onClick={() => {
+                          setGwError(null);
+                          fetchGoogleWalletUrl(state.pass.passId, state.pass.downloadToken)
+                            .then((saveUrl) => { window.location.href = saveUrl; })
+                            .catch(() => setGwError(t("Could not load Google Wallet link. Please try again.")));
+                        }}
+                      >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                          <path d="M12 11.5v3h4.2a3.6 3.6 0 0 1-1.6 2.3l2.6 2c1.5-1.4 2.4-3.5 2.4-6 0-.6-.1-1.1-.2-1.6H12v.3z" fill="#fff" />
+                          <path d="M5.6 14.3l-.6.5-2.1 1.6C4.2 18.9 7.9 21 12 21c3.2 0 5.9-1 7.8-2.8l-2.6-2A7 7 0 0 1 5.6 14.3z" fill="#fff" opacity=".85" />
+                          <path d="M3 7.6C2.4 8.9 2 10.4 2 12s.4 3.1 1 4.4l2.6-2a6.9 6.9 0 0 1 0-4.8L3 7.6z" fill="#fff" opacity=".7" />
+                          <path d="M12 5c1.8 0 3.3.6 4.6 1.8l2.4-2.4A11.7 11.7 0 0 0 12 3C7.9 3 4.2 5.1 2.9 8.4L5.5 10A7 7 0 0 1 12 5z" fill="#fff" opacity=".9" />
+                        </svg>
+                        {t("Save to Google Wallet")}
+                      </button>
+                    )}
+                  </div>
+                  {gwError && (
+                    <p
+                      style={{
+                        marginTop: ".75rem",
+                        fontSize: ".8rem",
+                        color: "#c0392b",
+                      }}
+                    >
+                      {gwError}
+                    </p>
                   )}
-                </p>
-              </div>
-            )}
+                  {wallet === 'ios' && (
+                    <p
+                      className="meta"
+                      style={{
+                        marginTop: "1.25rem",
+                        fontSize: ".75rem",
+                        color: "var(--muted, #6F7684)",
+                      }}
+                    >
+                      {t(
+                        "On iPhone this opens straight in Wallet. If nothing happens, open this page in Safari.",
+                      )}
+                    </p>
+                  )}
+                  {wallet === 'android' && (
+                    <p
+                      className="meta"
+                      style={{
+                        marginTop: "1.25rem",
+                        fontSize: ".75rem",
+                        color: "var(--muted, #6F7684)",
+                      }}
+                    >
+                      {t("Opens Google Wallet to save your loyalty card.")}
+                    </p>
+                  )}
+                </div>
+              );
+            })()}
 
             {state.phase === "error" && (
               <div role="alert">
@@ -216,7 +279,7 @@ export function EnrollPage() {
               color: "var(--muted, #6F7684)",
             }}
           >
-            {t("Loyalty cards in Apple Wallet · lovalte.com")}
+            {t("Loyalty cards · lovalte.com")}
           </p>
         </div>
       </main>

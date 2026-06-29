@@ -18,6 +18,15 @@ export interface DocField {
   label: string;
   value: string;
 }
+export interface GoogleOverrides {
+  bg?: string;           // hex — overrides doc.theme.bg for Google card
+  cardTitle?: string;    // overrides doc.logoText for Google
+  header?: string;       // overrides doc.headerFields[0]?.value
+  logoSrc?: string;      // overrides doc.logo?.src; '' = explicitly cleared (vs undefined = track Apple)
+  heroSrc?: string;      // overrides doc.hero?.src
+  textModules?: Array<{ id: string; header: string; body: string }>; // when set, replaces derived list entirely
+}
+
 export interface CardDoc {
   type: LoyaltyType;
   templateId: string;
@@ -35,6 +44,7 @@ export interface CardDoc {
   stampIcon: string; // lucide name
   stampedRef: string; // uploaded "stamped" art ref (overrides the lucide icon)
   unstampedRef: string; // uploaded "unstamped" art ref
+  googleOverrides?: GoogleOverrides;
 }
 
 export const TYPE_META: Record<
@@ -193,6 +203,7 @@ export function initialDoc(type: LoyaltyType): CardDoc {
     stampIcon: "coffee",
     stampedRef: "",
     unstampedRef: "",
+    googleOverrides: undefined,
   };
   return { ...base, ...((TEMPLATES[type][0]?.apply ?? {}) as object) } as CardDoc;
 }
@@ -215,6 +226,46 @@ export const rgbToHex = (rgb?: string) => {
       .join("")
   );
 };
+
+// ── Google Wallet document resolution ─────────────────────────────────────────
+export interface ResolvedGoogleDoc {
+  bg: string;                   // hex
+  cardTitle: string;
+  header: string;
+  logoSrc: string | null;
+  heroSrc: string | null;
+  textModules: Array<{ id: string; header: string; body: string }>;
+  loyaltyDisplay: string;
+  cardType: LoyaltyType;
+}
+
+export function deriveGoogleTextModules(doc: CardDoc): Array<{ id: string; header: string; body: string }> {
+  const out: Array<{ id: string; header: string; body: string }> = [];
+  out.push({ id: 'primary_points', header: doc.primaryLabel || TYPE_META[doc.type].primaryLabel, body: '{{points}}' });
+  for (const f of doc.fields) {
+    if (f.label.trim() && f.value.trim()) out.push({ id: `sec_${f.id}`, header: f.label.trim(), body: f.value.trim() });
+  }
+  if (doc.backFields.length <= 3) {
+    for (const f of doc.backFields) {
+      if (f.label.trim() && f.value.trim()) out.push({ id: `back_${f.id}`, header: f.label.trim(), body: f.value.trim() });
+    }
+  }
+  return out;
+}
+
+export function resolveGoogleDoc(doc: CardDoc): ResolvedGoogleDoc {
+  const ov = doc.googleOverrides ?? {};
+  return {
+    bg:          ov.bg          ?? doc.theme.bg,
+    cardTitle:   ov.cardTitle   ?? doc.logoText,
+    header:      ov.header      ?? (doc.headerFields[0]?.value ?? ''),
+    logoSrc:     ov.logoSrc !== undefined ? (ov.logoSrc || null) : (doc.logo?.src ?? null),
+    heroSrc:     ov.heroSrc !== undefined ? (ov.heroSrc || null) : (doc.hero?.src ?? null),
+    textModules: ov.textModules ?? deriveGoogleTextModules(doc),
+    loyaltyDisplay: TYPE_META[doc.type].sample(doc.stampsGoal),
+    cardType:    doc.type,
+  };
+}
 
 // ── Tools: every edit is a named command ──────────────────────────────────────
 export type ToolFn = (doc: CardDoc, args: Record<string, unknown>) => CardDoc;
@@ -296,6 +347,31 @@ export const TOOLS: Record<string, ToolFn> = {
     ...d,
     [a.slot === "unstamped" ? "unstampedRef" : "stampedRef"]: (a.ref as string) ?? "",
   }),
+  // ── Google Wallet overrides ─────────────────────────────────────────────────
+  "google.override.bg": (d, a) => ({ ...d, googleOverrides: { ...d.googleOverrides, bg: a.value as string } }),
+  "google.override.cardTitle": (d, a) => ({ ...d, googleOverrides: { ...d.googleOverrides, cardTitle: a.value as string } }),
+  "google.override.header": (d, a) => ({ ...d, googleOverrides: { ...d.googleOverrides, header: a.value as string } }),
+  "google.override.logo": (d, a) => ({ ...d, googleOverrides: { ...d.googleOverrides, logoSrc: a.src as string } }),
+  "google.override.logoClear": (d, _a) => ({ ...d, googleOverrides: { ...d.googleOverrides, logoSrc: "" } }),
+  "google.override.hero": (d, a) => ({ ...d, googleOverrides: { ...d.googleOverrides, heroSrc: a.src as string } }),
+  "google.override.heroClear": (d, _a) => ({ ...d, googleOverrides: { ...d.googleOverrides, heroSrc: "" } }),
+  "google.override.textModule": (d, a) => {
+    const base = d.googleOverrides?.textModules ?? deriveGoogleTextModules(d);
+    const mod = { id: a.id as string, header: a.header as string, body: a.body as string };
+    const idx = base.findIndex((m) => m.id === a.id);
+    const next = idx >= 0 ? base.map((m, i) => (i === idx ? mod : m)) : [...base, mod];
+    return { ...d, googleOverrides: { ...d.googleOverrides, textModules: next } };
+  },
+  "google.override.textModuleRemove": (d, a) => {
+    const base = d.googleOverrides?.textModules ?? deriveGoogleTextModules(d);
+    return { ...d, googleOverrides: { ...d.googleOverrides, textModules: base.filter((m) => m.id !== a.id) } };
+  },
+  "google.override.clear": (d, a) => {
+    const ov = { ...d.googleOverrides };
+    delete ov[a.field as keyof GoogleOverrides];
+    return { ...d, googleOverrides: Object.keys(ov).length ? ov : undefined };
+  },
+  "google.override.clearAll": (d, _a) => ({ ...d, googleOverrides: undefined }),
 };
 export function applyTool(
   doc: CardDoc,
@@ -350,6 +426,7 @@ export function docToInput(doc: CardDoc): TemplateInput {
     stampedRef: doc.stampedRef || undefined,
     unstampedRef: doc.unstampedRef || undefined,
     tierRules: [],
+    googleOverrides: doc.googleOverrides,
   };
 }
 
@@ -397,5 +474,6 @@ export function docFromTemplate(tmpl: CardTemplateDTO): CardDoc {
     stampIcon: b.stampIcon ?? "coffee",
     stampedRef: b.stampedRef ?? "",
     unstampedRef: b.unstampedRef ?? "",
+    googleOverrides: tmpl.googleOverrides,
   };
 }

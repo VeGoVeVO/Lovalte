@@ -48,6 +48,14 @@ const templateBodySchema = z
     tierRules: z
       .array(z.object({ label: z.string().min(1), minPoints: z.number().int().min(0) }))
       .default([]),
+    googleOverrides: z.object({
+      bg: z.string().optional(),
+      cardTitle: z.string().optional(),
+      header: z.string().optional(),
+      logoSrc: z.string().optional(),
+      heroSrc: z.string().optional(),
+      textModules: z.array(z.object({ id: z.string(), header: z.string(), body: z.string() })).optional(),
+    }).optional(),
   })
   // storeCard renders secondary + auxiliary from one shared 4-slot pool.
   .refine(
@@ -142,6 +150,7 @@ export function registerCardDesignRoutes(
       unstampedRef: body.unstampedRef,
       stampStripRefs: body.stampStripRefs,
       tierRules: body.tierRules ?? [],
+      googleOverrides: body.googleOverrides,
     });
     if (!r.ok) throw r.error;
     return reply.status(201).send(r.value);
@@ -192,6 +201,7 @@ export function registerCardDesignRoutes(
       unstampedRef: body.unstampedRef,
       stampStripRefs: body.stampStripRefs,
       tierRules: body.tierRules ?? [],
+      googleOverrides: body.googleOverrides,
     });
     if (!r.ok) throw r.error;
     return reply.status(200).send(r.value);

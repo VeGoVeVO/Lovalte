@@ -5,6 +5,7 @@ import { CardTemplate, CardTemplateId, type CardTemplateProps } from "../domain/
 import { RgbColor } from "../domain/RgbColor";
 import { RewardRule, type LoyaltyType } from "../domain/RewardRule";
 import type { ICardTemplateRepository, AssetRef } from "../application/ICardTemplateRepository";
+import type { GoogleOverrides } from "../application/dtos";
 
 type BrandRow = Record<string, unknown>;
 type RewardRow = Record<string, unknown>;
@@ -47,6 +48,7 @@ export class CardTemplateRepository implements ICardTemplateRepository {
       brand: template.brand.toJSON(),
       rewardRule: template.rewardRule.toJSON(),
       walletPlatform: template.walletPlatform,
+      googleOverrides: template.googleOverrides ?? null,
     };
 
     await withTransaction(this.pool, async (client: PoolClient) => {
@@ -136,7 +138,7 @@ export class CardTemplateRepository implements ICardTemplateRepository {
   }
 
   private rowToTemplate(row: Record<string, unknown>): CardTemplate {
-    const cfg = row.config as { brand: BrandRow; rewardRule: RewardRow; walletPlatform?: 'apple' | 'google' };
+    const cfg = row.config as { brand: BrandRow; rewardRule: RewardRow; walletPlatform?: 'apple' | 'google'; googleOverrides?: GoogleOverrides | null };
     const b = cfg.brand;
     const rr = cfg.rewardRule;
 
@@ -175,6 +177,7 @@ export class CardTemplateRepository implements ICardTemplateRepository {
       brand,
       rewardRule: rule,
       walletPlatform: cfg.walletPlatform ?? 'apple',
+      googleOverrides: (cfg.googleOverrides as GoogleOverrides | null | undefined) ?? undefined,
       createdAt: row.created_at as Date,
       updatedAt: row.updated_at as Date,
     };

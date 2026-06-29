@@ -38,3 +38,11 @@ export function useIssueDirect() {
 export function publicEnroll(token: string): Promise<PublicEnrollDto> {
   return api.post<PublicEnrollDto>("/api/v1/public/enroll", { token });
 }
+
+/** Public (no session): fetch a Google Wallet save URL for an issued pass. */
+export async function fetchGoogleWalletUrl(passId: string, downloadToken: string): Promise<string> {
+  const res = await fetch(`/api/v1/public/passes/${passId}/google-wallet-url?t=${encodeURIComponent(downloadToken)}`);
+  if (!res.ok) throw new Error('Could not load Google Wallet link');
+  const body = (await res.json()) as { data: { saveUrl: string } };
+  return body.data.saveUrl;
+}
