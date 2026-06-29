@@ -30,6 +30,10 @@ const CSS = `
 }
 .lvt-modal-panel {
   position: relative; overflow: hidden;
+  /* Local token vars: the modal portals to <body>, outside .halo, so children
+     that read these vars (and the scoped .btn/.input below) theme themselves. */
+  --text:#20242A; --muted:#5b6170; --border:rgba(28,36,56,.12);
+  --card:rgba(255,255,255,.55); --r-input:14px;
   width: 100%; max-height: 90vh; overflow-y: auto;
   display: flex; flex-direction: column; gap: 1rem;
   padding: clamp(1.3rem, 4vw, 1.8rem);
@@ -55,6 +59,27 @@ const CSS = `
 .lvt-modal-danger { padding: .6rem 1.15rem; border-radius: .7rem; font-weight: 600; cursor: pointer; color: #fff;
   background: linear-gradient(180deg, #d24a4a, #b93333); border: 1px solid rgba(150,30,30,.55); box-shadow: 0 8px 20px -10px rgba(185,51,51,.7); }
 .lvt-modal-danger:disabled { opacity: .6; cursor: default; }
+/* Glass primitives for .btn/.input rendered inside the modal portal (the
+   .halo-scoped ones don't reach <body>) — e.g. the card-type picker cards. */
+.lvt-modal-panel .btn {
+  font: inherit; font-size: .95rem; font-weight: 500; cursor: pointer; color: var(--text);
+  border: 1px solid var(--border); border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255,255,255,.78), rgba(255,255,255,.5));
+  box-shadow: 0 1px 0 rgba(255,255,255,.8) inset, 0 6px 16px -10px rgba(46,62,92,.4);
+  transition: transform .12s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease;
+}
+.lvt-modal-panel .btn:hover { transform: translateY(-2px); box-shadow: 0 1px 0 rgba(255,255,255,.9) inset, 0 12px 24px -12px rgba(46,62,92,.5); border-color: rgba(169,245,255,.8); }
+.lvt-modal-panel .btn:active { transform: translateY(0) scale(.98); }
+.lvt-modal-panel .btn.ghost { background: rgba(255,255,255,.42); }
+.lvt-modal-panel .btn:focus-visible { outline: none; box-shadow: 0 0 0 4px rgba(169,245,255,.4); }
+.lvt-modal-panel .input {
+  width: 100%; font: inherit; font-size: 1rem; color: var(--text);
+  padding: .8rem 1rem; border-radius: var(--r-input); border: 1px solid var(--border);
+  background: var(--card); box-shadow: 0 1px 1px rgba(16,18,40,.04) inset;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.lvt-modal-panel .input::placeholder { color: var(--muted); }
+.lvt-modal-panel .input:focus { outline: none; border-color: rgba(169,245,255,.75); box-shadow: 0 0 0 3px rgba(169,245,255,.25); }
 @keyframes lvtModalFade { from { opacity: 0 } to { opacity: 1 } }
 @keyframes lvtModalRise { from { opacity: 0; transform: translateY(10px) scale(.97) } to { opacity: 1; transform: none } }
 @media (prefers-reduced-motion: reduce) { .lvt-modal-overlay, .lvt-modal-panel { animation: none !important; } }
