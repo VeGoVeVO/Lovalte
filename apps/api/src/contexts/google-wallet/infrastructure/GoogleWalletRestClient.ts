@@ -60,6 +60,9 @@ export class GoogleWalletRestClient implements IGoogleWalletRestClient {
       ...(data.heroImageUri ? { heroImage: { sourceUri: { uri: data.heroImageUri } } } : {}),
       textModulesData: data.textModulesData,
     });
+    // 409 = object already exists (idempotent retry, or the DB write failed after a
+    // prior successful create). Treat as success and let the caller build the save URL.
+    if (res.status === 409) return;
     if (!res.ok) throw new Error(`GW createObject ${res.status}: ${await res.text()}`);
   }
 
