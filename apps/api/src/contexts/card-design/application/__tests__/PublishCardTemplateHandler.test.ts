@@ -74,7 +74,7 @@ function makeTemplateWithoutIcon(): CardTemplate {
   });
 }
 
-/** Draft with 0 primaryFields - validate() requires exactly 1. */
+/** Draft with 0 primaryFields - VALID (stamp cards show the count below the strip). */
 function makeTemplateWithNoPrimaryFields(): CardTemplate {
   return CardTemplate.reconstitute(CardTemplateId.of(TEMPLATE_ID), {
     ...makeBaseProps(),
@@ -83,7 +83,28 @@ function makeTemplateWithNoPrimaryFields(): CardTemplate {
       backgroundColor: RgbColor.create(0, 0, 0),
       foregroundColor: RgbColor.create(255, 255, 255),
       headerFields: [],
-      primaryFields: [], // violates: exactly 1 required
+      primaryFields: [], // valid: a storeCard may carry 0 primary fields
+      secondaryFields: [{ key: "points", label: "STAMPS", valueTemplate: "{{points}}" }],
+      auxiliaryFields: [],
+      backFields: [],
+      iconRef: "s3://bucket/icon.png",
+    }),
+  });
+}
+
+/** Draft with 2 primaryFields - validate() enforces ≤ 1. */
+function makeTemplateWithTooManyPrimaries(): CardTemplate {
+  return CardTemplate.reconstitute(CardTemplateId.of(TEMPLATE_ID), {
+    ...makeBaseProps(),
+    brand: new BrandConfig({
+      organizationName: "Acme",
+      backgroundColor: RgbColor.create(0, 0, 0),
+      foregroundColor: RgbColor.create(255, 255, 255),
+      headerFields: [],
+      primaryFields: [
+        { key: "a", label: "A", valueTemplate: "{{a}}" },
+        { key: "b", label: "B", valueTemplate: "{{b}}" },
+      ],
       secondaryFields: [],
       auxiliaryFields: [],
       backFields: [],
@@ -181,10 +202,23 @@ describe("PublishCardTemplateHandler", () => {
     expect(bus.published).toHaveLength(0);
   });
 
-  it("publish gate: rejects when primaryFields is empty (must be exactly 1)", async () => {
+  it("publish gate: allows 0 primaryFields (stamp card shows the count below the strip)", async () => {
     const bus = makeBus();
     const handler = new PublishCardTemplateHandler(
       makeRepo(makeTemplateWithNoPrimaryFields()),
+      bus,
+    );
+
+    const result = await handler.execute({ templateId: TEMPLATE_ID, tenantId: TENANT_ID });
+
+    expect(result.ok).toBe(true);
+    expect(bus.published.length).toBeGreaterThan(0);
+  });
+
+  it("publish gate: rejects when primaryFields exceeds 1", async () => {
+    const bus = makeBus();
+    const handler = new PublishCardTemplateHandler(
+      makeRepo(makeTemplateWithTooManyPrimaries()),
       bus,
     );
 

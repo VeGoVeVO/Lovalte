@@ -93,7 +93,8 @@ export class BrandConfig {
    * Domain-level validation run before publishing. Enforces what Apple's
    * storeCard pass style actually renders (PassKit Package Format Reference):
    * - headerFields ≤ 3
-   * - exactly 1 primaryField
+   * - at most 1 primaryField (Apple allows 0 — stamp cards show the count as a
+   *   field BELOW the strip, so they carry no primary field)
    * - secondaryFields + auxiliaryFields ≤ 4 (storeCard shares one 4-slot pool)
    * - backFields ≤ 20 (Apple allows unlimited; this is a boundary guard)
    * - iconRef must be registered (icon is required for every pass)
@@ -102,8 +103,8 @@ export class BrandConfig {
     if (this.headerFields.length > 3) {
       throw new DomainError("headerFields max 3 (Apple Wallet constraint)");
     }
-    if (this.primaryFields.length !== 1) {
-      throw new DomainError("Exactly 1 primaryField is required");
+    if (this.primaryFields.length > 1) {
+      throw new DomainError("At most 1 primaryField (Apple storeCard)");
     }
     const combined = this.secondaryFields.length + this.auxiliaryFields.length;
     if (combined > 4) {

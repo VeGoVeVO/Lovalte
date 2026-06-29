@@ -636,7 +636,7 @@ export function CardCanvas({
             </div>
           </div>
         )}
-        {doc.fields.slice(0, 4).map((f) => (
+        {doc.fields.slice(0, doc.type === "stamps" ? 3 : 4).map((f) => (
           <div
             key={f.id}
             style={{ display: "flex", alignItems: "flex-start", gap: 3, minWidth: 0 }}
@@ -664,7 +664,7 @@ export function CardCanvas({
             {removeBtn("fields", f.id)}
           </div>
         ))}
-        {doc.fields.length < 4 && addBtn("fields", t("Add field"))}
+        {doc.fields.length < (doc.type === "stamps" ? 3 : 4) && addBtn("fields", t("Add field"))}
       </div>
 
       <div style={{ flex: 1, minHeight: 10 }} />

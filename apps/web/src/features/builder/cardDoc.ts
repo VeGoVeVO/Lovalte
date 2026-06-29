@@ -335,8 +335,10 @@ export function docToInput(doc: CardDoc): TemplateInput {
     labelColor: hexToRgb(doc.theme.label),
     headerFields: toApiFields(doc.headerFields, "hdr"),
     primaryFields: isStamps ? [] : [loyaltyField],
+    // storeCard shares one 4-slot secondary+auxiliary pool. For stamps the count
+    // takes the first slot, so keep at most 4 total (count + 3 user fields).
     secondaryFields: isStamps
-      ? [loyaltyField, ...toApiFields(doc.fields, "sec")]
+      ? [loyaltyField, ...toApiFields(doc.fields, "sec")].slice(0, 4)
       : toApiFields(doc.fields, "sec"),
     auxiliaryFields: [],
     backFields: toApiFields(doc.backFields, "back"),
