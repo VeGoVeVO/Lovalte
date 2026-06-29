@@ -22,7 +22,17 @@ export class GetPassSaveUrlHandler {
     private readonly gwClient: IGoogleWalletRestClient,
     private readonly jwtService: IGoogleWalletJwtService,
     private readonly issuerId: string,
+    private readonly publicBaseUrl: string,
   ) {}
+
+  /** Google requires absolute public HTTPS image URLs; stored refs are app-relative
+   *  ("/api/v1/images/:id") or blank. Blank → undefined (field omitted). */
+  private absUri(ref?: string): string | undefined {
+    if (!ref || !ref.trim()) return undefined;
+    if (/^https?:\/\//i.test(ref)) return ref;
+    const base = this.publicBaseUrl.replace(/\/$/, "");
+    return `${base}${ref.startsWith("/") ? "" : "/"}${ref}`;
+  }
 
   async execute(cmd: GetPassSaveUrlCommand): Promise<Result<GetPassSaveUrlDto>> {
     const pass = await this.passRepo.findPassWithTemplate(cmd.passId, cmd.tenantId);

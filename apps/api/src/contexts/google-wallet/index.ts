@@ -23,7 +23,7 @@ export async function registerGoogleWallet(app: FastifyInstance, deps: Deps): Pr
   const gwClient  = new GoogleWalletRestClient(saJson);
   const jwtSvc    = new GoogleWalletJwtService(saJson, [deps.config.APP_BASE_URL]);
 
-  const getSaveUrl  = new GetPassSaveUrlHandler(passRepo, gwClient, jwtSvc, issuerId);
+  const getSaveUrl  = new GetPassSaveUrlHandler(passRepo, gwClient, jwtSvc, issuerId, deps.config.APP_BASE_URL);
   const syncPass    = new SyncWalletPassHandler(passRepo, gwClient);
   const expirePass  = new ExpireWalletPassHandler(passRepo, gwClient);
 
