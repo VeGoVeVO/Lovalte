@@ -34,15 +34,21 @@ export function registerMemberRoutes(
   };
 
   /**
-   * GET /api/v1/members
-   * Returns a summary list of all active members for the tenant.
+   * GET /api/v1/members[?cardTemplateId=...]
+   * Summary list of members; scoped to one card template when cardTemplateId is given.
    */
-  app.get("/api/v1/members", authHook, async (req, reply) => {
-    const auth = getAuth(req);
-    const r = await handlers.listMembers.execute({ tenantId: auth.tenantId });
-    if (!r.ok) throw r.error;
-    return reply.status(200).send({ data: r.value });
-  });
+  const listQuerySchema = z.object({ cardTemplateId: z.string().uuid().optional() });
+  app.get<{ Querystring: Record<string, string> }>(
+    "/api/v1/members",
+    authHook,
+    async (req, reply) => {
+      const auth = getAuth(req);
+      const { cardTemplateId } = parse(listQuerySchema, req.query);
+      const r = await handlers.listMembers.execute({ tenantId: auth.tenantId, cardTemplateId });
+      if (!r.ok) throw r.error;
+      return reply.status(200).send({ data: r.value });
+    },
+  );
 
   /**
    * GET /api/v1/members/:memberId

@@ -53,6 +53,7 @@ function Editable({
   colorRole,
   onColorFocus,
   onColorBlur,
+  maxLen,
 }: {
   value: string;
   ph?: string;
@@ -63,6 +64,8 @@ function Editable({
   colorRole?: "fg" | "label";
   onColorFocus?: (role: "fg" | "label", el: HTMLElement) => void;
   onColorBlur?: () => void;
+  /** Hard char limit matching what Apple renders, so preview == the real pass. */
+  maxLen?: number;
 }) {
   const ref = useRef<HTMLSpanElement>(null);
   useEffect(() => {
@@ -79,7 +82,20 @@ function Editable({
       contentEditable
       suppressContentEditableWarning
       data-ph={ph}
-      onInput={(e) => onInput(e.currentTarget.textContent || "")}
+      onInput={(e) => {
+        const el = e.currentTarget;
+        let txt = el.textContent || "";
+        if (maxLen && txt.length > maxLen) {
+          txt = txt.slice(0, maxLen);
+          el.textContent = txt;
+          const sel = window.getSelection();
+          if (sel) {
+            sel.selectAllChildren(el);
+            sel.collapseToEnd();
+          }
+        }
+        onInput(txt);
+      }}
       onClick={(e) => e.stopPropagation()}
       onFocus={(e) => colorRole && onColorFocus?.(colorRole, e.currentTarget)}
       onBlur={() => onColorBlur?.()}
@@ -522,6 +538,7 @@ export function CardCanvas({
               ariaLabel={t("Business name")}
               onInput={(v) => dispatch("text.logoText", { value: v })}
               {...colorProps("fg")}
+              maxLen={25}
               style={{ display: "block", fontSize: 15, fontWeight: 700 }}
             />
           ) : (
@@ -564,6 +581,7 @@ export function CardCanvas({
                     })
                   }
                   {...colorProps("label")}
+                  maxLen={15}
                   style={{ ...labelStyle, display: "block" }}
                 />
                 <Editable
@@ -579,6 +597,7 @@ export function CardCanvas({
                     })
                   }
                   {...colorProps("fg")}
+                  maxLen={15}
                   style={{ display: "block", fontSize: 13, fontWeight: 600 }}
                 />
               </div>
@@ -646,6 +665,7 @@ export function CardCanvas({
             ariaLabel={t("Label")}
             onInput={(v) => dispatch("text.primaryLabel", { value: v })}
             {...colorProps("label")}
+            maxLen={16}
             style={{ ...labelStyle, display: "block" }}
           />
           <div
@@ -669,8 +689,6 @@ export function CardCanvas({
         style={{
           margin: "12px 16px 0",
           display: "flex",
-          gap: 16,
-          flexWrap: "wrap",
           justifyContent: "space-between",
           alignItems: "flex-start",
         }}
@@ -686,6 +704,7 @@ export function CardCanvas({
                 ariaLabel={t("Label")}
                 onInput={(v) => dispatch("text.primaryLabel", { value: v })}
                 {...colorProps("label")}
+                maxLen={16}
                 style={{ ...labelStyle, fontSize: 9, display: "block" }}
               />
               <Region
@@ -721,6 +740,7 @@ export function CardCanvas({
                   dispatch("field.set", { list: "fields", id: f.id, key: "label", value: v })
                 }
                 {...colorProps("label")}
+                maxLen={20}
                 style={{ ...labelStyle, fontSize: 9, display: "block" }}
               />
               <Editable
@@ -731,6 +751,7 @@ export function CardCanvas({
                   dispatch("field.set", { list: "fields", id: f.id, key: "value", value: v })
                 }
                 {...colorProps("fg")}
+                maxLen={20}
                 style={{ display: "block", fontSize: 14, fontWeight: 700, marginTop: 2 }}
               />
             </div>

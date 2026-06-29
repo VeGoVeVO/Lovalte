@@ -74,7 +74,9 @@ export class PassDocumentBuilder {
         label: def.label,
         value: def.loyaltyType
           ? formatLoyalty(def.loyaltyType, fv?.value ?? 0, def.loyaltyGoal ?? 10)
-          : (fv?.value ?? def.value ?? ""),
+          : // `||` (not `??`) so a previously-seeded empty string also falls back to
+            // the merchant's template default.
+            fv?.value || def.value || "",
         ...(def.changeMessage ? { changeMessage: def.changeMessage } : {}),
       };
       if (def.region === "header") header.push(entry);

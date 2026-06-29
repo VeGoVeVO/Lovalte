@@ -560,6 +560,7 @@ function FieldListEditor({
             className="input"
             value={f.label}
             placeholder={t("Label")}
+            maxLength={50}
             onChange={(e) =>
               dispatch("field.set", { list, id: f.id, key: "label", value: e.target.value })
             }
@@ -569,6 +570,7 @@ function FieldListEditor({
             className="input"
             value={f.value}
             placeholder={t("Value")}
+            maxLength={255}
             onChange={(e) =>
               dispatch("field.set", { list, id: f.id, key: "value", value: e.target.value })
             }

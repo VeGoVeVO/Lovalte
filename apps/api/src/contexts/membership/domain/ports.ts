@@ -16,6 +16,8 @@ export interface IMemberRepository {
   findById(id: string, tenantId: string): Promise<Member | null>;
   findByPassId(passId: string, tenantId: string): Promise<Member | null>;
   listByTenant(tenantId: string): Promise<Member[]>;
+  /** Members whose pass was issued from a given card template (per-card view). */
+  listByCardTemplate(cardTemplateId: string, tenantId: string): Promise<Member[]>;
   save(member: Member): Promise<void>;
 }
 

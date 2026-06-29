@@ -6,16 +6,23 @@ import { GlassCard, Icon } from "../../design-system/halo";
 import { MemberDetail } from "./MemberDetail";
 import { useT } from "../../lib/i18n";
 
-// ── types (exported so MemberDetail can share) ────────────────────────────────
+// Members are scoped PER CARD: each published card has its own members, shown with
+// that card's real progress (stamps / points / cashback) — no tiers, no name/email.
 export type Member = {
   id: string;
-  displayName?: string;
-  email?: string;
+  displayName?: string | null;
+  email?: string | null;
   balance: number;
-  tier: string;
+  enrolledAt?: string;
 };
 
-// ── style constants ───────────────────────────────────────────────────────────
+type CardLite = {
+  id: string;
+  name: string;
+  status: "draft" | "published";
+  rewardRule: { cardType?: "points" | "stamps" | "cashback"; rewardThreshold?: number };
+};
+
 const TH: React.CSSProperties = {
   padding: "0.75rem 1.25rem",
   textAlign: "left",
@@ -28,182 +35,223 @@ const TH: React.CSSProperties = {
 };
 const TD: React.CSSProperties = { padding: "0.9rem 1.25rem", verticalAlign: "middle" };
 
-// ── TierBadge ─────────────────────────────────────────────────────────────────
-function TierBadge({ tier }: { tier: string }) {
-  return (
-    <span
-      style={{
-        display: "inline-block",
-        padding: "0.18em 0.65em",
-        borderRadius: "9999px",
-        fontSize: "0.7rem",
-        fontWeight: 600,
-        letterSpacing: "0.04em",
-        textTransform: "capitalize",
-        background: "rgba(32,36,42,0.07)",
-        color: "var(--text)",
-        border: "1px solid rgba(32,36,42,0.1)",
-      }}
-    >
-      {tier}
-    </span>
-  );
+/** Format a member's balance in the card's own terms — matches the pass. */
+function progress(card: CardLite, balance: number): string {
+  const type = card.rewardRule.cardType ?? "points";
+  const goal = card.rewardRule.rewardThreshold ?? 10;
+  if (type === "stamps") return `${Math.min(Math.max(balance, 0), goal)} / ${goal}`;
+  if (type === "cashback") return `$${Number(balance).toFixed(2)}`;
+  return `${balance.toLocaleString()} pts`;
 }
 
-// ── MemberListView ────────────────────────────────────────────────────────────
-function MemberListView({ onSelect }: { onSelect: (id: string) => void }) {
+const PROGRESS_LABEL: Record<string, string> = {
+  stamps: "Stamps",
+  cashback: "Balance",
+  points: "Points",
+};
+
+// ── Card picker ────────────────────────────────────────────────────────────────
+function CardPicker({ onPick }: { onPick: (card: CardLite) => void }) {
   const { t } = useT();
-  const {
-    data: members,
-    isLoading,
-    isError,
-    error,
-  } = useQuery<Member[], ApiError>({
-    queryKey: ["members"],
-    queryFn: () => api.get<Member[]>("/api/v1/members"),
+  const { data, isLoading, isError } = useQuery<CardLite[], ApiError>({
+    queryKey: ["card-templates"],
+    queryFn: () => api.get<CardLite[]>("/api/v1/card-templates"),
   });
+  const cards = (data ?? []).filter((c) => c.status === "published");
 
-  if (isError) {
+  if (isLoading)
     return (
-      <GlassCard className="feature">
-        <p role="alert" style={{ margin: 0, color: "var(--muted)" }}>
-          {t("Failed to load members: {message}", {
-            message: (error as ApiError)?.message ?? t("Unknown error"),
-          })}
-        </p>
+      <GlassCard style={{ padding: "1.25rem 1.5rem" }}>
+        <p style={{ margin: 0, color: "var(--muted)" }}>{t("Loading…")}</p>
       </GlassCard>
     );
-  }
-
-  if (isLoading) {
+  if (isError)
     return (
-      <GlassCard className="feature">
-        <p
-          aria-live="polite"
-          aria-label={t("Loading members")}
-          style={{ margin: 0, color: "var(--muted)" }}
-        >
-          {t("Loading…")}
-        </p>
+      <GlassCard style={{ padding: "1.25rem 1.5rem" }} role="alert">
+        <p style={{ margin: 0, color: "var(--text)" }}>{t("Failed to load cards.")}</p>
       </GlassCard>
     );
-  }
-
-  if (!members?.length) {
+  if (!cards.length)
     return (
-      <GlassCard className="feature" style={{ textAlign: "center", padding: "5rem 2rem" }}>
-        <p style={{ margin: "0 0 0.5rem", fontSize: "1.05rem", fontWeight: 500 }}>
-          {t("No members yet - issue a card to get started.")}
+      <GlassCard style={{ padding: "3rem 2rem", textAlign: "center" }}>
+        <p style={{ margin: "0 0 0.4rem", fontSize: "1.05rem", fontWeight: 500 }}>
+          {t("No published cards yet.")}
         </p>
         <p className="body" style={{ margin: 0 }}>
-          {t("Members appear here once a loyalty card has been issued to a customer.")}
+          {t("Publish a card in the Builder, then issue it to start enrolling members.")}
         </p>
       </GlassCard>
+    );
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+      <p className="body" style={{ margin: 0, color: "var(--muted)" }}>
+        {t("Pick a card to see its members.")}
+      </p>
+      {cards.map((c) => (
+        <button
+          key={c.id}
+          type="button"
+          className="glass glass-hover"
+          onClick={() => onPick(c)}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "1rem",
+            width: "100%",
+            textAlign: "left",
+            padding: "1rem 1.25rem",
+            borderRadius: "var(--r-card)",
+            cursor: "pointer",
+            font: "inherit",
+            color: "var(--text)",
+          }}
+        >
+          <span style={{ fontWeight: 600 }}>{c.name}</span>
+          <span style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+            <span className="eyebrow">
+              {t(PROGRESS_LABEL[c.rewardRule.cardType ?? "points"] ?? "Points")}
+            </span>
+            <Icon.Arrow aria-hidden="true" />
+          </span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ── Member list for one card ─────────────────────────────────────────────────────
+function MembersForCard({
+  card,
+  onBack,
+  onSelect,
+}: {
+  card: CardLite;
+  onBack: () => void;
+  onSelect: (id: string) => void;
+}) {
+  const { t } = useT();
+  const { data, isLoading, isError } = useQuery<Member[], ApiError>({
+    queryKey: ["members", card.id],
+    queryFn: () => api.get<Member[]>(`/api/v1/members?cardTemplateId=${card.id}`),
+  });
+  const members = data ?? [];
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+      <button
+        type="button"
+        className="btn ghost"
+        onClick={onBack}
+        style={{ alignSelf: "flex-start" }}
+      >
+        ← {t("All cards")}
+      </button>
+
+      {isLoading ? (
+        <GlassCard style={{ padding: "1.25rem 1.5rem" }}>
+          <p style={{ margin: 0, color: "var(--muted)" }}>{t("Loading…")}</p>
+        </GlassCard>
+      ) : isError ? (
+        <GlassCard style={{ padding: "1.25rem 1.5rem" }} role="alert">
+          <p style={{ margin: 0 }}>{t("Failed to load members.")}</p>
+        </GlassCard>
+      ) : !members.length ? (
+        <GlassCard style={{ padding: "3rem 2rem", textAlign: "center" }}>
+          <p style={{ margin: "0 0 0.4rem", fontSize: "1.05rem", fontWeight: 500 }}>
+            {t("No members yet on this card.")}
+          </p>
+          <p className="body" style={{ margin: 0 }}>
+            {t("Members appear here once this card is issued to a customer.")}
+          </p>
+        </GlassCard>
+      ) : (
+        <GlassCard style={{ padding: 0, overflow: "hidden" }}>
+          <div style={{ overflowX: "auto" }}>
+            <table
+              aria-label={t("Members of {name}", { name: card.name })}
+              style={{ width: "100%", borderCollapse: "collapse", minWidth: "28rem" }}
+            >
+              <thead>
+                <tr style={{ borderBottom: "1px solid var(--border)" }}>
+                  <th scope="col" style={{ ...TH, textAlign: "right" }}>
+                    {t(PROGRESS_LABEL[card.rewardRule.cardType ?? "points"] ?? "Points")}
+                  </th>
+                  <th scope="col" style={TH}>
+                    {t("Joined")}
+                  </th>
+                  <th scope="col" style={{ ...TH, width: "3.5rem" }} aria-label={t("Actions")} />
+                </tr>
+              </thead>
+              <tbody>
+                {members.map((m) => (
+                  <tr key={m.id} style={{ borderBottom: "1px solid var(--border)" }}>
+                    <td
+                      style={{
+                        ...TD,
+                        textAlign: "right",
+                        fontWeight: 600,
+                        fontVariantNumeric: "tabular-nums",
+                      }}
+                    >
+                      {progress(card, m.balance)}
+                    </td>
+                    <td style={{ ...TD, color: "var(--muted)", fontSize: "0.9rem" }}>
+                      {m.enrolledAt ? new Date(m.enrolledAt).toLocaleDateString() : "—"}
+                    </td>
+                    <td style={{ ...TD, textAlign: "center" }}>
+                      <button
+                        className="btn ghost"
+                        aria-label={t("View member details")}
+                        onClick={() => onSelect(m.id)}
+                        style={{ padding: "0.4rem 0.55rem", lineHeight: 1, display: "inline-flex" }}
+                      >
+                        <Icon.Arrow aria-hidden="true" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div
+            style={{
+              padding: "0.75rem 1.25rem",
+              borderTop: "1px solid var(--border)",
+              fontSize: "0.82rem",
+              color: "var(--muted)",
+            }}
+            aria-live="polite"
+          >
+            {t("{count} members", { count: members.length })}
+          </div>
+        </GlassCard>
+      )}
+    </div>
+  );
+}
+
+// ── MembersPage ──────────────────────────────────────────────────────────────────
+export function MembersPage() {
+  const { t } = useT();
+  const [card, setCard] = useState<CardLite | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  if (selectedId) {
+    return (
+      <AppShell narrow>
+        <MemberDetail memberId={selectedId} onBack={() => setSelectedId(null)} />
+      </AppShell>
     );
   }
 
   return (
-    <GlassCard className="feature" style={{ padding: 0, overflow: "hidden" }}>
-      <div style={{ overflowX: "auto" }}>
-        <table
-          aria-label={t("Members")}
-          style={{ width: "100%", borderCollapse: "collapse", minWidth: "38rem" }}
-        >
-          <thead>
-            <tr style={{ borderBottom: "1px solid rgba(32,36,42,0.08)" }}>
-              <th scope="col" style={TH}>
-                {t("Name")}
-              </th>
-              <th scope="col" style={TH}>
-                {t("Email")}
-              </th>
-              <th scope="col" style={{ ...TH, textAlign: "right" }}>
-                {t("Balance")}
-              </th>
-              <th scope="col" style={TH}>
-                {t("Tier")}
-              </th>
-              <th scope="col" style={{ ...TH, width: "3.5rem", textAlign: "center" }}>
-                {/* icon-only column - label provided on each action button */}
-                <span
-                  style={{
-                    position: "absolute",
-                    width: 1,
-                    height: 1,
-                    padding: 0,
-                    margin: -1,
-                    overflow: "hidden",
-                    clip: "rect(0,0,0,0)",
-                    whiteSpace: "nowrap",
-                    border: 0,
-                  }}
-                >
-                  {t("Actions")}
-                </span>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {members.map((m) => (
-              <tr key={m.id} style={{ borderBottom: "1px solid rgba(32,36,42,0.05)" }}>
-                <td style={{ ...TD, fontWeight: 500 }}>
-                  {m.displayName ?? <span style={{ color: "var(--muted)" }}>-</span>}
-                </td>
-                <td style={{ ...TD, color: "var(--muted)", fontSize: "0.9rem" }}>
-                  {m.email ?? <span style={{ opacity: 0.5 }}>-</span>}
-                </td>
-                <td
-                  style={{ ...TD, textAlign: "right", fontVariantNumeric: "tabular-nums" }}
-                  aria-label={t("{balance} points", { balance: m.balance.toLocaleString() })}
-                >
-                  {m.balance.toLocaleString()}&thinsp;pts
-                </td>
-                <td style={TD}>
-                  <TierBadge tier={m.tier} />
-                </td>
-                <td style={{ ...TD, textAlign: "center" }}>
-                  <button
-                    className="btn ghost"
-                    aria-label={t("View details for {name}", {
-                      name: m.displayName ?? m.email ?? t("member"),
-                    })}
-                    onClick={() => onSelect(m.id)}
-                    style={{ padding: "0.4rem 0.55rem", lineHeight: 1, display: "inline-flex" }}
-                  >
-                    <Icon.Arrow aria-hidden="true" />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <div
-        style={{
-          padding: "0.75rem 1.25rem",
-          borderTop: "1px solid rgba(32,36,42,0.06)",
-          fontSize: "0.82rem",
-          color: "var(--muted)",
-        }}
-        aria-live="polite"
-      >
-        {t("{count} members", { count: members.length })}
-      </div>
-    </GlassCard>
-  );
-}
-
-// ── MembersPage (named export) ────────────────────────────────────────────────
-export function MembersPage() {
-  const { t } = useT();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-
-  return (
-    <AppShell title={selectedId ? undefined : t("Members")}>
-      {selectedId ? (
-        <MemberDetail memberId={selectedId} onBack={() => setSelectedId(null)} />
+    <AppShell title={card ? card.name : t("Members")} narrow>
+      {card ? (
+        <MembersForCard card={card} onBack={() => setCard(null)} onSelect={setSelectedId} />
       ) : (
-        <MemberListView onSelect={setSelectedId} />
+        <CardPicker onPick={setCard} />
       )}
     </AppShell>
   );

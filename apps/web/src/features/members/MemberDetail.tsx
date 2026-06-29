@@ -167,21 +167,6 @@ export function MemberDetail({ memberId, onBack }: MemberDetailProps) {
                     {m?.balance?.toLocaleString() ?? "-"}&thinsp;pts
                   </dd>
                 </div>
-                <div>
-                  <dt
-                    style={{
-                      fontSize: "0.7rem",
-                      fontWeight: 600,
-                      letterSpacing: "0.06em",
-                      textTransform: "uppercase",
-                      color: "var(--muted)",
-                      marginBottom: "0.3rem",
-                    }}
-                  >
-                    {t("Tier")}
-                  </dt>
-                  <dd style={{ margin: 0, textTransform: "capitalize" }}>{m?.tier ?? "-"}</dd>
-                </div>
               </dl>
             </>
           )}

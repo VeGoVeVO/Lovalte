@@ -119,6 +119,32 @@ export class MemberRepository implements IMemberRepository {
     }
   }
 
+  async listByCardTemplate(cardTemplateId: string, tenantId: string): Promise<Member[]> {
+    const client = await this.pool.connect();
+    try {
+      await this.setTenantCtx(client, tenantId);
+      // A member belongs to the card its pass was issued from: passes.pass_type_id
+      // is the published template id (the pass_types snapshot id == card_templates.id).
+      const result = await client.query<MemberWithBalanceRow>(
+        `SELECT m.id, m.tenant_id, m.pass_id, m.display_name, m.email,
+                m.current_tier, m.status, m.joined_at,
+                COALESCE(SUM(l.delta), 0)::TEXT AS balance
+         FROM loyalty.members m
+         JOIN passes pa ON pa.id = m.pass_id AND pa.tenant_id = m.tenant_id
+         LEFT JOIN loyalty.point_ledger l
+           ON l.member_id = m.id AND l.tenant_id = m.tenant_id
+         WHERE m.tenant_id = $1 AND m.status != 'deleted' AND pa.pass_type_id = $2
+         GROUP BY m.id, m.tenant_id, m.pass_id, m.display_name, m.email,
+                  m.current_tier, m.status, m.joined_at
+         ORDER BY m.joined_at DESC`,
+        [tenantId, cardTemplateId],
+      );
+      return result.rows.map((row) => this.toAggregate(row, parseInt(row.balance, 10)));
+    } finally {
+      client.release();
+    }
+  }
+
   async save(member: Member): Promise<void> {
     const client = await this.pool.connect();
     try {

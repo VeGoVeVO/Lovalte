@@ -6,6 +6,7 @@ export interface MemberSummaryDTO {
   email: string | null;
   balance: number;
   tier: string;
+  enrolledAt: string;
 }
 
 export function toMemberSummaryDTO(member: Member): MemberSummaryDTO {
@@ -15,6 +16,7 @@ export function toMemberSummaryDTO(member: Member): MemberSummaryDTO {
     email: member.email,
     balance: member.balance,
     tier: member.currentTier,
+    enrolledAt: member.enrolledAt.toISOString(),
   };
 }
 

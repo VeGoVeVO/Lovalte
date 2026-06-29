@@ -81,6 +81,7 @@ export class PassKitSigningAdapter implements IPassSigningPort {
     if (logo) {
       buffers["logo.png"] = logo;
       buffers["logo@2x.png"] = logo;
+      buffers["logo@3x.png"] = logo;
     }
     const strip = await this.resolveImage(imageAssetRefs.strip);
     if (strip) {
