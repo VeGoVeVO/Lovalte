@@ -47,6 +47,8 @@ const MORE = [{ to: "/app/staff", label: "Staff" }];
 
 const shellCss = `
 .lvt-mobilehead, .lvt-tabbar { display: none; }
+/* Narrow pages (forms/lists): title + content share one centered column. */
+.lvt-narrow { max-width: 600px; margin: 0 auto; }
 /* Grid children must be allowed to shrink, else min-width'd cards (.meta 180px)
    overflow narrow mobile columns and "leak" past the container. */
 .halo .grid-2 > *, .halo .grid-3 > * { min-width: 0; }
@@ -90,7 +92,17 @@ const shellCss = `
 
 /** Authenticated-app shell. Desktop: top glass nav. Mobile: slim header + a
  *  native-style bottom tab bar (App-Store-friendly), safe-area aware. */
-export function AppShell({ title, children }: { title?: string; children: ReactNode }) {
+export function AppShell({
+  title,
+  children,
+  narrow,
+}: {
+  title?: string;
+  children: ReactNode;
+  /** Constrain title + content to one centered column (forms/lists), so the
+   *  heading lines up with the content instead of floating at the page edge. */
+  narrow?: boolean;
+}) {
   const nav = useNavigate();
   const loc = useLocation();
   const qc = useQueryClient();
@@ -234,20 +246,22 @@ export function AppShell({ title, children }: { title?: string; children: ReactN
           className="container lvt-rise lvt-main"
           style={{ paddingTop: "1.25rem", paddingBottom: "5rem" }}
         >
-          {title ? (
-            <h1
-              className="cardt"
-              style={{
-                margin: "0 0 1.1rem",
-                fontSize: "clamp(1.2rem, 1rem + 1vw, 1.5rem)",
-                fontWeight: 600,
-                letterSpacing: "-0.015em",
-              }}
-            >
-              {title}
-            </h1>
-          ) : null}
-          {children}
+          <div className={narrow ? "lvt-narrow" : undefined}>
+            {title ? (
+              <h1
+                className="cardt"
+                style={{
+                  margin: "0 0 1.1rem",
+                  fontSize: "clamp(1.2rem, 1rem + 1vw, 1.5rem)",
+                  fontWeight: 600,
+                  letterSpacing: "-0.015em",
+                }}
+              >
+                {title}
+              </h1>
+            ) : null}
+            {children}
+          </div>
         </main>
 
         {/* Mobile bottom tab bar */}

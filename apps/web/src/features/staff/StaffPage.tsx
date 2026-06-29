@@ -132,14 +132,12 @@ export function StaffPage() {
   };
 
   return (
-    <AppShell title={t("Staff")}>
+    <AppShell title={t("Staff")} narrow>
       <div
         style={{
           display: "flex",
           flexDirection: "column",
           gap: "2rem",
-          maxWidth: "720px",
-          margin: "0 auto",
         }}
       >
         {/* ── Invite form ──────────────────────────────────────── */}

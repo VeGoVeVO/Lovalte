@@ -115,15 +115,13 @@ export function IssuePassPage() {
   };
 
   return (
-    <AppShell title={t("Issue a Wallet Pass")}>
+    <AppShell title={t("Issue a Wallet Pass")} narrow>
       <GlassCard
         light
         style={{
           display: "flex",
           flexDirection: "column",
           gap: "1.25rem",
-          maxWidth: 540,
-          margin: "0 auto",
           padding: "clamp(1.25rem, 4vw, 2rem)",
         }}
       >

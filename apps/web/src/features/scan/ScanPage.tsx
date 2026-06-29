@@ -107,7 +107,7 @@ export function ScanPage() {
 
   /* ── Render ─────────────────────────────────────────────────────────── */
   return (
-    <AppShell title={t("Scan a card")}>
+    <AppShell title={t("Scan a card")} narrow>
       <style>{scanCss}</style>
       <GlassCard
         light
@@ -116,8 +116,6 @@ export function ScanPage() {
           flexDirection: "column",
           gap: "1.25rem",
           padding: "clamp(1.5rem,4vw,2.5rem)",
-          maxWidth: 480,
-          margin: "0 auto",
           borderRadius: "var(--r-card)",
         }}
       >
