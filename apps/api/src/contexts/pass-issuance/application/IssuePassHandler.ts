@@ -12,6 +12,7 @@ import { Pass } from "../domain/Pass";
 import { SerialNumber } from "../domain/SerialNumber";
 import { AuthenticationToken } from "../domain/AuthenticationToken";
 import { PassDocumentBuilder } from "../domain/PassDocumentBuilder";
+import { resolvePassImageRefs } from "../domain/resolveStripRef";
 import type {
   IPassRepository,
   IPassTemplateRepository,
@@ -109,11 +110,14 @@ export class IssuePassHandler {
     // endpoint, not in the barcode (a signed token only bloated the QR).
     const qrMessage = pass.id.value;
 
-    // Build + sign pass document (throws DomainError if certs not configured)
+    // Build + sign pass document (throws DomainError if certs not configured).
+    // resolvePassImageRefs swaps the stamp strip to strip_<earned> so the very
+    // first issued+cached pass already shows its stamp grid (not just on a later
+    // re-sign) — the same resolution every other signing path uses.
     const passJson = this.builder.build(pass, template, qrMessage);
     const buffer = await this.signer.sign(
       passJson as unknown as Record<string, unknown>,
-      template.imageAssetRefs,
+      resolvePassImageRefs(pass, template),
     );
 
     // Cache signed buffer keyed by (serial, version)

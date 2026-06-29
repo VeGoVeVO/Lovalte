@@ -175,6 +175,43 @@ describe("IssuePassHandler", () => {
     expect(passJson.barcodes[0].message).toBe(result.value.passId);
   });
 
+  it("signs a stamp pass with the strip frame for the live earned count (strip_0 when fresh)", async () => {
+    // Regression: the issue path used to sign + cache the BASE strip, so a
+    // freshly added stamp card showed no stamps. It must resolve strip_<earned>.
+    const stamps: PassTemplateDto = {
+      ...TEMPLATE,
+      fieldDefinitions: [
+        {
+          key: "points",
+          label: "Stamps",
+          region: "primary",
+          loyaltyType: "stamps",
+          loyaltyGoal: 10,
+        },
+      ],
+      imageAssetRefs: {
+        icon: "/api/v1/images/icon-1",
+        strip: "/api/v1/images/base-strip",
+        strip_0: "/api/v1/images/frame-0",
+        strip_1: "/api/v1/images/frame-1",
+      },
+    };
+    templates = makeTemplateRepo(stamps);
+
+    const result = await handler().execute({
+      memberId: MEMBER_ID,
+      passTypeId: PASS_TYPE_ID,
+      tenantId: TENANT_ID,
+    });
+    expect(result.ok).toBe(true);
+
+    const refs = (signer.sign as ReturnType<typeof vi.fn>).mock.calls[0][1] as Record<
+      string,
+      string
+    >;
+    expect(refs.strip).toBe("/api/v1/images/frame-0");
+  });
+
   it("is idempotent: returns existing pass without calling save again", async () => {
     const existing = makePass();
     passes.findByMemberAndType = vi.fn().mockResolvedValue(existing);

@@ -1,29 +1,12 @@
 import { NotFoundError, type Result, ok, err } from "../../../kernel";
 import { PassDocumentBuilder } from "../domain/PassDocumentBuilder";
-import type { Pass } from "../domain/Pass";
+import { resolvePassImageRefs } from "../domain/resolveStripRef";
 import type {
   IPassRepository,
   IPassTemplateRepository,
   IPassSigningPort,
   IPassBufferCache,
-  PassTemplateDto,
 } from "../domain/ports";
-
-/**
- * Resolve which strip image a stamp card shows for THIS pass: the pre-rendered
- * frame matching the live stamps-earned count (strip_<earned>), falling back to
- * the static strip. Non-stamp cards are returned unchanged.
- */
-function stripRefsForPass(pass: Pass, template: PassTemplateDto): Record<string, string> {
-  const refs = template.imageAssetRefs;
-  const stampDef = template.fieldDefinitions.find((d) => d.loyaltyType === "stamps");
-  if (!stampDef) return refs;
-  const goal = stampDef.loyaltyGoal ?? 10;
-  const raw = pass.fieldValues.find((v) => v.key === stampDef.key)?.value;
-  const earned = Math.min(Math.max(Math.trunc(Number(raw) || 0), 0), goal);
-  const frame = refs[`strip_${earned}`];
-  return frame ? { ...refs, strip: frame } : refs;
-}
 
 export interface GetPassPkpassCommand {
   passId: string;
@@ -83,7 +66,7 @@ export class GetPassPkpassHandler {
     const passJson = this.builder.build(pass, template, qrMessage);
     const buffer = await this.signer.sign(
       passJson as unknown as Record<string, unknown>,
-      stripRefsForPass(pass, template),
+      resolvePassImageRefs(pass, template),
     );
 
     await this.cache.put(pass.serialNumber.value, pass.version, buffer);
