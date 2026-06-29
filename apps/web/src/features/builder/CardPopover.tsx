@@ -88,7 +88,12 @@ export function CardPopover({ anchor, open, onClose, title, children }: Props) {
     ],
   });
 
-  const dismiss = useDismiss(context, { outsidePress: true });
+  // Don't close when the click lands in a child popup that portals to <body>
+  // (the colour picker wheel, the icon-picker modal) — those are still "inside".
+  const dismiss = useDismiss(context, {
+    outsidePress: (e) =>
+      !(e.target as Element | null)?.closest?.(".lvt-cp-pop, .lvt-modal-overlay"),
+  });
   const role = useRole(context, { role: "dialog" });
   const { getFloatingProps } = useInteractions([dismiss, role]);
 

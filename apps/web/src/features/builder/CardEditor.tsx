@@ -64,6 +64,17 @@ function makeIconDataUrl(bg: string, fg: string, name: string): string {
 }
 
 const editorCss = `
+.lvt-be-bar { display:flex; align-items:center; gap:6px; margin-bottom:14px; }
+.lvt-be-tool { width:38px; height:38px; flex:0 0 auto; display:grid; place-items:center; border-radius:11px; line-height:0;
+  border:1px solid var(--border,rgba(20,24,40,.12)); background:var(--card,#fff); color:var(--text,#1c2030);
+  cursor:pointer; box-shadow:0 1px 2px rgba(16,18,27,.05); transition:background .15s, transform .12s; }
+.lvt-be-tool:hover:not(:disabled){ background:rgba(20,24,40,.05); }
+.lvt-be-tool:active:not(:disabled){ transform:scale(.94); }
+.lvt-be-tool:disabled { opacity:.38; cursor:default; }
+.lvt-be-publish { margin-left:auto; height:38px; padding:0 18px; border-radius:11px; border:0; font-weight:700; cursor:pointer;
+  background:linear-gradient(180deg,#3a86ff,#2f6fe0); color:#fff; box-shadow:0 8px 18px -8px rgba(58,134,255,.7); transition:transform .12s; }
+.lvt-be-publish:active:not(:disabled){ transform:scale(.97); }
+.lvt-be-publish:disabled { opacity:.55; cursor:default; }
 .lvt-be-stage { width: 340px; max-width: 100%; margin: 0 auto; display:flex; flex-direction:column; align-items:center; }
 .lvt-be-hint { margin:16px auto 0; max-width:18rem; text-align:center; color:var(--muted); font-size:.82rem; text-wrap:balance; }
 .lvt-ed { outline:none; cursor:text; border-radius:4px; }
@@ -353,23 +364,45 @@ export function CardEditor({ initial, onClose }: Props) {
           <DynamicIcon name={doc.stampIcon as never} size={174} />
         </span>
       )}
-      <div style={{ display: "flex", gap: ".5rem", flexWrap: "wrap", marginBottom: "1rem" }}>
-        <GlassButton type="button" variant="ghost" onClick={onClose}>
-          {t("← Back")}
-        </GlassButton>
-        <div style={{ flex: 1 }} />
-        <GlassButton type="button" variant="ghost" onClick={undo} disabled={idx <= 0}>
-          ↶ {t("Undo")}
-        </GlassButton>
-        <GlassButton type="button" variant="ghost" onClick={redo} disabled={idx >= hist.length - 1}>
-          ↷ {t("Redo")}
-        </GlassButton>
-        <GlassButton type="button" variant="ghost" onClick={() => void save()} disabled={busy}>
-          {t("Save draft")}
-        </GlassButton>
-        <GlassButton type="button" onClick={() => void publish()} disabled={busy}>
+      <div className="lvt-be-bar">
+        <button type="button" className="lvt-be-tool" aria-label={t("Back")} onClick={onClose}>
+          <DynamicIcon name={"arrow-left" as never} size={18} />
+        </button>
+        <button
+          type="button"
+          className="lvt-be-tool"
+          aria-label={t("Undo")}
+          onClick={undo}
+          disabled={idx <= 0}
+        >
+          <DynamicIcon name={"undo-2" as never} size={18} />
+        </button>
+        <button
+          type="button"
+          className="lvt-be-tool"
+          aria-label={t("Redo")}
+          onClick={redo}
+          disabled={idx >= hist.length - 1}
+        >
+          <DynamicIcon name={"redo-2" as never} size={18} />
+        </button>
+        <button
+          type="button"
+          className="lvt-be-tool"
+          aria-label={t("Save draft")}
+          onClick={() => void save()}
+          disabled={busy}
+        >
+          <DynamicIcon name={"save" as never} size={18} />
+        </button>
+        <button
+          type="button"
+          className="lvt-be-publish"
+          onClick={() => void publish()}
+          disabled={busy}
+        >
           {t("Publish")}
-        </GlassButton>
+        </button>
       </div>
 
       <div className="lvt-be-stage">
