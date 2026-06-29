@@ -20,6 +20,16 @@ const DEPRECATED_FIELD_DEFS: FieldDefinition[] = [
   { key: "estado", label: "Estado", region: "primary" },
   { key: "aviso", label: "Aviso", region: "back" },
 ];
+/** Flatten a stamp card's per-count strip frames into `strip_<n>` asset keys. */
+function stampStripEntries(refs: unknown): Record<string, string> {
+  if (!Array.isArray(refs)) return {};
+  const out: Record<string, string> = {};
+  refs.forEach((ref, i) => {
+    if (typeof ref === "string" && ref) out[`strip_${i}`] = ref;
+  });
+  return out;
+}
+
 const DEPRECATION_VALUES = [
   { key: "estado", label: "Estado", value: "No válida" },
   {
@@ -129,6 +139,10 @@ export const registerPassIssuance: ContextModule = async (app, deps) => {
         icon: (brand.iconRef as string) ?? "",
         logo: (brand.logoRef as string) ?? "",
         strip: (brand.stripRef as string) ?? "",
+        // Stamp cards carry one pre-rendered strip per earned-count, baked in the
+        // browser at publish. Flatten them as strip_<n>; GetPassPkpassHandler picks
+        // strip_<earned> at sign time so the grid matches the customer's progress.
+        ...stampStripEntries(brand.stampStripRefs),
       },
     };
     await templateRepo.upsert(dto);

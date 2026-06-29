@@ -154,6 +154,9 @@ export class CardTemplateRepository implements ICardTemplateRepository {
       logoRef: (b.logoRef as string | null) ?? undefined,
       stripRef: (b.stripRef as string | null) ?? undefined,
       stampIcon: (b.stampIcon as string | null) ?? undefined,
+      stampedRef: (b.stampedRef as string | null) ?? undefined,
+      unstampedRef: (b.unstampedRef as string | null) ?? undefined,
+      stampStripRefs: Array.isArray(b.stampStripRefs) ? (b.stampStripRefs as string[]) : undefined,
     });
 
     const rule = new RewardRule(

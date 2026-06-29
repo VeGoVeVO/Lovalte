@@ -33,6 +33,8 @@ export interface CardTemplateDTO {
     logoRef?: string;
     stripRef?: string;
     stampIcon?: string;
+    stampedRef?: string;
+    unstampedRef?: string;
   };
   rewardRule: {
     pointsPerVisit: number;
@@ -62,6 +64,11 @@ export interface TemplateInput {
   rewardThreshold: number;
   cardType: LoyaltyType;
   stampIcon?: string;
+  /** Uploaded stamp art refs (override the Lucide stamp icon). */
+  stampedRef?: string;
+  unstampedRef?: string;
+  /** Browser-rendered strip frames indexed by stamps earned (sent at publish). */
+  stampStripRefs?: string[];
   tierRules: { label: string; minPoints: number }[];
 }
 

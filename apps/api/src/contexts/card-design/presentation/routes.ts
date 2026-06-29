@@ -40,6 +40,11 @@ const templateBodySchema = z
     rewardThreshold: z.number().int().min(1),
     cardType: z.enum(["points", "stamps", "cashback"]).optional(),
     stampIcon: z.string().max(64).optional(),
+    stampedRef: z.string().max(256).optional(),
+    unstampedRef: z.string().max(256).optional(),
+    // One pre-rendered strip per stamps-earned count (index 0..goal). Cap at 31
+    // (max goal 30 + the empty frame) to bound payload size.
+    stampStripRefs: z.array(z.string().max(256)).max(31).optional(),
     tierRules: z
       .array(z.object({ label: z.string().min(1), minPoints: z.number().int().min(0) }))
       .default([]),
@@ -133,6 +138,9 @@ export function registerCardDesignRoutes(
       rewardThreshold: body.rewardThreshold,
       cardType: body.cardType,
       stampIcon: body.stampIcon,
+      stampedRef: body.stampedRef,
+      unstampedRef: body.unstampedRef,
+      stampStripRefs: body.stampStripRefs,
       tierRules: body.tierRules ?? [],
     });
     if (!r.ok) throw r.error;
@@ -180,6 +188,9 @@ export function registerCardDesignRoutes(
       rewardThreshold: body.rewardThreshold,
       cardType: body.cardType,
       stampIcon: body.stampIcon,
+      stampedRef: body.stampedRef,
+      unstampedRef: body.unstampedRef,
+      stampStripRefs: body.stampStripRefs,
       tierRules: body.tierRules ?? [],
     });
     if (!r.ok) throw r.error;

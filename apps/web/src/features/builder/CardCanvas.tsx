@@ -4,7 +4,8 @@ import { DynamicIcon } from "lucide-react/dynamic";
 import { useUploadImage, fileToDataUrl, validateImageFile } from "./useImages";
 import { useT } from "../../lib/i18n";
 import type { CardDoc, Slot } from "./cardDoc";
-import { hexToRgb, TYPE_META } from "./cardDoc";
+import { hexToRgb } from "./cardDoc";
+import { stampLayout, STRIP_RATIO, GRID_LEFT } from "./stampStrip";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif";
 
@@ -219,6 +220,55 @@ function ImgSlot({
   );
 }
 
+/**
+ * The stamp grid drawn on the strip band — the chosen Lucide icon (or uploaded
+ * stamp art), filled when earned and faint when not. Same layout (stampLayout)
+ * as the baked strip frames, so the preview matches the issued card.
+ */
+function StampGrid({ doc, fg, width }: { doc: CardDoc; fg: string; width: number }) {
+  const { cols, rows } = stampLayout(doc.stampsGoal);
+  const size = Math.max(11, Math.round(((width * (1 - GRID_LEFT)) / cols) * 0.5));
+  return (
+    <div
+      aria-hidden
+      style={{
+        position: "absolute",
+        top: "14%",
+        bottom: "14%",
+        left: `${GRID_LEFT * 100}%`,
+        right: "4%",
+        display: "grid",
+        gridTemplateColumns: `repeat(${cols}, 1fr)`,
+        gridTemplateRows: `repeat(${rows}, 1fr)`,
+        gap: "6%",
+        placeItems: "center",
+        pointerEvents: "none",
+      }}
+    >
+      {Array.from({ length: doc.stampsGoal }).map((_, i) => {
+        const got = i < doc.stampsEarned;
+        const art = got ? doc.stampedRef : doc.unstampedRef;
+        return art ? (
+          <img
+            key={i}
+            src={art}
+            alt=""
+            style={{ width: "78%", height: "78%", objectFit: "contain", opacity: got ? 1 : 0.32 }}
+          />
+        ) : (
+          <DynamicIcon
+            key={i}
+            name={doc.stampIcon as never}
+            size={size}
+            color={fg}
+            style={{ opacity: got ? 1 : 0.22 }}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
 const NOOP = () => {};
 
 /** The interactive 1:1 Wallet card the merchant edits directly. */
@@ -311,52 +361,51 @@ export function CardCanvas({
       </div>
 
       {doc.type === "stamps" ? (
-        <div style={{ position: "relative" }}>
-          <ImgSlot
-            slot="hero"
-            src={doc.hero?.src ?? null}
-            tx={doc.hero?.tx ?? 0}
-            ty={doc.hero?.ty ?? 0}
-            scale={doc.hero?.scale ?? 1}
-            art="linear-gradient(120deg,#5a3a24,#3b2417)"
-            height={width * 0.46}
-            active={selected === "hero"}
-            label={t("Strip photo")}
-            editable={editable}
-            onSelect={() => onSelect("hero")}
-            dispatch={dispatch}
-          />
+        // Stamp strip: theme-bg band + the stamp grid, with the native "X / N"
+        // primary value overlaid bottom-left — a faithful render of the strip.png
+        // the server bakes (Apple has no native stamp widget). WYSIWYG with the
+        // generated frames in stampStrip.ts.
+        <div
+          onClick={(e) => {
+            if (!editable) return;
+            e.stopPropagation();
+            onSelect("primary");
+          }}
+          style={{
+            position: "relative",
+            height: width * STRIP_RATIO,
+            background: bg,
+            cursor: editable ? "pointer" : "default",
+            ...ring("primary"),
+          }}
+        >
+          <StampGrid doc={doc} fg={fg} width={width} />
+          {/* Native primary value lives on the left; the grid fills the right. */}
           <div
             style={{
               position: "absolute",
-              inset: 0,
-              display: "grid",
-              gridTemplateColumns: "repeat(5,1fr)",
-              gridTemplateRows: "repeat(2,1fr)",
-              gap: "6%",
-              padding: "7% 6%",
-              pointerEvents: "none",
+              left: 16,
+              top: 0,
+              bottom: 0,
+              width: `${GRID_LEFT * 100}%`,
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
             }}
           >
-            {Array.from({ length: Math.min(doc.stampsGoal, 10) }).map((_, i) => {
-              const got = i < doc.stampsEarned;
-              return (
-                <div
-                  key={i}
-                  style={{
-                    borderRadius: "50%",
-                    border: "2px solid rgba(255,255,255,.85)",
-                    background: got ? "rgba(255,255,255,.92)" : "rgba(255,255,255,.12)",
-                    display: "grid",
-                    placeItems: "center",
-                  }}
-                >
-                  {got && (
-                    <DynamicIcon name={doc.stampIcon as never} size={width * 0.05} color={bg} />
-                  )}
-                </div>
-              );
-            })}
+            <div
+              style={{
+                fontSize: 30,
+                fontWeight: 800,
+                lineHeight: 1,
+                letterSpacing: "-0.02em",
+              }}
+            >
+              {doc.stampsEarned} / {doc.stampsGoal}
+            </div>
+            <div style={{ ...labelStyle, fontSize: 11, marginTop: 3 }}>
+              {doc.primaryLabel || "STAMPS"}
+            </div>
           </div>
         </div>
       ) : (
@@ -376,7 +425,7 @@ export function CardCanvas({
         />
       )}
 
-      {/* Primary field — large, below the strip (Apple Wallet accurate) */}
+      {/* Primary field — large, below the hero (non-stamps; stamps overlay it on the strip) */}
       {doc.type !== "stamps" && (
         <div
           onClick={(e) => {
@@ -387,31 +436,29 @@ export function CardCanvas({
           style={{ padding: "10px 16px 4px", ...ring("primary") }}
         >
           <div style={{ ...labelStyle }}>{doc.primaryLabel}</div>
-          <div style={{ fontSize: 30, fontWeight: 800, lineHeight: 1, marginTop: 3, letterSpacing: "-0.02em" }}>
+          <div
+            style={{
+              fontSize: 30,
+              fontWeight: 800,
+              lineHeight: 1,
+              marginTop: 3,
+              letterSpacing: "-0.02em",
+            }}
+          >
             {sampleValue(doc)}
           </div>
         </div>
       )}
 
-      {/* Secondary fields row */}
-      {(doc.type === "stamps"
-        ? [{ id: "g", label: t("UNTIL REWARD"), value: String(doc.stampsGoal) }]
-        : doc.fields
-      ).length > 0 && (
+      {/* Secondary fields row (non-stamps) */}
+      {doc.type !== "stamps" && doc.fields.length > 0 && (
         <div style={{ display: "flex", gap: 18, padding: "8px 16px 4px", flexWrap: "wrap" }}>
-          {(doc.type === "stamps"
-            ? [{ id: "g", label: t("UNTIL REWARD"), value: String(doc.stampsGoal) }]
-            : doc.fields
-          )
-            .slice(0, 4)
-            .map((fld) => (
-              <div key={fld.id} style={{ minWidth: 0 }}>
-                <div style={{ ...labelStyle, fontSize: 9 }}>{fld.label}</div>
-                <div style={{ fontSize: doc.type === "stamps" ? 22 : 14, fontWeight: 700, marginTop: 2 }}>
-                  {fld.value}
-                </div>
-              </div>
-            ))}
+          {doc.fields.slice(0, 4).map((fld) => (
+            <div key={fld.id} style={{ minWidth: 0 }}>
+              <div style={{ ...labelStyle, fontSize: 9 }}>{fld.label}</div>
+              <div style={{ fontSize: 14, fontWeight: 700, marginTop: 2 }}>{fld.value}</div>
+            </div>
+          ))}
         </div>
       )}
 

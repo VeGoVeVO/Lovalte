@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { DynamicIcon } from "lucide-react/dynamic";
 import { Modal, GlassButton, ColorPicker } from "../../design-system/halo";
 import { useT } from "../../lib/i18n";
@@ -18,12 +18,16 @@ import {
   initialDoc,
   docToInput,
   docFromTemplate,
+  hexToRgb,
   type CardDoc,
 } from "./cardDoc";
 import type { LoyaltyType } from "./useTemplates";
 import { CardCanvas, type SlotKind } from "./CardCanvas";
 import { AssetField } from "./AssetField";
 import { IconPicker } from "./IconPicker";
+import { useUploadImage } from "./useImages";
+import { renderStampFrames } from "./stampStrip";
+import { svgToPngDataUrl } from "./lucideRaster";
 
 type Step = "type" | "templates" | "editor";
 
@@ -60,6 +64,9 @@ export function CardEditor({ initial, onClose }: Props) {
   const updateMut = useUpdateTemplate();
   const publishMut = usePublishTemplate();
   const assetMut = useRegisterAsset();
+  const uploadImg = useUploadImage();
+  // Hidden live render of the chosen stamp icon — rasterized into the strip frames.
+  const stampIconRef = useRef<HTMLSpanElement>(null);
 
   const existing = initial !== "new" ? initial : null;
   const [step, setStep] = useState<Step>(existing ? "editor" : "type");
@@ -104,11 +111,39 @@ export function CardEditor({ initial, onClose }: Props) {
     setStep("editor");
   };
 
-  const save = async (): Promise<string | null> => {
+  /**
+   * Render one strip per stamps-earned count and upload them. The chosen Lucide
+   * icon is rasterized from its live DOM node; uploaded stamp art overrides it.
+   * Returns the frame refs indexed by earned count.
+   * ponytail: regenerates every frame on publish (goal ≤ 12 → ≤ 13 small PNGs);
+   * could hash the design and skip when nothing changed.
+   */
+  const buildStampFrames = async (): Promise<string[] | undefined> => {
+    if (!doc || doc.type !== "stamps") return undefined;
+    const svg = stampIconRef.current?.querySelector("svg");
+    const stampIconPng = svg
+      ? await svgToPngDataUrl(svg, 174, hexToRgb(doc.theme.fg)).catch(() => null)
+      : null;
+    const frames = await renderStampFrames({
+      goal: doc.stampsGoal,
+      bg: doc.theme.bg,
+      fg: doc.theme.fg,
+      stampIconPng,
+      stampedRef: doc.stampedRef || null,
+      unstampedRef: doc.unstampedRef || null,
+    });
+    return Promise.all(
+      frames.map((dataUrl) =>
+        uploadImg.mutateAsync({ kind: "strip", source: "upload", dataUrl }).then((r) => r.url),
+      ),
+    );
+  };
+
+  const save = async (stampStripRefs?: string[]): Promise<string | null> => {
     if (!doc) return null;
     setStatus(null);
     try {
-      const input = docToInput(doc);
+      const input = { ...docToInput(doc), ...(stampStripRefs ? { stampStripRefs } : {}) };
       let id = savedId;
       if (id) await updateMut.mutateAsync({ id, input });
       else {
@@ -132,9 +167,11 @@ export function CardEditor({ initial, onClose }: Props) {
     }
   };
   const publish = async () => {
-    const id = await save();
-    if (!id) return;
     try {
+      // Bake the stamp strip frames first so they ship with the published brand.
+      const frames = await buildStampFrames();
+      const id = await save(frames);
+      if (!id) return;
       await publishMut.mutateAsync(id);
       setStatus(t("Published."));
       onClose();
@@ -144,7 +181,11 @@ export function CardEditor({ initial, onClose }: Props) {
   };
 
   const busy =
-    createMut.isPending || updateMut.isPending || publishMut.isPending || assetMut.isPending;
+    createMut.isPending ||
+    updateMut.isPending ||
+    publishMut.isPending ||
+    assetMut.isPending ||
+    uploadImg.isPending;
 
   // ── Type step ──────────────────────────────────────────────────────────────
   if (step === "type") {
@@ -239,6 +280,22 @@ export function CardEditor({ initial, onClose }: Props) {
   return (
     <div>
       <style>{editorCss}</style>
+      {doc.type === "stamps" && (
+        <span
+          ref={stampIconRef}
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            width: 0,
+            height: 0,
+            overflow: "hidden",
+            opacity: 0,
+            pointerEvents: "none",
+          }}
+        >
+          <DynamicIcon name={doc.stampIcon as never} size={174} />
+        </span>
+      )}
       <div style={{ display: "flex", gap: ".5rem", flexWrap: "wrap", marginBottom: "1rem" }}>
         <GlassButton type="button" variant="ghost" onClick={onClose}>
           {t("← Back")}
@@ -428,6 +485,31 @@ function Inspector({
               >
                 ＋
               </button>
+            </div>
+          </div>
+          <div>
+            <label style={eyebrow}>{t("Stamp art (optional)")}</label>
+            <p
+              className="body"
+              style={{ fontSize: ".72rem", color: "var(--muted)", margin: "0 0 .5rem" }}
+            >
+              {t("Upload your own stamp images to replace the icon.")}
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <AssetField
+                kind="strip"
+                label={t("Stamped")}
+                hint={t("Shown for collected stamps.")}
+                value={doc.stampedRef}
+                onChange={(url) => dispatch("stamps.art", { slot: "stamped", ref: url })}
+              />
+              <AssetField
+                kind="strip"
+                label={t("Unstamped")}
+                hint={t("Shown for empty stamps.")}
+                value={doc.unstampedRef}
+                onChange={(url) => dispatch("stamps.art", { slot: "unstamped", ref: url })}
+              />
             </div>
           </div>
         </>

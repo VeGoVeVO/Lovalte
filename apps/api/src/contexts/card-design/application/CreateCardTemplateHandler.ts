@@ -26,6 +26,9 @@ export class CreateCardTemplateHandler {
         auxiliaryFields: input.auxiliaryFields,
         backFields: input.backFields,
         stampIcon: input.stampIcon,
+        stampedRef: input.stampedRef,
+        unstampedRef: input.unstampedRef,
+        stampStripRefs: input.stampStripRefs,
       });
 
       const rule = new RewardRule(

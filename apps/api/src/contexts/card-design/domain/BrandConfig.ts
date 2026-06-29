@@ -25,6 +25,17 @@ export interface BrandConfigParams {
   stripRef?: string;
   /** Lucide icon name used for stamp cards' stamp marks (builder/preview). */
   stampIcon?: string;
+  /** Uploaded "stamped"/"unstamped" stamp art refs (override the Lucide icon). */
+  stampedRef?: string;
+  unstampedRef?: string;
+  /**
+   * Pre-rendered strip frames for a stamp card, indexed by stamps earned
+   * (stampStripRefs[n] = the strip showing n filled stamps). The browser renders
+   * + uploads these at publish; pass-issuance swaps strip = stampStripRefs[earned]
+   * at sign time. Keeps the stamp grid baked into the image (Apple has no native
+   * stamp widget) with zero server-side image dependency.
+   */
+  stampStripRefs?: string[];
 }
 
 /**
@@ -47,6 +58,9 @@ export class BrandConfig {
   readonly logoRef: string | undefined;
   readonly stripRef: string | undefined;
   readonly stampIcon: string | undefined;
+  readonly stampedRef: string | undefined;
+  readonly unstampedRef: string | undefined;
+  readonly stampStripRefs: ReadonlyArray<string> | undefined;
 
   constructor(p: BrandConfigParams) {
     const name = (p.organizationName ?? "").trim();
@@ -70,6 +84,9 @@ export class BrandConfig {
     this.logoRef = p.logoRef;
     this.stripRef = p.stripRef;
     this.stampIcon = p.stampIcon;
+    this.stampedRef = p.stampedRef;
+    this.unstampedRef = p.unstampedRef;
+    this.stampStripRefs = p.stampStripRefs ? Object.freeze([...p.stampStripRefs]) : undefined;
   }
 
   /**
@@ -117,6 +134,9 @@ export class BrandConfig {
       logoRef: this.logoRef,
       stripRef: this.stripRef,
       stampIcon: this.stampIcon,
+      stampedRef: this.stampedRef,
+      unstampedRef: this.unstampedRef,
+      stampStripRefs: this.stampStripRefs ? [...this.stampStripRefs] : undefined,
     };
   }
 
@@ -136,6 +156,9 @@ export class BrandConfig {
       logoRef: this.logoRef ?? null,
       stripRef: this.stripRef ?? null,
       stampIcon: this.stampIcon ?? null,
+      stampedRef: this.stampedRef ?? null,
+      unstampedRef: this.unstampedRef ?? null,
+      stampStripRefs: this.stampStripRefs ? [...this.stampStripRefs] : null,
     };
   }
 }

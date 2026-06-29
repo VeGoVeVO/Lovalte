@@ -33,6 +33,8 @@ export interface CardDoc {
   stampsGoal: number;
   stampsEarned: number;
   stampIcon: string; // lucide name
+  stampedRef: string; // uploaded "stamped" art ref (overrides the lucide icon)
+  unstampedRef: string; // uploaded "unstamped" art ref
 }
 
 export const TYPE_META: Record<
@@ -189,6 +191,8 @@ export function initialDoc(type: LoyaltyType): CardDoc {
     stampsGoal: 10,
     stampsEarned: 6,
     stampIcon: "coffee",
+    stampedRef: "",
+    unstampedRef: "",
   };
   return { ...base, ...((TEMPLATES[type][0]?.apply ?? {}) as object) } as CardDoc;
 }
@@ -274,6 +278,11 @@ export const TOOLS: Record<string, ToolFn> = {
     stampsEarned: Math.max(0, Math.min(d.stampsGoal, a.earned as number)),
   }),
   "stamps.icon": (d, a) => ({ ...d, stampIcon: a.icon as string }),
+  // Set/clear uploaded stamp art for the "stamped" or "unstamped" slot.
+  "stamps.art": (d, a) => ({
+    ...d,
+    [a.slot === "unstamped" ? "unstampedRef" : "stampedRef"]: (a.ref as string) ?? "",
+  }),
 };
 export function applyTool(
   doc: CardDoc,
@@ -313,6 +322,8 @@ export function docToInput(doc: CardDoc): TemplateInput {
     rewardThreshold: doc.type === "stamps" ? doc.stampsGoal : 10,
     cardType: doc.type,
     stampIcon: doc.stampIcon,
+    stampedRef: doc.stampedRef || undefined,
+    unstampedRef: doc.unstampedRef || undefined,
     tierRules: [],
   };
 }
@@ -347,5 +358,7 @@ export function docFromTemplate(tmpl: CardTemplateDTO): CardDoc {
     stampsGoal: tmpl.rewardRule.rewardThreshold,
     stampsEarned: Math.min(6, tmpl.rewardRule.rewardThreshold),
     stampIcon: b.stampIcon ?? "coffee",
+    stampedRef: b.stampedRef ?? "",
+    unstampedRef: b.unstampedRef ?? "",
   };
 }

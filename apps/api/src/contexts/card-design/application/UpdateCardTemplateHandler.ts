@@ -34,6 +34,11 @@ export class UpdateCardTemplateHandler {
         logoRef: template.brand.logoRef,
         stripRef: template.brand.stripRef,
         stampIcon: input.stampIcon ?? template.brand.stampIcon,
+        // Single art refs come on every save; the heavy frame array is only
+        // re-sent at publish, so preserve the existing frames on a draft save.
+        stampedRef: input.stampedRef ?? template.brand.stampedRef,
+        unstampedRef: input.unstampedRef ?? template.brand.unstampedRef,
+        stampStripRefs: input.stampStripRefs ?? template.brand.stampStripRefs?.slice(),
       });
 
       const rule = new RewardRule(
