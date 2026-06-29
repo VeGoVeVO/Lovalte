@@ -46,6 +46,7 @@ export class CardTemplateRepository implements ICardTemplateRepository {
     const config = {
       brand: template.brand.toJSON(),
       rewardRule: template.rewardRule.toJSON(),
+      walletPlatform: template.walletPlatform,
     };
 
     await withTransaction(this.pool, async (client: PoolClient) => {
@@ -135,7 +136,7 @@ export class CardTemplateRepository implements ICardTemplateRepository {
   }
 
   private rowToTemplate(row: Record<string, unknown>): CardTemplate {
-    const cfg = row.config as { brand: BrandRow; rewardRule: RewardRow };
+    const cfg = row.config as { brand: BrandRow; rewardRule: RewardRow; walletPlatform?: 'apple' | 'google' };
     const b = cfg.brand;
     const rr = cfg.rewardRule;
 
@@ -173,6 +174,7 @@ export class CardTemplateRepository implements ICardTemplateRepository {
       version: row.version as number,
       brand,
       rewardRule: rule,
+      walletPlatform: cfg.walletPlatform ?? 'apple',
       createdAt: row.created_at as Date,
       updatedAt: row.updated_at as Date,
     };

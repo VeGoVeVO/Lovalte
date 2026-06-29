@@ -18,6 +18,7 @@ export interface CardTemplateDTO {
   name: string;
   status: "draft" | "published";
   version: number;
+  walletPlatform: "apple" | "google";
   brand: {
     organizationName: string;
     logoText?: string;
@@ -70,6 +71,7 @@ export interface TemplateInput {
   /** Browser-rendered strip frames indexed by stamps earned (sent at publish). */
   stampStripRefs?: string[];
   tierRules: { label: string; minPoints: number }[];
+  walletPlatform?: "apple" | "google";
 }
 
 // ── Local PUT wrapper (api.ts exposes get/post/del only) ─────────────────────

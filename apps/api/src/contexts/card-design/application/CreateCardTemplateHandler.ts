@@ -44,6 +44,7 @@ export class CreateCardTemplateHandler {
         input.name,
         brand,
         rule,
+        input.walletPlatform ?? 'apple',
       );
 
       await this.repo.save(template);

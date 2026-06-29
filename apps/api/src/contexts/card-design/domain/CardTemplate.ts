@@ -21,6 +21,7 @@ export interface CardTemplateProps {
   version: number;
   brand: BrandConfig;
   rewardRule: RewardRule;
+  walletPlatform: 'apple' | 'google';
   createdAt: Date;
   updatedAt: Date;
 }
@@ -39,6 +40,7 @@ export class CardTemplate extends AggregateRoot<CardTemplateId> {
   private _version: number;
   private _brand: BrandConfig;
   private _rewardRule: RewardRule;
+  private _walletPlatform: 'apple' | 'google';
   readonly createdAt: Date;
   private _updatedAt: Date;
 
@@ -50,6 +52,7 @@ export class CardTemplate extends AggregateRoot<CardTemplateId> {
     this._version = props.version;
     this._brand = props.brand;
     this._rewardRule = props.rewardRule;
+    this._walletPlatform = props.walletPlatform;
     this.createdAt = props.createdAt;
     this._updatedAt = props.updatedAt;
   }
@@ -61,6 +64,7 @@ export class CardTemplate extends AggregateRoot<CardTemplateId> {
     name: string,
     brand: BrandConfig,
     rewardRule: RewardRule,
+    walletPlatform: 'apple' | 'google' = 'apple',
   ): CardTemplate {
     const now = new Date();
     const t = new CardTemplate(id, {
@@ -70,6 +74,7 @@ export class CardTemplate extends AggregateRoot<CardTemplateId> {
       version: 0,
       brand,
       rewardRule,
+      walletPlatform,
       createdAt: now,
       updatedAt: now,
     });
@@ -167,6 +172,9 @@ export class CardTemplate extends AggregateRoot<CardTemplateId> {
   }
   get rewardRule(): RewardRule {
     return this._rewardRule;
+  }
+  get walletPlatform(): 'apple' | 'google' {
+    return this._walletPlatform;
   }
   get updatedAt(): Date {
     return this._updatedAt;

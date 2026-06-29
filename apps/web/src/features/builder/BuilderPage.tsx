@@ -1,12 +1,13 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { AppShell } from "../../lib/AppShell";
-import { GlassCard, GlassButton } from "../../design-system/halo";
+import { GlassCard, GlassButton, Modal } from "../../design-system/halo";
 import { useT } from "../../lib/i18n";
 import { useTemplates, useDeleteTemplate, type CardTemplateDTO } from "./useTemplates";
 import { DeleteTemplateModal } from "./DeleteTemplateModal";
 import { CardEditor } from "./CardEditor";
+import { GoogleWalletEditor } from "./GoogleWalletEditor";
 
-type EditTarget = CardTemplateDTO | "new" | null;
+type EditTarget = CardTemplateDTO | "new-apple" | "new-google" | null;
 
 /**
  * Shows the full card name on one line, shrinking the font to fit its column.
@@ -45,12 +46,34 @@ function FitText({ text }: { text: string }) {
 export function BuilderPage() {
   const { t } = useT();
   const [editing, setEditing] = useState<EditTarget>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [confirmCard, setConfirmCard] = useState<CardTemplateDTO | null>(null);
 
   const templates = useTemplates();
   const deleteMut = useDeleteTemplate();
 
-  if (editing) {
+  if (editing === "new-apple") {
+    return (
+      <AppShell>
+        <CardEditor initial="new" onClose={() => setEditing(null)} />
+      </AppShell>
+    );
+  }
+  if (editing === "new-google") {
+    return (
+      <AppShell>
+        <GoogleWalletEditor initial={null} onClose={() => setEditing(null)} />
+      </AppShell>
+    );
+  }
+  if (editing && typeof editing !== "string") {
+    if (editing.walletPlatform === "google") {
+      return (
+        <AppShell>
+          <GoogleWalletEditor initial={editing} onClose={() => setEditing(null)} />
+        </AppShell>
+      );
+    }
     return (
       <AppShell>
         <CardEditor initial={editing} onClose={() => setEditing(null)} />
@@ -76,7 +99,7 @@ export function BuilderPage() {
           {t("Card Builder")}
         </h1>
         <div style={{ flex: 1, display: "flex", justifyContent: "flex-end" }}>
-          <GlassButton type="button" onClick={() => setEditing("new")}>
+          <GlassButton type="button" onClick={() => setPickerOpen(true)}>
             {t("+ New card")}
           </GlassButton>
         </div>
@@ -169,7 +192,7 @@ export function BuilderPage() {
                   </svg>
                 </button>
               </div>
-              <div style={{ marginTop: "0.55rem" }}>
+              <div style={{ marginTop: "0.55rem", display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
                 <span
                   style={{
                     fontSize: "0.7rem",
@@ -184,6 +207,19 @@ export function BuilderPage() {
                 >
                   {t(card.status)}
                 </span>
+                <span
+                  style={{
+                    fontSize: "0.7rem",
+                    fontWeight: 500,
+                    padding: "0.2rem 0.55rem",
+                    borderRadius: 999,
+                    background: card.walletPlatform === "google" ? "rgba(66,133,244,.12)" : "rgba(0,0,0,.07)",
+                    border: `1px solid ${card.walletPlatform === "google" ? "rgba(66,133,244,.3)" : "rgba(0,0,0,.14)"}`,
+                    color: card.walletPlatform === "google" ? "rgb(30,80,200)" : "var(--muted)",
+                  }}
+                >
+                  {card.walletPlatform === "google" ? "Google" : "Apple"}
+                </span>
               </div>
               <p className="body" style={{ margin: "0.6rem 0 0", fontSize: "0.82rem" }}>
                 v{card.version} · {new Date(card.updatedAt).toLocaleDateString()}
@@ -191,6 +227,61 @@ export function BuilderPage() {
             </GlassCard>
           ))}
         </div>
+      )}
+
+      {pickerOpen && (
+        <Modal onClose={() => setPickerOpen(false)} labelledBy="wallet-picker-title">
+          <h2 id="wallet-picker-title" className="cardt lvt-modal-title" style={{ marginBottom: "0.4rem" }}>
+            {t("Choose wallet type")}
+          </h2>
+          <p className="body" style={{ margin: "0 0 1.25rem", color: "var(--muted)" }}>
+            {t("Pick the platform for your new loyalty card.")}
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <button
+              type="button"
+              className="btn ghost"
+              onClick={() => { setPickerOpen(false); setEditing("new-apple"); }}
+              style={{
+                textAlign: "left",
+                padding: "1.1rem",
+                display: "flex",
+                flexDirection: "column",
+                gap: 6,
+                alignItems: "flex-start",
+                borderRadius: "0.75rem",
+              }}
+            >
+              <span style={{ fontSize: 28 }}>🍎</span>
+              <strong style={{ fontSize: "1rem" }}>{t("Apple Wallet")}</strong>
+              <span className="body" style={{ fontSize: ".8rem", color: "var(--muted)" }}>
+                {t("iPhone & Apple Watch")}
+              </span>
+            </button>
+            <button
+              type="button"
+              className="btn ghost"
+              onClick={() => { setPickerOpen(false); setEditing("new-google"); }}
+              style={{
+                textAlign: "left",
+                padding: "1.1rem",
+                display: "flex",
+                flexDirection: "column",
+                gap: 6,
+                alignItems: "flex-start",
+                borderRadius: "0.75rem",
+              }}
+            >
+              <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true">
+                <path fill="#4285F4" d="M21.35 11.1H12v2.92h5.35c-.23 1.22-1.4 3.58-5.35 3.58-3.22 0-5.84-2.66-5.84-5.6s2.62-5.6 5.84-5.6c1.83 0 3.06.78 3.76 1.46l2.56-2.48C16.65 3.78 14.5 3 12 3 7.03 3 3 7.03 3 12s4.03 9 9 9c5.19 0 8.63-3.65 8.63-8.79 0-.59-.07-1.04-.13-1.31z"/>
+              </svg>
+              <strong style={{ fontSize: "1rem" }}>{t("Google Wallet")}</strong>
+              <span className="body" style={{ fontSize: ".8rem", color: "var(--muted)" }}>
+                {t("Android & Google Pay")}
+              </span>
+            </button>
+          </div>
+        </Modal>
       )}
 
       {confirmCard && (

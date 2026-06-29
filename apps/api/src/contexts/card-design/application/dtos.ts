@@ -38,6 +38,7 @@ export interface CreateCardTemplateInput {
   /** Browser-rendered strip frames indexed by stamps earned (publish-time). */
   stampStripRefs?: string[];
   tierRules: TierRuleInput[];
+  walletPlatform?: 'apple' | 'google';
 }
 
 export interface UpdateCardTemplateInput extends CreateCardTemplateInput {
@@ -76,6 +77,7 @@ export interface CardTemplateDTO {
     cardType: LoyaltyType;
     tierRules: TierRuleInput[];
   };
+  walletPlatform: 'apple' | 'google';
   /** Number of passes issued from this template (cards already in customer wallets). */
   issuedCount: number;
   createdAt: string;
@@ -137,6 +139,7 @@ export function toCardTemplateDTO(t: CardTemplate, issuedCount = 0): CardTemplat
       cardType: t.rewardRule.cardType,
       tierRules: [...t.rewardRule.tierRules],
     },
+    walletPlatform: t.walletPlatform,
     createdAt: t.createdAt.toISOString(),
     updatedAt: t.updatedAt.toISOString(),
   };
