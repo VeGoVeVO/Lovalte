@@ -16,7 +16,7 @@
     "@fastify/rate-limit": "^10.2.1",
     "bullmq": "^5.34.0",
     "fastify": "^5.2.0",
-    "googleapis": "^173.0.0",
+    "google-auth-library": "^9.0.0",
     "ioredis": "^5.4.1",
     "joi": "^17.13.4",
     "passkit-generator": "^3.5.7",

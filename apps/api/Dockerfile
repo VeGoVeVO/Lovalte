@@ -10,7 +10,7 @@ RUN npm ci
 # Compile + copy the forward-only SQL migrations next to the compiled runner,
 # then drop dev dependencies so the runtime image ships prod-only node_modules.
 COPY apps/api apps/api
-RUN NODE_OPTIONS=--max-old-space-size=512 npm run build --workspace apps/api \
+RUN npm run build --workspace apps/api \
  && cp -r apps/api/src/db/migrations apps/api/dist/db/migrations \
  && npm prune --omit=dev
 
