@@ -48,8 +48,8 @@ const SLOT_META: Record<
   logo: { icon: "image", title: "Logo", sub: "Your brand mark, top-left", accent: "#3FB6D9" },
   colors: {
     icon: "palette",
-    title: "Colours",
-    sub: "Background, text & labels",
+    title: "Background",
+    sub: "Pick the card background",
     accent: "#8B7BD8",
   },
   hero: { icon: "image", title: "Strip photo", sub: "Banner behind the value", accent: "#34B98A" },
@@ -145,6 +145,8 @@ export function CardEditor({ initial, onClose }: Props) {
   const stampIconRef = useRef<HTMLSpanElement>(null);
 
   const existing = initial !== "new" ? initial : null;
+  // Already-published cards are edited & re-pushed to holders, so the CTA reads "Update".
+  const isPublished = existing?.status === "published";
   const [step, setStep] = useState<Step>(existing ? "editor" : "type");
   const [type, setType] = useState<LoyaltyType>(existing?.rewardRule.cardType ?? "points");
   const [hist, setHist] = useState<CardDoc[]>(existing ? [docFromTemplate(existing)] : []);
@@ -271,7 +273,7 @@ export function CardEditor({ initial, onClose }: Props) {
       const id = await save(frames);
       if (!id) return;
       await publishMut.mutateAsync(id);
-      setStatus(t("Published."));
+      setStatus(isPublished ? t("Updated — holders will get the new card.") : t("Published."));
       onClose();
     } catch (e) {
       setStatus((e as { message?: string })?.message ?? t("Publish failed."));
@@ -431,7 +433,7 @@ export function CardEditor({ initial, onClose }: Props) {
           onClick={() => void publish()}
           disabled={busy}
         >
-          {t("Publish")}
+          {isPublished ? t("Update") : t("Publish")}
         </button>
       </div>
 
@@ -602,22 +604,16 @@ function ComponentEditor({
   const { t } = useT();
 
   if (sel === "colors") {
+    // Clicking the card background edits ONLY the background colour, with the wheel
+    // open straight away. Text & label colours are changed contextually, from the
+    // little swatch that appears when you tap that text on the card.
     return (
-      <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 240 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 248 }}>
         <ColorPicker
           ariaLabel={t("Background")}
           value={doc.theme.bg}
           onChange={(v) => dispatch("theme.set", { key: "bg", value: v })}
-        />
-        <ColorPicker
-          ariaLabel={t("Text")}
-          value={doc.theme.fg}
-          onChange={(v) => dispatch("theme.set", { key: "fg", value: v })}
-        />
-        <ColorPicker
-          ariaLabel={t("Labels")}
-          value={doc.theme.label}
-          onChange={(v) => dispatch("theme.set", { key: "label", value: v })}
+          defaultOpen
         />
       </div>
     );

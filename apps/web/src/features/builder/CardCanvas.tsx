@@ -1,6 +1,8 @@
-import { useEffect, useRef, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { QRCodeSVG } from "qrcode.react";
 import { DynamicIcon } from "lucide-react/dynamic";
+import { ColorPicker } from "../../design-system/halo";
 import { useT } from "../../lib/i18n";
 import type { CardDoc, Slot, FieldList } from "./cardDoc";
 import type { PopAnchor } from "./CardPopover";
@@ -49,12 +51,19 @@ function Editable({
   ariaLabel,
   onInput,
   style,
+  colorRole,
+  onColorFocus,
+  onColorBlur,
 }: {
   value: string;
   ph?: string;
   ariaLabel: string;
   onInput: (v: string) => void;
   style?: CSSProperties;
+  /** Which theme colour this text uses — drives the contextual recolour swatch. */
+  colorRole?: "fg" | "label";
+  onColorFocus?: (role: "fg" | "label", el: HTMLElement) => void;
+  onColorBlur?: () => void;
 }) {
   const ref = useRef<HTMLSpanElement>(null);
   useEffect(() => {
@@ -73,6 +82,8 @@ function Editable({
       data-ph={ph}
       onInput={(e) => onInput(e.currentTarget.textContent || "")}
       onClick={(e) => e.stopPropagation()}
+      onFocus={(e) => colorRole && onColorFocus?.(colorRole, e.currentTarget)}
+      onBlur={() => onColorBlur?.()}
       onKeyDown={(e) => {
         if (e.key === "Enter") {
           e.preventDefault();
@@ -305,6 +316,28 @@ export function CardCanvas({
 }: Props) {
   const { t } = useT();
   const editable = !readOnly;
+
+  // Contextual recolour: focusing a text shows a small swatch near it (NOT the wheel
+  // directly). Tapping the swatch opens the wheel for that text's theme colour.
+  const [colorChip, setColorChip] = useState<{ role: "fg" | "label"; x: number; y: number } | null>(
+    null,
+  );
+  const wheelOpen = useRef(false);
+  const blurTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const colorProps = (role: "fg" | "label") => ({
+    colorRole: role,
+    onColorFocus: (r: "fg" | "label", el: HTMLElement) => {
+      clearTimeout(blurTimer.current);
+      const rc = el.getBoundingClientRect();
+      setColorChip({ role: r, x: rc.left, y: rc.top });
+    },
+    onColorBlur: () => {
+      blurTimer.current = setTimeout(() => {
+        if (!wheelOpen.current) setColorChip(null);
+      }, 200);
+    },
+  });
+
   const fg = hexToRgb(doc.theme.fg);
   const bg = hexToRgb(doc.theme.bg);
   const lbl = hexToRgb(doc.theme.label);
@@ -457,6 +490,7 @@ export function CardCanvas({
               ph={t("Business name")}
               ariaLabel={t("Business name")}
               onInput={(v) => dispatch("text.logoText", { value: v })}
+              {...colorProps("fg")}
               style={{ display: "block", fontSize: 15, fontWeight: 700 }}
             />
           ) : (
@@ -498,6 +532,7 @@ export function CardCanvas({
                       value: v,
                     })
                   }
+                  {...colorProps("label")}
                   style={{ ...labelStyle, display: "block" }}
                 />
                 <Editable
@@ -512,6 +547,7 @@ export function CardCanvas({
                       value: v,
                     })
                   }
+                  {...colorProps("fg")}
                   style={{ display: "block", fontSize: 13, fontWeight: 600 }}
                 />
               </div>
@@ -578,6 +614,7 @@ export function CardCanvas({
             ph="POINTS"
             ariaLabel={t("Label")}
             onInput={(v) => dispatch("text.primaryLabel", { value: v })}
+            {...colorProps("label")}
             style={{ ...labelStyle, display: "block" }}
           />
           <div
@@ -615,6 +652,7 @@ export function CardCanvas({
                 ph="STAMPS"
                 ariaLabel={t("Label")}
                 onInput={(v) => dispatch("text.primaryLabel", { value: v })}
+                {...colorProps("label")}
                 style={{ ...labelStyle, fontSize: 9, display: "block" }}
               />
               <Region
@@ -649,6 +687,7 @@ export function CardCanvas({
                 onInput={(v) =>
                   dispatch("field.set", { list: "fields", id: f.id, key: "label", value: v })
                 }
+                {...colorProps("label")}
                 style={{ ...labelStyle, fontSize: 9, display: "block" }}
               />
               <Editable
@@ -658,6 +697,7 @@ export function CardCanvas({
                 onInput={(v) =>
                   dispatch("field.set", { list: "fields", id: f.id, key: "value", value: v })
                 }
+                {...colorProps("fg")}
                 style={{ display: "block", fontSize: 14, fontWeight: 700, marginTop: 2 }}
               />
             </div>
@@ -691,6 +731,32 @@ export function CardCanvas({
           />
         </div>
       </div>
+      {editable &&
+        colorChip &&
+        createPortal(
+          <div
+            className="lvt-tc-chip"
+            onMouseDown={(e) => e.preventDefault()}
+            style={{
+              position: "fixed",
+              left: Math.min(Math.max(8, colorChip.x), window.innerWidth - 160),
+              top: Math.max(8, colorChip.y - 46),
+              zIndex: 2400,
+              width: 150,
+            }}
+          >
+            <ColorPicker
+              ariaLabel={colorChip.role === "fg" ? t("Text colour") : t("Label colour")}
+              value={colorChip.role === "fg" ? doc.theme.fg : doc.theme.label}
+              onChange={(v) => dispatch("theme.set", { key: colorChip.role, value: v })}
+              onOpenChange={(o) => {
+                if (!o && wheelOpen.current) setColorChip(null);
+                wheelOpen.current = o;
+              }}
+            />
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }

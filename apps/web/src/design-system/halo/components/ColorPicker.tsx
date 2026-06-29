@@ -7,6 +7,10 @@ interface ColorPickerProps {
   onChange: (hex: string) => void;
   id?: string;
   ariaLabel?: string;
+  /** Open the wheel immediately (e.g. clicking the card background = pick bg now). */
+  defaultOpen?: boolean;
+  /** Notified whenever the wheel opens/closes (so a parent can keep its chip mounted). */
+  onOpenChange?: (open: boolean) => void;
 }
 
 /** Curated palette - loyalty-card friendly darks, brand hues, and accents. */
@@ -164,8 +168,15 @@ function dragHandlers(cb: (e: React.PointerEvent) => void) {
  * merchant can land on any exact brand color. Popover is portalled to <body> to
  * escape transformed/blurred ancestors.
  */
-export function ColorPicker({ value, onChange, id, ariaLabel }: ColorPickerProps) {
-  const [open, setOpen] = useState(false);
+export function ColorPicker({
+  value,
+  onChange,
+  id,
+  ariaLabel,
+  defaultOpen,
+  onOpenChange,
+}: ColorPickerProps) {
+  const [open, setOpen] = useState(defaultOpen ?? false);
   const [hex, setHex] = useState(value);
   const [rect, setRect] = useState<{ left: number; top: number } | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -175,6 +186,7 @@ export function ColorPicker({ value, onChange, id, ariaLabel }: ColorPickerProps
 
   ensureStyle();
   useEffect(() => setHex(value), [value]);
+  useEffect(() => onOpenChange?.(open), [open, onOpenChange]);
 
   const [r, g, b] = hexToRgb(value);
   const [h, s, v] = rgbToHsv(r, g, b);
