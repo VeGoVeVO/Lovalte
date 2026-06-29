@@ -7,18 +7,25 @@ COPY package.json package-lock.json tsconfig.base.json ./
 COPY apps/api/package.json apps/api/
 COPY apps/web/package.json apps/web/
 RUN npm ci
-# Compile + copy the forward-only SQL migrations next to the compiled runner,
-# then drop dev dependencies so the runtime image ships prod-only node_modules.
 COPY apps/api apps/api
 RUN npm run build --workspace apps/api \
- && cp -r apps/api/src/db/migrations apps/api/dist/db/migrations \
- && npm prune --omit=dev --workspaces
+ && cp -r apps/api/src/db/migrations apps/api/dist/db/migrations
+
+# ── Production deps (clean install, no prune needed) ─────────────────────────
+# npm prune in a workspace root strips workspace-only hoisted deps (e.g.
+# google-auth-library). A fresh ci --omit=dev is simpler and reliable.
+FROM node:22-alpine AS prod-deps
+WORKDIR /app
+COPY package.json package-lock.json ./
+COPY apps/api/package.json apps/api/
+COPY apps/web/package.json apps/web/
+RUN npm ci --omit=dev
 
 # ── Minimal runtime ──────────────────────────────────────────────────────────
 FROM node:22-alpine AS runtime
 ENV NODE_ENV=production
 WORKDIR /app
-COPY --from=builder --chown=node:node /app/node_modules ./node_modules
+COPY --from=prod-deps --chown=node:node /app/node_modules ./node_modules
 COPY --from=builder --chown=node:node /app/apps/api/dist ./dist
 COPY --from=builder --chown=node:node /app/apps/api/package.json ./package.json
 USER node
