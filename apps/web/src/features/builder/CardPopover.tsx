@@ -155,9 +155,11 @@ export function CardPopover({
       if (!o) onClose();
     },
     placement: "right-start",
-    // fixed strategy + a position reference (set below) = positions correctly from
-    // the clicked element OR a virtual click-point, surviving scroll/portal.
     strategy: "fixed",
+    // Position via top/left, NOT transform: the lvtPopIn entrance animation also
+    // animates `transform` and its `to { transform: none }` would otherwise clobber
+    // Floating UI's positioning transform, snapping the popover to the top-left.
+    transform: false,
     whileElementsMounted: autoUpdate,
     middleware: [
       offset(12),
