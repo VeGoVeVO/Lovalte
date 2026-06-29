@@ -44,11 +44,21 @@ export interface StampStripInput {
   /** Theme colours as hex (#rrggbb). */
   bg: string;
   fg: string;
+  /** Optional background image ref drawn cover-fit behind the stamps. */
+  bgRef?: string | null;
   /** Pre-rendered PNG of the Lucide stamp icon, already foreground-coloured. */
   stampIconPng?: string | null;
   /** Uploaded stamp art refs that override the Lucide icon (optional). */
   stampedRef?: string | null;
   unstampedRef?: string | null;
+}
+
+/** Draw an image to cover WxH, centred (object-fit: cover). */
+function drawCover(ctx: CanvasRenderingContext2D, img: HTMLImageElement, w: number, h: number) {
+  const s = Math.max(w / img.width, h / img.height);
+  const dw = img.width * s;
+  const dh = img.height * s;
+  ctx.drawImage(img, (w - dw) / 2, (h - dh) / 2, dw, dh);
 }
 
 /** Draw one stamp mark (filled when earned, faint when not) inside a box. */
@@ -101,7 +111,8 @@ export async function renderStampFrames(input: StampStripInput): Promise<string[
   const fg = hexToRgb(input.fg);
   const bg = hexToRgb(input.bg);
 
-  const [stampedArt, unstampedArt, icon] = await Promise.all([
+  const [bgImg, stampedArt, unstampedArt, icon] = await Promise.all([
+    input.bgRef ? loadImage(input.bgRef).catch(() => null) : null,
     input.stampedRef ? loadImage(input.stampedRef).catch(() => null) : null,
     input.unstampedRef ? loadImage(input.unstampedRef).catch(() => null) : null,
     input.stampIconPng ? loadImage(input.stampIconPng).catch(() => null) : null,
@@ -130,6 +141,7 @@ export async function renderStampFrames(input: StampStripInput): Promise<string[
     ctx.clearRect(0, 0, STRIP_W, STRIP_H);
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, STRIP_W, STRIP_H);
+    if (bgImg) drawCover(ctx, bgImg, STRIP_W, STRIP_H);
     for (let i = 0; i < goal; i++) {
       const col = i % cols;
       const row = Math.floor(i / cols);

@@ -455,6 +455,8 @@ export const ES: Record<string, string> = {
   "drag to fit": "arrastra para ajustar",
 
   // ── Builder: stamp cards ─────────────────────────────────────────────
+  "Background image (optional)": "Imagen de fondo (opcional)",
+  "Fills the strip behind the stamps.": "Rellena la banda detrás de los sellos.",
   "Stamp icon": "Icono del sello",
   "Stamps to reward": "Sellos para el premio",
   "Stamp art (optional)": "Imágenes del sello (opcional)",

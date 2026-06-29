@@ -145,6 +145,7 @@ export function CardEditor({ initial, onClose }: Props) {
       goal: doc.stampsGoal,
       bg: doc.theme.bg,
       fg: doc.theme.fg,
+      bgRef: doc.hero?.src || null,
       stampIconPng,
       stampedRef: doc.stampedRef || null,
       unstampedRef: doc.unstampedRef || null,
@@ -476,6 +477,20 @@ function Inspector({
 
       {doc.type === "stamps" ? (
         <>
+          <div>
+            <label style={eyebrow}>{t("Background image (optional)")}</label>
+            <AssetField
+              kind="strip"
+              label={t("Background")}
+              hint={t("Fills the strip behind the stamps.")}
+              value={doc.hero?.src ?? ""}
+              onChange={(url) =>
+                url
+                  ? dispatch("image.set", { slot: "hero", src: url })
+                  : dispatch("image.clear", { slot: "hero" })
+              }
+            />
+          </div>
           <div>
             <label style={eyebrow}>{t("Stamp icon")}</label>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>

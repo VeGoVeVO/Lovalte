@@ -375,10 +375,24 @@ export function CardCanvas({
             position: "relative",
             height: width * STRIP_RATIO,
             background: bg,
+            overflow: "hidden",
             cursor: editable ? "pointer" : "default",
             ...ring("primary"),
           }}
         >
+          {doc.hero?.src && (
+            <img
+              src={doc.hero.src}
+              alt=""
+              style={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+              }}
+            />
+          )}
           <StampGrid doc={doc} fg={fg} width={width} />
           {/* Native primary value lives on the left; the grid fills the right. */}
           <div
@@ -391,6 +405,7 @@ export function CardCanvas({
               display: "flex",
               flexDirection: "column",
               justifyContent: "center",
+              textShadow: doc.hero?.src ? "0 1px 6px rgba(0,0,0,.55)" : "none",
             }}
           >
             <div
