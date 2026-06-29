@@ -16,6 +16,8 @@ const schema = z.object({
   APPLE_SIGNER_KEY_PATH: z.string().optional(),
   APPLE_SIGNER_KEY_PASSPHRASE: z.string().optional(),
   APPLE_WWDR_PATH: z.string().optional(),
+  GOOGLE_WALLET_SA_JSON: z.string().optional(),
+  GOOGLE_WALLET_ISSUER_ID: z.string().optional(),
 });
 
 export type AppConfig = z.infer<typeof schema>;
