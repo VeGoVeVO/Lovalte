@@ -3,6 +3,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { DynamicIcon } from "lucide-react/dynamic";
 import { useT } from "../../lib/i18n";
 import type { CardDoc, Slot, FieldList } from "./cardDoc";
+import type { PopAnchor } from "./CardPopover";
 import { hexToRgb } from "./cardDoc";
 import { stampLayout, STRIP_RATIO, GRID_LEFT } from "./stampStrip";
 
@@ -14,7 +15,7 @@ export type SlotKind = "logo" | "colors" | "hero" | "stamps" | "reward" | "back"
 interface Props {
   doc: CardDoc;
   selected?: SlotKind;
-  onSelect?: (s: SlotKind, anchor?: HTMLElement | null) => void;
+  onSelect?: (s: SlotKind, anchor?: PopAnchor) => void;
   dispatch?: (toolId: string, args?: Record<string, unknown>) => void;
   width?: number;
   readOnly?: boolean;
@@ -151,7 +152,7 @@ function ImgSlot({
         borderRadius: round ?? 0,
         overflow: "hidden",
         cursor: editable ? (src ? "grab" : "pointer") : "default",
-        outline: active ? "2.5px solid #3a86ff" : "none",
+        outline: active ? "2.5px solid #5BA7C9" : "none",
         outlineOffset: round ? 1 : -2,
         background: art ?? "rgba(255,255,255,.08)",
         touchAction: editable ? "none" : "auto",
@@ -328,7 +329,7 @@ export function CardCanvas({
         style={{
           cursor: "pointer",
           borderRadius: 8,
-          outline: selected === kind ? "2.5px solid #3a86ff" : "none",
+          outline: selected === kind ? "2.5px solid #5BA7C9" : "none",
           outlineOffset: 3,
           ...style,
         }}
@@ -389,7 +390,14 @@ export function CardCanvas({
 
   return (
     <div
-      onClick={(e) => editable && onSelect("colors", e.currentTarget)}
+      onClick={(e) => {
+        if (!editable) return;
+        // Anchor the colours popover to the click POINT (a 0x0 virtual rect), not
+        // the whole card div — otherwise Floating UI places it off in the corner.
+        const x = e.clientX;
+        const y = e.clientY;
+        onSelect("colors", { getBoundingClientRect: () => new DOMRect(x, y, 0, 0) });
+      }}
       style={{
         width: "100%",
         maxWidth: width,

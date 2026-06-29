@@ -25,7 +25,7 @@ import {
 } from "./cardDoc";
 import type { LoyaltyType } from "./useTemplates";
 import { CardCanvas, type SlotKind } from "./CardCanvas";
-import { CardPopover } from "./CardPopover";
+import { CardPopover, type PopAnchor } from "./CardPopover";
 import { AssetField } from "./AssetField";
 import { IconPicker } from "./IconPicker";
 import { useUploadImage } from "./useImages";
@@ -36,14 +36,31 @@ type Step = "type" | "templates" | "editor";
 
 type Dispatch = (toolId: string, args?: Record<string, unknown>) => void;
 
-/** Popover heading per selected component (text is edited inline on the card). */
-const TITLES: Record<Exclude<SlotKind, null>, string> = {
-  logo: "Logo",
-  colors: "Colours",
-  hero: "Strip photo",
-  stamps: "Stamps",
-  reward: "Reward",
-  back: "Back of the card",
+/**
+ * Per-component popover identity: a distinct icon, caption and accent so each
+ * editor reads as its own designed surface (not one generic box). Text fields
+ * are still edited inline on the card; the popover holds the non-text controls.
+ */
+const SLOT_META: Record<
+  Exclude<SlotKind, null>,
+  { icon: string; title: string; sub: string; accent: string }
+> = {
+  logo: { icon: "image", title: "Logo", sub: "Your brand mark, top-left", accent: "#3FB6D9" },
+  colors: {
+    icon: "palette",
+    title: "Colours",
+    sub: "Background, text & labels",
+    accent: "#8B7BD8",
+  },
+  hero: { icon: "image", title: "Strip photo", sub: "Banner behind the value", accent: "#34B98A" },
+  stamps: { icon: "stamp", title: "Stamps", sub: "Icon, art & background", accent: "#D96BA8" },
+  reward: { icon: "gift", title: "Reward", sub: "Stamps needed to earn it", accent: "#E0954B" },
+  back: {
+    icon: "rotate-ccw",
+    title: "Back of card",
+    sub: "Details on the flip side",
+    accent: "#6E86C8",
+  },
 };
 
 /** A tiny branded square used as the auto Apple icon when no logo was uploaded. */
@@ -64,33 +81,46 @@ function makeIconDataUrl(bg: string, fg: string, name: string): string {
 }
 
 const editorCss = `
-.lvt-be-bar { display:flex; align-items:center; gap:6px; margin-bottom:14px; }
-.lvt-be-tool { width:38px; height:38px; flex:0 0 auto; display:grid; place-items:center; border-radius:11px; line-height:0;
-  border:1px solid var(--border,rgba(20,24,40,.12)); background:var(--card,#fff); color:var(--text,#1c2030);
-  cursor:pointer; box-shadow:0 1px 2px rgba(16,18,27,.05); transition:background .15s, transform .12s; }
-.lvt-be-tool:hover:not(:disabled){ background:rgba(20,24,40,.05); }
-.lvt-be-tool:active:not(:disabled){ transform:scale(.94); }
-.lvt-be-tool:disabled { opacity:.38; cursor:default; }
-.lvt-be-publish { margin-left:auto; height:38px; padding:0 18px; border-radius:11px; border:0; font-weight:700; cursor:pointer;
-  background:linear-gradient(180deg,#3a86ff,#2f6fe0); color:#fff; box-shadow:0 8px 18px -8px rgba(58,134,255,.7); transition:transform .12s; }
-.lvt-be-publish:active:not(:disabled){ transform:scale(.97); }
+.lvt-be-bar { display:flex; align-items:center; gap:8px; margin-bottom:16px; }
+/* Toolbar buttons = the Halo glass material (frosted, edge-lit, lifted). */
+.lvt-be-tool { width:40px; height:40px; flex:0 0 auto; display:grid; place-items:center; border-radius:13px; line-height:0;
+  border:1px solid rgba(255,255,255,.7); color:var(--text,#20242A);
+  background:linear-gradient(180deg, rgba(255,255,255,.9), rgba(255,255,255,.6));
+  -webkit-backdrop-filter:blur(18px) saturate(160%); backdrop-filter:blur(18px) saturate(160%);
+  cursor:pointer; box-shadow:0 1px 0 rgba(255,255,255,.85) inset, 0 6px 16px -10px rgba(46,62,92,.4);
+  transition:transform .12s ease, box-shadow .2s ease, border-color .2s ease; }
+.lvt-be-tool:hover:not(:disabled){ transform:translateY(-1px); box-shadow:0 1px 0 rgba(255,255,255,.95) inset, 0 10px 22px -10px rgba(46,62,92,.5); border-color:rgba(169,245,255,.85); }
+.lvt-be-tool:active:not(:disabled){ transform:translateY(0) scale(.93); }
+.lvt-be-tool:disabled { opacity:.4; cursor:default; }
+.lvt-be-tool:focus-visible { outline:none; box-shadow:0 0 0 4px rgba(169,245,255,.4); }
+/* Publish = holographic CTA echoing the brand mark (cyan -> lavender -> pink). */
+.lvt-be-publish { margin-left:auto; height:40px; padding:0 22px; border-radius:13px; border:0; font-weight:700; font-size:.94rem; cursor:pointer;
+  color:#fff; letter-spacing:.005em; text-shadow:0 1px 2px rgba(24,12,48,.4);
+  background:linear-gradient(135deg, #3E72C0 0%, #6B53C6 48%, #BE3F86 100%);
+  box-shadow:0 1px 0 rgba(255,255,255,.4) inset, 0 10px 26px -10px rgba(107,83,198,.85), 0 2px 6px -2px rgba(190,63,134,.5);
+  transition:transform .12s ease, box-shadow .2s ease, filter .2s ease; }
+.lvt-be-publish:hover:not(:disabled){ transform:translateY(-1px); filter:saturate(1.08) brightness(1.04); box-shadow:0 1px 0 rgba(255,255,255,.5) inset, 0 14px 32px -10px rgba(107,83,198,.95), 0 3px 8px -2px rgba(190,63,134,.6); }
+.lvt-be-publish:active:not(:disabled){ transform:translateY(0) scale(.97); }
 .lvt-be-publish:disabled { opacity:.55; cursor:default; }
+.lvt-be-publish:focus-visible { outline:none; box-shadow:0 0 0 4px rgba(139,123,216,.45); }
 .lvt-be-stage { width: 340px; max-width: 100%; margin: 0 auto; display:flex; flex-direction:column; align-items:center; }
-.lvt-be-hint { margin:16px auto 0; max-width:18rem; text-align:center; color:var(--muted); font-size:.82rem; text-wrap:balance; }
-.lvt-ed { outline:none; cursor:text; border-radius:4px; }
-.lvt-ed:focus { box-shadow:0 0 0 2px rgba(58,134,255,.55); }
+.lvt-be-hint { margin:18px auto 0; max-width:18rem; text-align:center; color:var(--muted); font-size:.82rem; text-wrap:balance; }
+.lvt-ed { outline:none; cursor:text; border-radius:5px; transition:box-shadow .15s ease; }
+.lvt-ed:focus { box-shadow:0 0 0 2px rgba(169,245,255,.85); }
 .lvt-ed[data-ph]:empty::before { content: attr(data-ph); opacity:.5; }
 .lvt-be-rail { display:flex; gap:16px; overflow-x:auto; scroll-snap-type:x mandatory; padding:10px calc(50% - 130px) 18px;
   -webkit-overflow-scrolling:touch; }
 .lvt-be-rail::-webkit-scrollbar{ display:none; }
 .lvt-be-slide { flex:0 0 auto; scroll-snap-align:center; cursor:pointer; border:0; background:none; padding:0;
-  transition:transform .2s; }
-.lvt-be-slide:hover{ transform:translateY(-4px); }
-.lvt-be-iconbtn{ width:38px; height:38px; border-radius:10px; border:1px solid rgba(20,24,40,.12); background:#fff;
-  display:grid; place-items:center; }
+  transition:transform .22s var(--ease,cubic-bezier(.22,1,.36,1)); }
+.lvt-be-slide:hover{ transform:translateY(-6px) scale(1.015); }
+.lvt-be-iconbtn{ width:40px; height:40px; border-radius:11px; border:1px solid rgba(255,255,255,.7);
+  background:linear-gradient(180deg, rgba(255,255,255,.9), rgba(255,255,255,.6)); color:var(--text,#20242A);
+  -webkit-backdrop-filter:blur(14px) saturate(160%); backdrop-filter:blur(14px) saturate(160%);
+  display:grid; place-items:center; box-shadow:0 1px 0 rgba(255,255,255,.85) inset; }
 .lvt-be-eyebrow{ font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin:0 0 6px; display:block; }
 .lvt-be-row{ display:flex; align-items:center; gap:10px; }
-@media (prefers-reduced-motion:reduce){ .lvt-be-slide{ transition:none; } }
+@media (prefers-reduced-motion:reduce){ .lvt-be-slide, .lvt-be-tool, .lvt-be-publish, .lvt-ed{ transition:none; } }
 `;
 
 interface Props {
@@ -121,7 +151,7 @@ export function CardEditor({ initial, onClose }: Props) {
   const [idx, setIdx] = useState(existing ? 0 : -1);
   const [savedId, setSavedId] = useState<string | null>(existing?.id ?? null);
   const [sel, setSel] = useState<SlotKind>(null);
-  const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+  const [anchor, setAnchor] = useState<PopAnchor>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [iconPicker, setIconPicker] = useState(false);
   const doc = hist[idx];
@@ -140,7 +170,7 @@ export function CardEditor({ initial, onClose }: Props) {
   };
   const undo = () => setIdx((n) => Math.max(0, n - 1));
   const redo = () => setIdx((n) => Math.min(hist.length - 1, n + 1));
-  const select = (s: SlotKind, el?: HTMLElement | null) => {
+  const select = (s: SlotKind, el?: PopAnchor) => {
     setSel(s);
     setAnchor(el ?? null);
   };
@@ -428,7 +458,10 @@ export function CardEditor({ initial, onClose }: Props) {
         anchor={anchor}
         open={!!sel && !iconPicker}
         onClose={closePop}
-        title={sel ? t(TITLES[sel]) : ""}
+        title={sel ? t(SLOT_META[sel].title) : ""}
+        subtitle={sel ? t(SLOT_META[sel].sub) : undefined}
+        accent={sel ? SLOT_META[sel].accent : undefined}
+        icon={sel ? <DynamicIcon name={SLOT_META[sel].icon as never} size={17} /> : undefined}
       >
         {sel && (
           <ComponentEditor
@@ -596,32 +629,31 @@ function ComponentEditor({
 
   if (sel === "reward") {
     return (
-      <div>
+      <div style={{ minWidth: 230 }}>
         <label className="lvt-be-eyebrow">{t("Stamps to reward")}</label>
-        <div className="lvt-be-row">
+        <div className="lvt-pop-step" role="group" aria-label={t("Stamps to reward")}>
           <button
             type="button"
-            className="btn ghost"
             aria-label={t("Fewer")}
+            disabled={doc.stampsGoal <= 1}
             onClick={() => dispatch("stamps.goal", { goal: doc.stampsGoal - 1 })}
           >
             −
           </button>
-          <strong style={{ minWidth: 24, textAlign: "center", fontVariantNumeric: "tabular-nums" }}>
+          <span className="val" aria-live="polite">
             {doc.stampsGoal}
-          </strong>
+          </span>
           <button
             type="button"
-            className="btn ghost"
             aria-label={t("More")}
             onClick={() => dispatch("stamps.goal", { goal: doc.stampsGoal + 1 })}
           >
-            ＋
+            +
           </button>
         </div>
         <p
           className="body"
-          style={{ fontSize: ".72rem", color: "var(--muted)", margin: "8px 0 0" }}
+          style={{ fontSize: ".72rem", color: "var(--muted)", margin: "10px 0 0" }}
         >
           {t("Edit the label by typing on the card.")}
         </p>
@@ -635,7 +667,7 @@ function ComponentEditor({
       <div>
         <label className="lvt-be-eyebrow">{t("Stamp icon")}</label>
         <div className="lvt-be-row">
-          <span className="lvt-be-iconbtn">
+          <span className="lvt-pop-iconbtn">
             <DynamicIcon name={doc.stampIcon as never} size={20} />
           </span>
           <button type="button" className="btn ghost" onClick={onPickStampIcon}>

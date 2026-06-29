@@ -54,6 +54,10 @@ html, body { overflow-x: hidden; }
 .lvt-press { transition: transform .12s ease; }
 .lvt-press:active { transform: scale(.97); }
 
+/* The dev version badge sits bottom-right; on mobile that collides with the
+   bottom tab bar's last item ("Scan"), so hide it on small screens. */
+@media (max-width: 767px) { .lvt-ver { display: none; } }
+
 @media (prefers-reduced-motion: reduce) {
   .lvt-rise, .lvt-fade, .lvt-pop, .lvt-stagger > *, .lvt-press { animation: none !important; transition: none !important; }
 }

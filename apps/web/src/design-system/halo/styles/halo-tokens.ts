@@ -213,11 +213,9 @@ export const css = `
   padding:.6rem .7rem .6rem 1.1rem; border-radius:var(--r-pill); }
 .halo .brand{ display:flex; align-items:center; gap:.6rem; font-weight:600;
   letter-spacing:-.02em; font-size:1.05rem; }
-.halo .brand .dot{ width:24px; height:24px; border-radius:50%;
-  background:radial-gradient(60% 60% at 35% 30%, #fff, rgba(255,255,255,.4) 50%, transparent 72%),
-    radial-gradient(120% 120% at 70% 80%, rgba(200,238,255,.9), transparent 60%),
-    radial-gradient(120% 120% at 20% 80%, rgba(229,216,255,.7), transparent 60%), rgba(255,255,255,.6);
-  box-shadow:0 1px 0 rgba(255,255,255,.9) inset, 0 4px 10px -4px rgba(46,62,92,.4); }
+.halo .brand .dot{ width:30px; height:30px; flex:0 0 auto; border-radius:9px;
+  background:url('/lovalte-mark.png') center/contain no-repeat;
+  filter:drop-shadow(0 4px 10px -4px rgba(46,62,92,.4)); }
 .halo .navlinks{ display:flex; align-items:center; gap:.4rem; }
 .halo .navlinks a{ color:var(--muted); text-decoration:none; font-size:.95rem; font-weight:450;
   padding:.5rem .85rem; border-radius:var(--r-pill); transition:color var(--d) var(--ease),

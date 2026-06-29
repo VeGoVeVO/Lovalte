@@ -100,9 +100,14 @@ const CSS = `
 .lvt-cp-trigger:focus-visible{ outline:none; border-color:#5BA7C9; box-shadow:0 0 0 3px rgba(91,167,201,.26); }
 .lvt-cp-sw{ width:26px; height:26px; border-radius:7px; flex-shrink:0; border:1px solid rgba(0,0,0,.18); box-shadow:inset 0 0 0 1px rgba(255,255,255,.25); }
 .lvt-cp-hex{ font-variant-numeric:tabular-nums; letter-spacing:.02em; text-transform:uppercase; color:var(--muted,#6F7684); overflow:hidden; text-overflow:ellipsis; }
-.lvt-cp-pop{ position:fixed; z-index:2500; background:#fff; border:1px solid rgba(20,24,32,.12);
-  border-radius:14px; box-shadow:0 18px 50px -20px rgba(16,18,27,.5); padding:.85rem; width:248px;
+.lvt-cp-pop{ position:fixed; z-index:2500;
+  background:linear-gradient(180deg, rgba(255,255,255,.94), rgba(255,255,255,.82));
+  -webkit-backdrop-filter:blur(30px) saturate(185%); backdrop-filter:blur(30px) saturate(185%);
+  border:1px solid rgba(255,255,255,.72);
+  border-radius:16px; padding:.85rem; width:248px;
+  box-shadow:0 1px 0 rgba(255,255,255,.85) inset, 0 24px 60px -22px rgba(16,18,40,.5), 0 2px 8px -3px rgba(16,18,40,.14);
   animation:lvtPop .14s ease-out both; }
+@media (prefers-reduced-transparency:reduce){ .lvt-cp-pop{ background:#fff; -webkit-backdrop-filter:none; backdrop-filter:none; } }
 .lvt-cp-sq{ position:relative; height:120px; border-radius:10px; cursor:crosshair; touch-action:none; }
 .lvt-cp-hue{ position:relative; height:14px; border-radius:8px; margin-top:.55rem; cursor:pointer; touch-action:none;
   background:linear-gradient(to right,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00); }

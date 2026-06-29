@@ -147,14 +147,13 @@ export function AppShell({ title, children }: { title?: string; children: ReactN
             className="brand"
             style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: ".5rem" }}
           >
-            <span
+            <img
+              src="/lovalte-mark.png"
+              alt=""
               aria-hidden="true"
-              style={{
-                width: 12,
-                height: 12,
-                borderRadius: "50%",
-                background: "linear-gradient(135deg,#A9F5FF,#5BA7C9)",
-              }}
+              width={26}
+              height={26}
+              style={{ display: "block", borderRadius: 7, flexShrink: 0 }}
             />
             <span style={{ fontWeight: 600, color: "var(--text)" }}>Lovalte</span>
           </Link>

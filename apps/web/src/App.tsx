@@ -39,6 +39,7 @@ export function App() {
       </Routes>
       <span
         aria-hidden="true"
+        className="lvt-ver"
         style={{
           position: "fixed",
           bottom: "calc(6px + env(safe-area-inset-bottom, 0px))",
