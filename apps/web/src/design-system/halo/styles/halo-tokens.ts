@@ -202,7 +202,7 @@ export const css = `
   letter-spacing:-.035em; margin:0; }
 .halo h2.section{ font-size:clamp(1.95rem,3.8vw,2.35rem); line-height:1.12; font-weight:500;
   letter-spacing:-.025em; margin:0; }
-.halo h3.cardt{ font-size:1.375rem; font-weight:500; letter-spacing:-.015em; margin:0; }
+.halo .cardt{ font-size:1.375rem; font-weight:500; letter-spacing:-.015em; margin:0; }
 .halo .lead{ font-size:clamp(1.05rem,1.5vw,1.22rem); color:var(--muted); line-height:1.6;
   font-weight:400; }
 .halo .body{ font-size:1.0625rem; color:var(--muted); line-height:1.62; }

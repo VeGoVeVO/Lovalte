@@ -17,17 +17,17 @@ type RedeemResult = {
 };
 
 const scanCss = `
-.scan-view { position: relative; margin-top: .75rem; border-radius: var(--r-card,16px); overflow: hidden; background:#0b0d12; }
+.scan-view { position: relative; margin-top: .75rem; border-radius: var(--r-card,24px); overflow: hidden; background:#0b0d12; }
 .scan-view video { width:100%; max-height:340px; object-fit:cover; display:block; }
 .scan-frame { position:absolute; inset:14%; border-radius:14px; border:2px solid rgba(255,255,255,.85);
   box-shadow: 0 0 0 1000px rgba(8,10,16,.30); pointer-events:none; }
 .scan-line { position:absolute; left:14%; right:14%; height:2px; border-radius:2px;
-  background:linear-gradient(90deg,transparent,#A9F5FF,transparent); box-shadow:0 0 10px #A9F5FF;
+  background:linear-gradient(90deg,transparent,var(--cyan),transparent); box-shadow:0 0 10px var(--cyan);
   animation: scanline 2.1s ease-in-out infinite; }
 @keyframes scanline { 0%,100%{ top:16%; } 50%{ top:82%; } }
-.scan-detected { text-align:center; margin-bottom:1rem; }
+.scan-detected { text-align:center; }
 .scan-crop-wrap { position:relative; width:128px; height:128px; margin:0 auto; }
-.scan-crop { width:128px; height:128px; border-radius:14px; object-fit:cover; background:#fff;
+.scan-crop { width:128px; height:128px; border-radius:14px; object-fit:cover; background:var(--bg,#FCFCFD);
   box-shadow:0 10px 26px -10px rgba(0,0,0,.4); animation: scanpop .35s cubic-bezier(.2,.8,.3,1.2) both; }
 .scan-ring { position:absolute; inset:-7px; border-radius:18px; border:3px solid rgb(0,180,120); animation: scanring .55s ease-out both; }
 .scan-check { position:absolute; right:-8px; bottom:-8px; width:34px; height:34px; border-radius:50%;
@@ -109,9 +109,20 @@ export function ScanPage() {
   return (
     <AppShell title={t("Scan a card")}>
       <style>{scanCss}</style>
-      <GlassCard light className="waitlist" style={{ maxWidth: 480 }}>
+      <GlassCard
+        light
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "1.25rem",
+          padding: "clamp(1.5rem,4vw,2.5rem)",
+          maxWidth: 480,
+          margin: "0 auto",
+          borderRadius: "var(--r-card)",
+        }}
+      >
         {/* Context line */}
-        <p className="body" style={{ marginBottom: "1.25rem" }}>
+        <p className="body" style={{ textAlign: "left" }}>
           {showManualFallback
             ? status === "denied"
               ? t("Camera access was denied. Paste the QR token below to continue.")
@@ -121,7 +132,7 @@ export function ScanPage() {
 
         {/* ── Camera section (hidden when in manual-fallback mode or after detection) */}
         {!showManualFallback && !detectedToken && (
-          <div>
+          <>
             {status === "idle" && (
               <GlassButton onClick={startCamera} aria-label={t("Start camera to scan a QR code")}>
                 {t("Start Camera")}
@@ -144,24 +155,19 @@ export function ScanPage() {
                 <div className="scan-frame" aria-hidden="true" />
                 <div className="scan-line" aria-hidden="true" />
               </div>
-              <p
-                className="meta"
-                style={{ textAlign: "center", margin: "0.6rem 0 0", fontSize: "0.8rem" }}
-              >
+              <p className="eyebrow" style={{ textAlign: "center", margin: "0.6rem 0 0" }}>
                 {t("Hold the customer's card QR inside the frame")}
               </p>
-              <div style={{ marginTop: "0.75rem", textAlign: "center" }}>
-                <GlassButton variant="ghost" onClick={stopCamera} aria-label={t("Stop the camera")}>
-                  {t("Stop Camera")}
-                </GlassButton>
-              </div>
+              <GlassButton variant="ghost" onClick={stopCamera} aria-label={t("Stop the camera")}>
+                {t("Stop Camera")}
+              </GlassButton>
             </div>
-          </div>
+          </>
         )}
 
         {/* ── Manual fallback input */}
         {showManualFallback && !detectedToken && (
-          <div style={{ marginBottom: "1rem" }}>
+          <>
             <label
               htmlFor="qr-token-input"
               className="meta"
@@ -183,7 +189,7 @@ export function ScanPage() {
               disabled={mutation.isPending}
               autoComplete="off"
             />
-          </div>
+          </>
         )}
 
         {/* ── Detected: auto-cropped QR + success animation (camera path) */}
@@ -212,7 +218,7 @@ export function ScanPage() {
                 </svg>
               </span>
             </div>
-            <p className="meta" style={{ marginTop: "0.7rem" }}>
+            <p className="eyebrow" style={{ marginTop: "0.7rem" }}>
               {t("Card detected - award or redeem below.")}
             </p>
           </div>
@@ -220,10 +226,7 @@ export function ScanPage() {
 
         {/* ── Action buttons (shown whenever we have a usable token) */}
         {activeToken && (
-          <div
-            className="hero-actions"
-            style={{ flexWrap: "wrap", gap: "0.6rem", marginTop: "0.75rem" }}
-          >
+          <div className="hero-actions" style={{ justifyContent: "center" }}>
             <GlassButton
               onClick={() => handleAction("award")}
               disabled={mutation.isPending}
@@ -259,7 +262,6 @@ export function ScanPage() {
           aria-atomic="true"
           className="body"
           style={{
-            marginTop: "1rem",
             minHeight: "1.5em",
             color: mutation.isError ? "var(--c-err, #e53935)" : undefined,
           }}

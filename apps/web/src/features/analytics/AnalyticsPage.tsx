@@ -58,9 +58,9 @@ const KPIS: Array<{ key: keyof Overview; label: string }> = [
 ];
 
 const ROLE_BG: Record<UserRole, string> = {
-  owner: "var(--mint)",
-  manager: "var(--lavender)",
-  staff: "var(--ice)",
+  owner: "rgba(200,255,216,.35)",
+  manager: "rgba(229,216,255,.35)",
+  staff: "rgba(200,238,255,.28)",
 };
 
 /* ─── helpers ────────────────────────────────────────────────────── */
@@ -77,21 +77,7 @@ function daysAgo(n: number): Date {
 
 /* ─── styles ─────────────────────────────────────────────────────── */
 
-const kpiGridCss = `
-  .analytics-kpi-grid { grid-template-columns: repeat(4, 1fr) !important; }
-  @media (max-width: 900px) {
-    .analytics-kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
-  }
-  @media (max-width: 480px) {
-    .analytics-kpi-grid { grid-template-columns: 1fr !important; }
-  }
-`;
-
 const layoutCss = `
-@keyframes lvt-staff-in {
-  from { opacity: 0; transform: translateX(20px); }
-  to   { opacity: 1; transform: translateX(0); }
-}
 .lvt-analytics-wrap {
   display: flex;
   gap: 1.5rem;
@@ -126,31 +112,11 @@ const layoutCss = `
   transition: opacity 300ms cubic-bezier(.22,1,.36,1) 60ms,
               transform 300ms cubic-bezier(.22,1,.36,1) 60ms;
 }
-.lvt-team-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: .45rem;
-  font-size: .85rem;
-  font-weight: 500;
-  padding: .42rem .9rem;
-  border-radius: var(--r-pill);
-  border: 1px solid rgba(255,255,255,.65);
-  background: rgba(255,255,255,.45);
-  -webkit-backdrop-filter: blur(16px) saturate(160%);
-  backdrop-filter: blur(16px) saturate(160%);
-  box-shadow: 0 1px 0 rgba(255,255,255,.7) inset, 0 2px 8px -4px rgba(46,62,92,.12);
-  cursor: pointer;
-  color: var(--text);
-  transition: background 220ms ease, transform 180ms ease, box-shadow 220ms ease;
+@media (max-width: 900px) {
+  .lvt-kpi-grid { grid-template-columns: repeat(2,1fr) !important; }
 }
-.lvt-team-btn:hover {
-  background: rgba(255,255,255,.62);
-  transform: translateY(-1px);
-  box-shadow: 0 1px 0 rgba(255,255,255,.8) inset, 0 4px 14px -6px rgba(46,62,92,.18);
-}
-.lvt-team-btn.active {
-  background: rgba(200,238,255,.38);
-  border-color: rgba(169,245,255,.55);
+@media (max-width: 560px) {
+  .lvt-kpi-grid { grid-template-columns: 1fr !important; }
 }
 @media (max-width: 767px) {
   .lvt-analytics-wrap { flex-direction: column; }
@@ -169,10 +135,14 @@ const layoutCss = `
 
 function StaffSidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { t } = useT();
-  const { data: users, isLoading, isError } = useQuery({
+  const {
+    data: users,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ["staff-users"],
     queryFn: () => api.get<UserDTO[]>("/api/v1/users"),
-    enabled: open,  // only fetch once sidebar is opened
+    enabled: open, // only fetch once sidebar is opened
     staleTime: 60_000,
   });
 
@@ -184,132 +154,132 @@ function StaffSidebar({ open, onClose }: { open: boolean; onClose: () => void })
       aria-hidden={!open}
     >
       {/* Always mounted — parent width transition handles show/hide smoothly */}
-        <div className="lvt-staff-inner">
-          <GlassCard light className="feature" style={{ padding: "1.25rem 1.1rem" }}>
-            {/* header */}
-            <div
+      <div className="lvt-staff-inner">
+        <GlassCard light className="feature" style={{ padding: "1.25rem 1.1rem" }}>
+          {/* header */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "1rem",
+            }}
+          >
+            <h2 className="cardt" style={{ fontSize: "1rem" }}>
+              {t("Team")}
+            </h2>
+            <button
+              type="button"
+              className="btn ghost"
+              onClick={onClose}
+              aria-label={t("Close team panel")}
+              style={{ padding: "0.3rem 0.55rem", fontSize: "0.82rem", lineHeight: 1 }}
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 14 14"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                aria-hidden="true"
+              >
+                <path d="M1 1l12 12M13 1L1 13" />
+              </svg>
+            </button>
+          </div>
+
+          {/* list */}
+          {isLoading ? (
+            <p className="body" aria-busy="true" style={{ fontSize: "0.85rem", margin: 0 }}>
+              {t("Loading…")}
+            </p>
+          ) : isError ? (
+            <p className="body" role="alert" style={{ fontSize: "0.82rem", margin: 0 }}>
+              {t("Could not load team.")}
+            </p>
+          ) : !users?.length ? (
+            <p className="body" style={{ fontSize: "0.85rem", margin: 0 }}>
+              {t("No team members yet.")}
+            </p>
+          ) : (
+            <ul
+              role="list"
+              aria-label={t("Team members")}
               style={{
+                listStyle: "none",
+                margin: 0,
+                padding: 0,
                 display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "1rem",
+                flexDirection: "column",
+                gap: "0.45rem",
               }}
             >
-              <h2 className="cardt" style={{ fontSize: "1rem" }}>
-                {t("Team")}
-              </h2>
-              <button
-                type="button"
-                className="btn ghost"
-                onClick={onClose}
-                aria-label={t("Close team panel")}
-                style={{ padding: "0.3rem 0.55rem", fontSize: "0.82rem", lineHeight: 1 }}
-              >
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 14 14"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  aria-hidden="true"
-                >
-                  <path d="M1 1l12 12M13 1L1 13" />
-                </svg>
-              </button>
-            </div>
-
-            {/* list */}
-            {isLoading ? (
-              <p className="body" aria-busy="true" style={{ fontSize: "0.85rem", margin: 0 }}>
-                {t("Loading…")}
-              </p>
-            ) : isError ? (
-              <p className="body" role="alert" style={{ fontSize: "0.82rem", margin: 0 }}>
-                {t("Could not load team.")}
-              </p>
-            ) : !users?.length ? (
-              <p className="body" style={{ fontSize: "0.85rem", margin: 0 }}>
-                {t("No team members yet.")}
-              </p>
-            ) : (
-              <ul
-                role="list"
-                aria-label={t("Team members")}
-                style={{
-                  listStyle: "none",
-                  margin: 0,
-                  padding: 0,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "0.45rem",
-                }}
-              >
-                {users.map((user) => (
-                  <li key={user.userId}>
+              {users.map((user) => (
+                <li key={user.userId}>
+                  <div
+                    className="glass"
+                    style={{
+                      padding: "0.7rem 0.9rem",
+                      borderRadius: "14px",
+                    }}
+                  >
                     <div
-                      className="glass"
                       style={{
-                        padding: "0.7rem 0.9rem",
-                        borderRadius: "14px",
+                        fontWeight: 500,
+                        fontSize: "0.86rem",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
                       }}
                     >
-                      <div
+                      {user.email}
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "0.35rem",
+                        marginTop: "0.3rem",
+                        alignItems: "center",
+                      }}
+                    >
+                      <span
                         style={{
-                          fontWeight: 500,
-                          fontSize: "0.86rem",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
+                          fontSize: "0.66rem",
+                          fontWeight: 600,
+                          padding: "0.15rem 0.5rem",
+                          borderRadius: "var(--r-pill)",
+                          background: ROLE_BG[user.role] ?? "rgba(0,0,0,.06)",
+                          color: "var(--text)",
+                          textTransform: "capitalize",
+                          letterSpacing: "0.01em",
                         }}
                       >
-                        {user.email}
-                      </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: "0.35rem",
-                          marginTop: "0.3rem",
-                          alignItems: "center",
-                        }}
-                      >
+                        {user.role}
+                      </span>
+                      {user.status !== "active" && (
                         <span
                           style={{
-                            fontSize: "0.66rem",
-                            fontWeight: 600,
-                            padding: "0.15rem 0.5rem",
+                            fontSize: "0.63rem",
+                            color: "var(--muted)",
+                            padding: "0.1rem 0.45rem",
                             borderRadius: "var(--r-pill)",
-                            background: ROLE_BG[user.role] ?? "rgba(0,0,0,.06)",
-                            color: "var(--text)",
+                            background: "rgba(0,0,0,.05)",
                             textTransform: "capitalize",
-                            letterSpacing: "0.01em",
                           }}
                         >
-                          {user.role}
+                          {user.status}
                         </span>
-                        {user.status !== "active" && (
-                          <span
-                            style={{
-                              fontSize: "0.63rem",
-                              color: "var(--muted)",
-                              padding: "0.1rem 0.45rem",
-                              borderRadius: "var(--r-pill)",
-                              background: "rgba(0,0,0,.05)",
-                              textTransform: "capitalize",
-                            }}
-                          >
-                            {user.status}
-                          </span>
-                        )}
-                      </div>
+                      )}
                     </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </GlassCard>
-        </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </GlassCard>
+      </div>
     </aside>
   );
 }
@@ -343,14 +313,14 @@ export function AnalyticsPage() {
 
   return (
     <AppShell title={t("Analytics")}>
-      <style>{kpiGridCss}</style>
       <style>{layoutCss}</style>
 
       {/* team toggle */}
       <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "1.5rem" }}>
         <button
           type="button"
-          className={`lvt-team-btn${staffOpen ? " active" : ""}`}
+          className="btn"
+          style={staffOpen ? { background: "rgba(200,238,255,.38)" } : undefined}
           onClick={() => setStaffOpen((o) => !o)}
           aria-expanded={staffOpen}
           aria-controls="staff-sidebar"
@@ -383,16 +353,24 @@ export function AnalyticsPage() {
             </h2>
 
             {overview.isError && (
-              <div role="alert" className="glass feature" style={{ marginBottom: "1.5rem" }}>
+              <GlassCard role="alert" style={{ padding: "0.85rem 1.1rem", marginBottom: "1.5rem" }}>
                 <p className="body" style={{ margin: 0 }}>
                   {t("Unable to load overview data - please refresh or sign in.")}
                 </p>
-              </div>
+              </GlassCard>
             )}
 
             <ul
-              className="grid-3 analytics-kpi-grid"
-              style={{ gap: "1.5rem", listStyle: "none", padding: 0, margin: "0 0 2.5rem" }}
+              role="list"
+              className="lvt-kpi-grid"
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(4,1fr)",
+                gap: "1.5rem",
+                listStyle: "none",
+                padding: 0,
+                margin: "0 0 2.5rem",
+              }}
               aria-label={t("Key performance indicators")}
             >
               {KPIS.map((kpi) => {
@@ -428,7 +406,7 @@ export function AnalyticsPage() {
                 display: "flex",
                 flexWrap: "wrap",
                 gap: "1.25rem",
-                alignItems: "flex-start",
+                alignItems: "center",
                 justifyContent: "space-between",
                 marginBottom: "1.75rem",
               }}
@@ -444,8 +422,14 @@ export function AnalyticsPage() {
                 <div role="group" aria-labelledby="metric-group-label">
                   <span
                     id="metric-group-label"
-                    className="eyebrow"
-                    style={{ display: "block", marginBottom: ".5rem" }}
+                    style={{
+                      position: "absolute",
+                      width: 1,
+                      height: 1,
+                      overflow: "hidden",
+                      clip: "rect(0,0,0,0)",
+                      whiteSpace: "nowrap",
+                    }}
                   >
                     {t("Metric")}
                   </span>
@@ -469,8 +453,14 @@ export function AnalyticsPage() {
                 <div role="group" aria-labelledby="range-group-label">
                   <span
                     id="range-group-label"
-                    className="eyebrow"
-                    style={{ display: "block", marginBottom: ".5rem" }}
+                    style={{
+                      position: "absolute",
+                      width: 1,
+                      height: 1,
+                      overflow: "hidden",
+                      clip: "rect(0,0,0,0)",
+                      whiteSpace: "nowrap",
+                    }}
                   >
                     {t("Range")}
                   </span>

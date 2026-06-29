@@ -34,7 +34,7 @@ const CHART_HEIGHT = 260;
 const tooltipContentStyle: React.CSSProperties = {
   background: "var(--card-strong)",
   border: "1px solid var(--border)",
-  borderRadius: "12px",
+  borderRadius: "var(--r-btn)",
   backdropFilter: "blur(20px)",
   WebkitBackdropFilter: "blur(20px)",
   color: "var(--text)",
@@ -109,10 +109,10 @@ export function MetricsChart({ data, metricLabel, isLoading, isError }: MetricsC
           <Line
             type="monotone"
             dataKey="count"
-            stroke="var(--text)"
+            stroke="#6EC6FF"
             strokeWidth={1.5}
             dot={false}
-            activeDot={{ r: 4, fill: "var(--text)", stroke: "var(--card)", strokeWidth: 2 }}
+            activeDot={{ r: 4, fill: "#6EC6FF", stroke: "var(--bg)", strokeWidth: 2 }}
           />
         </LineChart>
       </ResponsiveContainer>
