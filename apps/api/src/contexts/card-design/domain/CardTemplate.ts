@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { AggregateRoot, UniqueId, DomainError } from "../../../kernel";
+import { AggregateRoot, UniqueId } from "../../../kernel";
 import { BrandConfig } from "./BrandConfig";
 import { RewardRule } from "./RewardRule";
 
@@ -27,8 +27,10 @@ export interface CardTemplateProps {
 
 /**
  * CardTemplate aggregate root.
- * State machine: draft → published (one-way). Published templates are immutable;
- * to make changes the merchant creates a new template version.
+ * State machine: draft → published. Once published, the merchant can edit brand
+ * config (updateBrand) and re-publish; each re-publish bumps the version and
+ * re-emits CardTemplatePublished so the pass-issuance context refreshes all
+ * issued passes.
  */
 export class CardTemplate extends AggregateRoot<CardTemplateId> {
   private _tenantId: string;
@@ -81,13 +83,12 @@ export class CardTemplate extends AggregateRoot<CardTemplateId> {
   }
 
   /**
-   * Update brand config and reward rule. Only allowed in draft status.
+   * Update brand config and reward rule. Allowed in both draft and published
+   * status — published edits are staged and take effect on the next publish()
+   * call, which bumps the version and triggers a pass refresh for all holders.
    * Emits CardTemplateSaved.
    */
   updateBrand(brand: BrandConfig, rewardRule: RewardRule, name?: string): void {
-    if (this._status !== "draft") {
-      throw new DomainError("Only draft templates can be updated", "TEMPLATE_NOT_DRAFT");
-    }
     this._brand = brand;
     this._rewardRule = rewardRule;
     if (name !== undefined) this._name = name;
@@ -99,12 +100,11 @@ export class CardTemplate extends AggregateRoot<CardTemplateId> {
 
   /**
    * Register an uploaded asset ref (icon, logo, strip) on the brand config.
-   * Only allowed in draft status.
+   * Allowed in draft and published status (published edits take effect on the
+   * next publish, alongside updateBrand) so a merchant can swap the logo/strip
+   * of a live card and re-publish it to all holders.
    */
   applyAssetRef(kind: "icon" | "logo" | "strip", ref: string): void {
-    if (this._status !== "draft") {
-      throw new DomainError("Only draft templates can have assets updated", "TEMPLATE_NOT_DRAFT");
-    }
     const params = this._brand.toParams();
     if (kind === "icon") params.iconRef = ref;
     else if (kind === "logo") params.logoRef = ref;
@@ -131,12 +131,12 @@ export class CardTemplate extends AggregateRoot<CardTemplateId> {
 
   /**
    * Publish this template. Runs domain validation (field counts, colors, required icon),
-   * increments version, transitions to published, emits CardTemplatePublished.
+   * increments version, transitions to (or stays at) published, emits CardTemplatePublished.
+   * When the template is already published this acts as a "re-publish": the version is
+   * bumped again and the event is re-emitted so the pass-issuance context refreshes all
+   * issued passes with the updated design.
    */
   publish(): void {
-    if (this._status === "published") {
-      throw new DomainError("Template is already published", "ALREADY_PUBLISHED");
-    }
     this._brand.validate();
     this._version += 1;
     this._status = "published";

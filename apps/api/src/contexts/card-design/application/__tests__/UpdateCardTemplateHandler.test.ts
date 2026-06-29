@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { UpdateCardTemplateHandler } from "../UpdateCardTemplateHandler";
 import type { ICardTemplateRepository } from "../ICardTemplateRepository";
 import type { DomainEventBus, DomainEvent } from "../../../../kernel";
-import { NotFoundError, DomainError, ValidationError } from "../../../../kernel";
+import { NotFoundError, ValidationError } from "../../../../kernel";
 import { CardTemplate, CardTemplateId } from "../../domain/CardTemplate";
 import { BrandConfig } from "../../domain/BrandConfig";
 import { RewardRule } from "../../domain/RewardRule";
@@ -139,17 +139,17 @@ describe("UpdateCardTemplateHandler", () => {
     expect(bus.published).toHaveLength(0);
   });
 
-  it("returns DomainError with code TEMPLATE_NOT_DRAFT when updating a published template", async () => {
+  it("succeeds when updating a published template (staged for next publish)", async () => {
     const bus = makeBus();
     const handler = new UpdateCardTemplateHandler(makeRepo(makePublishedTemplate()), bus);
 
     const result = await handler.execute(UPDATE_INPUT);
 
-    expect(result.ok).toBe(false);
-    if (result.ok) return;
-    expect(result.error).toBeInstanceOf(DomainError);
-    expect((result.error as DomainError).code).toBe("TEMPLATE_NOT_DRAFT");
-    expect(bus.published).toHaveLength(0);
+    // updateBrand is now allowed on published templates; status stays published.
+    expect(result.ok).toBe(true);
+    // CardTemplateSaved is emitted so the builder UI can reflect saved state.
+    expect(bus.published).toHaveLength(1);
+    expect(bus.published[0].name).toBe("CardTemplateSaved");
   });
 
   it("returns ValidationError when a hex color is supplied in the update input", async () => {

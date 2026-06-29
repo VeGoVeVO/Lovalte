@@ -12,13 +12,14 @@ import { CreateEnrollLinkHandler } from "./application/CreateEnrollLinkHandler";
 import { PublicEnrollHandler } from "./application/PublicEnrollHandler";
 import { registerPassRoutes } from "./presentation/routes";
 
-// Deprecated-card design applied to every pass when its template is deleted: a
-// neutral Lovalte snapshot plus a "no longer valid" message (Spanish, the
-// product locale). The existing icon in the snapshot is kept so the pass stays
-// Apple-valid; voiding greys it out in Wallet.
+// Branded deprecation card shown to holders when a merchant deletes a template.
+// Styled as a polished Lovalte card (deep navy, white text) so it looks intentional,
+// and includes a friendly Spanish promo nudging the holder to create their own cards.
+// The existing icon in the snapshot is kept so the pass stays Apple-valid; voiding
+// greys it out in Wallet automatically.
 const DEPRECATED_FIELD_DEFS: FieldDefinition[] = [
   { key: "estado", label: "Estado", region: "primary" },
-  { key: "aviso", label: "Aviso", region: "back" },
+  { key: "lovalte", label: "Lovalte", region: "back" },
 ];
 /** Flatten a stamp card's per-count strip frames into `strip_<n>` asset keys. */
 function stampStripEntries(refs: unknown): Record<string, string> {
@@ -31,11 +32,12 @@ function stampStripEntries(refs: unknown): Record<string, string> {
 }
 
 const DEPRECATION_VALUES = [
-  { key: "estado", label: "Estado", value: "No válida" },
+  { key: "estado", label: "Estado", value: "Tarjeta archivada" },
   {
-    key: "aviso",
-    label: "Aviso",
-    value: "Esta tarjeta de fidelidad ya no está activa. Puedes eliminarla de tu Apple Wallet.",
+    key: "lovalte",
+    label: "Lovalte",
+    value:
+      "Esta tarjeta ya no está activa. Crea las tuyas y descubre la fidelidad en Apple Wallet en lovalte.com",
   },
 ];
 
@@ -146,6 +148,37 @@ export const registerPassIssuance: ContextModule = async (app, deps) => {
       },
     };
     await templateRepo.upsert(dto);
+
+    // Push the updated design to all existing non-voided passes so holders see
+    // the new card immediately. We do NOT change field values — we pass the
+    // pass's own existing fieldValues back through UpdatePassFieldsHandler,
+    // which bumps lastUpdated + version and emits PassFieldsUpdated. The delivery
+    // context converts that event into an APNs empty push so the device polls and
+    // picks up the newly re-signed pkpass.
+    const existingPasses = await passRepo.findByPassTypeId(templateId, tenantId);
+    for (const pass of existingPasses) {
+      if (pass.voided) continue;
+      try {
+        const r = await updatePassFields.execute({
+          passId: pass.id.value,
+          tenantId,
+          fieldValues: pass.fieldValues,
+        });
+        if (!r.ok) {
+          app.log.error({ err: r.error }, "UpdatePassFields failed after CardTemplatePublished");
+          continue;
+        }
+        const signed = await getPassPkpass.execute({ passId: pass.id.value, tenantId });
+        if (!signed.ok) {
+          app.log.error({ err: signed.error }, "Re-sign after CardTemplatePublished failed");
+        }
+      } catch (passErr) {
+        app.log.error(
+          { err: passErr, passId: pass.id.value },
+          "Pass refresh failed after CardTemplatePublished",
+        );
+      }
+    }
   });
 
   /**
@@ -216,10 +249,12 @@ export const registerPassIssuance: ContextModule = async (app, deps) => {
         ...snap,
         organizationName: "Lovalte",
         logoText: "Lovalte",
-        description: "Tarjeta de fidelidad no válida",
-        backgroundColor: "rgb(40, 44, 52)",
+        description: "Tarjeta archivada — Lovalte",
+        // Deep Lovalte navy background with white foreground and muted-grey labels
+        // for a polished branded look that signals intentional deactivation.
+        backgroundColor: "rgb(20, 22, 38)",
         foregroundColor: "rgb(255, 255, 255)",
-        labelColor: "rgb(170, 176, 190)",
+        labelColor: "rgb(160, 165, 185)",
         fieldDefinitions: DEPRECATED_FIELD_DEFS,
         // keep imageAssetRefs: the existing icon survives and keeps the pass Apple-valid
       });

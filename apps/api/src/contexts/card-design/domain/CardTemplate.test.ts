@@ -72,22 +72,36 @@ describe("CardTemplate", () => {
     expect(() => t.publish()).toThrow(DomainError);
   });
 
-  it("throws when publishing an already-published template", () => {
+  it("re-publishing a published template bumps version and re-emits CardTemplatePublished", () => {
     const t = makeTemplate({ iconRef: "s3://icon" });
-    t.publish();
-    expect(() => t.publish()).toThrow(DomainError);
+    t.publish(); // version → 1
+    t.pullEvents(); // clear
+    t.publish(); // version → 2
+    expect(t.status).toBe("published");
+    expect(t.version).toBe(2);
+    const events = t.pullEvents();
+    const pub = events.find((e) => e.name === "CardTemplatePublished");
+    expect(pub).toBeDefined();
+    expect(pub?.payload.version).toBe(2);
   });
 
-  it("throws DomainError when updating a published template", () => {
+  it("allows updateBrand on a published template and emits CardTemplateSaved", () => {
     const t = makeTemplate({ iconRef: "s3://icon" });
     t.publish();
-    expect(() => t.updateBrand(makeBrand(), makeRule())).toThrow(DomainError);
+    t.pullEvents(); // clear publish event
+    // Should not throw — edits are staged until next publish()
+    expect(() => t.updateBrand(makeBrand({ iconRef: "s3://icon2" }), makeRule())).not.toThrow();
+    const events = t.pullEvents();
+    expect(events).toHaveLength(1);
+    expect(events[0].name).toBe("CardTemplateSaved");
+    expect(t.status).toBe("published"); // status unchanged by updateBrand
   });
 
-  it("throws DomainError when applying asset ref to a published template", () => {
+  it("allows applying an asset ref to a published template (staged for next publish)", () => {
     const t = makeTemplate({ iconRef: "s3://icon" });
     t.publish();
-    expect(() => t.applyAssetRef("logo", "s3://logo")).toThrow(DomainError);
+    expect(() => t.applyAssetRef("logo", "s3://logo")).not.toThrow();
+    expect(t.brand.logoRef).toBe("s3://logo");
   });
 
   it("rejects hex color strings", () => {
