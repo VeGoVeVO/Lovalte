@@ -12,6 +12,21 @@ const FONT = "-apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sa
 /** Components that open a contextual popover (text is edited inline instead). */
 export type SlotKind = "logo" | "colors" | "hero" | "stamps" | "reward" | "back" | null;
 
+/**
+ * Popover anchors as STATIC rect snapshots (not live elements). The card's inner
+ * `Region` is recreated on every render, so a captured element detaches when the
+ * popover-opening re-render runs and its rect collapses to (0,0) → popover flew to
+ * the top-left corner. Snapshotting the rect (or click point) at the moment of the
+ * click is immune to that remount.
+ */
+const rectAnchor = (el: HTMLElement): PopAnchor => {
+  const r = el.getBoundingClientRect();
+  return { getBoundingClientRect: () => r };
+};
+const pointAnchor = (x: number, y: number): PopAnchor => ({
+  getBoundingClientRect: () => new DOMRect(x, y, 0, 0),
+});
+
 interface Props {
   doc: CardDoc;
   selected?: SlotKind;
@@ -96,7 +111,7 @@ function ImgSlot({
   active: boolean;
   label: string;
   editable: boolean;
-  onSelect: (anchor: HTMLElement) => void;
+  onSelect: (anchor: PopAnchor) => void;
   dispatch: (toolId: string, args?: Record<string, unknown>) => void;
 }) {
   const { t } = useT();
@@ -129,12 +144,12 @@ function ImgSlot({
         onClick: (e: React.MouseEvent) => {
           e.stopPropagation();
           if (drag.current?.moved) return; // a drag, not a click
-          onSelect(e.currentTarget as HTMLElement);
+          onSelect(rectAnchor(e.currentTarget as HTMLElement));
         },
         onKeyDown: (e: React.KeyboardEvent) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
-            onSelect(e.currentTarget as HTMLElement);
+            onSelect(rectAnchor(e.currentTarget as HTMLElement));
           }
         },
         onPointerDown: down,
@@ -318,12 +333,12 @@ export function CardCanvas({
         aria-label={t("Edit {label}", { label })}
         onClick={(e) => {
           e.stopPropagation();
-          onSelect(kind, e.currentTarget);
+          onSelect(kind, rectAnchor(e.currentTarget));
         }}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
-            onSelect(kind, e.currentTarget);
+            onSelect(kind, rectAnchor(e.currentTarget));
           }
         }}
         style={{
@@ -392,11 +407,9 @@ export function CardCanvas({
     <div
       onClick={(e) => {
         if (!editable) return;
-        // Anchor the colours popover to the click POINT (a 0x0 virtual rect), not
-        // the whole card div — otherwise Floating UI places it off in the corner.
-        const x = e.clientX;
-        const y = e.clientY;
-        onSelect("colors", { getBoundingClientRect: () => new DOMRect(x, y, 0, 0) });
+        // Colours = the whole card; anchor to the click POINT so the popover opens
+        // next to the cursor instead of beside the (huge) card element.
+        onSelect("colors", pointAnchor(e.clientX, e.clientY));
       }}
       style={{
         width: "100%",

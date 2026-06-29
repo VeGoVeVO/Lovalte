@@ -183,10 +183,11 @@ export function CardPopover({
   const role = useRole(context, { role: "dialog" });
   const { getFloatingProps } = useInteractions([dismiss, role]);
 
-  // Drive positioning off the anchor (real element OR virtual click-point). Using
-  // setPositionReference (not elements.reference) is what supports virtual anchors.
+  // Drive positioning off the anchor (a static rect snapshot or click point).
+  // setReference (the PRIMARY reference) both accepts a virtual element and starts
+  // whileElementsMounted/autoUpdate — setPositionReference did neither here.
   useEffect(() => {
-    refs.setPositionReference(anchor);
+    refs.setReference(anchor);
   }, [anchor, refs]);
 
   if (!open || !anchor) return null;
