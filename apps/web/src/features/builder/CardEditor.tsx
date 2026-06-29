@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type PointerEvent as RPointerEvent,
+} from "react";
 import { DynamicIcon } from "lucide-react/dynamic";
 import { Modal, GlassButton, ColorPicker } from "../../design-system/halo";
 import { useT } from "../../lib/i18n";
@@ -103,7 +109,23 @@ const editorCss = `
 .lvt-be-publish:active:not(:disabled){ transform:translateY(0) scale(.97); }
 .lvt-be-publish:disabled { opacity:.55; cursor:default; }
 .lvt-be-publish:focus-visible { outline:none; box-shadow:0 0 0 4px rgba(139,123,216,.45); }
-.lvt-be-stage { width: 340px; max-width: 100%; margin: 0 auto; display:flex; flex-direction:column; align-items:center; }
+.lvt-be-stage { width: 100%; max-width: 680px; margin: 0 auto; display:flex; flex-direction:column; align-items:center; }
+/* Desktop-only infinite canvas: drag empty space to pan, buttons/scroll to zoom. */
+.lvt-be-canvas { position:relative; width:100%; height:clamp(480px,64vh,700px); overflow:hidden;
+  border-radius:22px; cursor:grab; touch-action:none;
+  background:radial-gradient(120% 90% at 50% 38%, rgba(255,255,255,.42), transparent 72%); }
+.lvt-be-canvas:active { cursor:grabbing; }
+.lvt-be-canvas-inner { position:absolute; inset:0; display:grid; place-items:center; transform-origin:center center; will-change:transform; }
+.lvt-be-canvas-inner.animate { transition:transform .2s var(--ease,cubic-bezier(.22,1,.36,1)); }
+.lvt-be-canvas-inner > * { pointer-events:auto; }
+.lvt-be-zoom { position:absolute; right:12px; bottom:12px; display:flex; gap:6px; z-index:2; }
+.lvt-be-zoom button { width:34px; height:34px; border-radius:11px; border:1px solid rgba(255,255,255,.7); cursor:pointer;
+  color:var(--text,#20242A); line-height:0; font-size:1.05rem; display:grid; place-items:center;
+  background:linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,.66));
+  -webkit-backdrop-filter:blur(14px) saturate(160%); backdrop-filter:blur(14px) saturate(160%);
+  box-shadow:0 1px 0 rgba(255,255,255,.85) inset, 0 6px 16px -10px rgba(46,62,92,.4); transition:border-color .18s ease, transform .12s ease; }
+.lvt-be-zoom button:hover { border-color:rgba(169,245,255,.9); }
+.lvt-be-zoom button:active { transform:scale(.92); }
 .lvt-be-hint { margin:18px auto 0; max-width:18rem; text-align:center; color:var(--muted); font-size:.82rem; text-wrap:balance; }
 .lvt-ed { outline:none; cursor:text; border-radius:5px; transition:box-shadow .15s ease; }
 .lvt-ed:focus { box-shadow:0 0 0 2px rgba(169,245,255,.85); }
@@ -209,6 +231,57 @@ export function CardEditor({ initial, onClose }: Props) {
     } catch (err) {
       setStatus((err as { message?: string })?.message ?? t("Upload failed."));
     }
+  };
+
+  // PC-only canvas: drag empty space to pan, buttons/wheel to zoom. Mobile is untouched.
+  const [isDesktop, setIsDesktop] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(min-width: 768px)").matches,
+  );
+  const [view, setView] = useState({ x: 0, y: 0, z: 1 });
+  const [animateView, setAnimateView] = useState(false);
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const panRef = useRef<{ px: number; py: number; vx: number; vy: number } | null>(null);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 768px)");
+    const h = () => setIsDesktop(mq.matches);
+    mq.addEventListener("change", h);
+    return () => mq.removeEventListener("change", h);
+  }, []);
+  useEffect(() => {
+    const el = canvasRef.current;
+    if (!el || !isDesktop) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      setAnimateView(false);
+      setView((v) => ({
+        ...v,
+        z: Math.min(2.5, Math.max(0.6, +(v.z - e.deltaY * 0.0016).toFixed(3))),
+      }));
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, [isDesktop, step]);
+  const onCanvasDown = (e: RPointerEvent<HTMLDivElement>) => {
+    if (e.target !== canvasRef.current) return; // only the bare background pans
+    setAnimateView(false);
+    panRef.current = { px: e.clientX, py: e.clientY, vx: view.x, vy: view.y };
+    canvasRef.current?.setPointerCapture(e.pointerId);
+  };
+  const onCanvasMove = (e: RPointerEvent<HTMLDivElement>) => {
+    const p = panRef.current;
+    if (!p) return;
+    setView((v) => ({ ...v, x: p.vx + (e.clientX - p.px), y: p.vy + (e.clientY - p.py) }));
+  };
+  const onCanvasUp = () => {
+    panRef.current = null;
+  };
+  const zoomBy = (d: number) => {
+    setAnimateView(true);
+    setView((v) => ({ ...v, z: Math.min(2.5, Math.max(0.6, +(v.z + d).toFixed(2))) }));
+  };
+  const resetView = () => {
+    setAnimateView(true);
+    setView({ x: 0, y: 0, z: 1 });
   };
 
   // Expose the tool API so a future AI builder can drive the exact same build.
@@ -477,15 +550,57 @@ export function CardEditor({ initial, onClose }: Props) {
         tabIndex={-1}
       />
       <div className="lvt-be-stage">
-        <CardCanvas
-          doc={doc}
-          selected={sel}
-          onSelect={select}
-          dispatch={dispatch}
-          width={340}
-          onAddLogo={addLogo}
-        />
-        {!sel && <p className="lvt-be-hint">{t("Tap any part of the card to edit it.")}</p>}
+        {isDesktop ? (
+          <div
+            className="lvt-be-canvas"
+            ref={canvasRef}
+            onPointerDown={onCanvasDown}
+            onPointerMove={onCanvasMove}
+            onPointerUp={onCanvasUp}
+            onPointerLeave={onCanvasUp}
+          >
+            <div
+              className={`lvt-be-canvas-inner${animateView ? " animate" : ""}`}
+              style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.z})` }}
+            >
+              <CardCanvas
+                doc={doc}
+                selected={sel}
+                onSelect={select}
+                dispatch={dispatch}
+                width={340}
+                onAddLogo={addLogo}
+              />
+            </div>
+            <div className="lvt-be-zoom">
+              <button type="button" aria-label={t("Zoom out")} onClick={() => zoomBy(-0.2)}>
+                −
+              </button>
+              <button type="button" aria-label={t("Reset view")} onClick={resetView}>
+                ⤢
+              </button>
+              <button type="button" aria-label={t("Zoom in")} onClick={() => zoomBy(0.2)}>
+                +
+              </button>
+            </div>
+          </div>
+        ) : (
+          <CardCanvas
+            doc={doc}
+            selected={sel}
+            onSelect={select}
+            dispatch={dispatch}
+            width={340}
+            onAddLogo={addLogo}
+          />
+        )}
+        {!sel && (
+          <p className="lvt-be-hint">
+            {isDesktop
+              ? t("Tap a part to edit · drag to pan · scroll to zoom")
+              : t("Tap any part of the card to edit it.")}
+          </p>
+        )}
         {status && (
           <p
             role="status"
