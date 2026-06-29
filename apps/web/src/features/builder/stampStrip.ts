@@ -6,9 +6,15 @@
 
 import { hexToRgb } from "./cardDoc";
 
-/** Apple strip is ~3:1; render at @3x so it stays crisp on every iPhone. */
+/**
+ * Apple storeCard strip @3x. A storeCard with NO primary fields (our stamp cards
+ * carry the count BELOW the strip, so primaryFields is empty) gets the TALLER
+ * 375×144 pt strip = 1125×432 px. Using the 369 (123 pt, with-primary) height made
+ * Wallet aspect-fill the image taller and crop ~32 pt off each side on-device, so
+ * stamps were clipped left/right. 432 matches what Wallet actually renders.
+ */
 export const STRIP_W = 1125;
-export const STRIP_H = 369;
+export const STRIP_H = 432;
 /** Preview band aspect (height = width * this) — matches the generated strip. */
 export const STRIP_RATIO = STRIP_H / STRIP_W;
 /**
@@ -16,7 +22,7 @@ export const STRIP_RATIO = STRIP_H / STRIP_W;
  * BELOW the strip (not overlaid on the left), so the grid spans the full strip.
  * Shared by the renderer and the preview so they line up.
  */
-export const GRID_LEFT = 0.04;
+export const GRID_LEFT = 0.06;
 
 export const STAMPS_MAX = 20;
 

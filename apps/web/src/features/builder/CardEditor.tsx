@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { DynamicIcon } from "lucide-react/dynamic";
 import { Modal, GlassButton, ColorPicker } from "../../design-system/halo";
 import { useT } from "../../lib/i18n";
@@ -28,7 +28,7 @@ import { CardCanvas, type SlotKind } from "./CardCanvas";
 import { CardPopover, type PopAnchor } from "./CardPopover";
 import { AssetField } from "./AssetField";
 import { IconPicker } from "./IconPicker";
-import { useUploadImage } from "./useImages";
+import { useUploadImage, fileToDataUrl, validateImageFile } from "./useImages";
 import { renderStampFrames } from "./stampStrip";
 import { svgToPngDataUrl } from "./lucideRaster";
 
@@ -179,6 +179,36 @@ export function CardEditor({ initial, onClose }: Props) {
   const closePop = () => {
     setSel(null);
     setAnchor(null);
+  };
+
+  // Logo = optional. The "+" mark on the card opens the OS file picker directly
+  // (no popover); after upload the logo auto-fits and the adjust popover opens so
+  // the merchant can nudge/scale it to fit if they want.
+  const logoFileRef = useRef<HTMLInputElement>(null);
+  const logoAnchorRect = useRef<DOMRect | null>(null);
+  const addLogo = (rect?: DOMRect) => {
+    logoAnchorRect.current = rect ?? null;
+    logoFileRef.current?.click();
+  };
+  const onLogoFile = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    const invalid = validateImageFile(file);
+    if (invalid) {
+      setStatus(invalid);
+      return;
+    }
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      const res = await uploadImg.mutateAsync({ kind: "logo", source: "upload", dataUrl });
+      dispatch("image.set", { slot: "logo", src: res.url });
+      const rect = logoAnchorRect.current;
+      setSel("logo");
+      setAnchor(rect ? { getBoundingClientRect: () => rect } : null);
+    } catch (err) {
+      setStatus((err as { message?: string })?.message ?? t("Upload failed."));
+    }
   };
 
   // Expose the tool API so a future AI builder can drive the exact same build.
@@ -437,8 +467,24 @@ export function CardEditor({ initial, onClose }: Props) {
         </button>
       </div>
 
+      <input
+        ref={logoFileRef}
+        type="file"
+        accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml"
+        onChange={onLogoFile}
+        style={{ display: "none" }}
+        aria-hidden="true"
+        tabIndex={-1}
+      />
       <div className="lvt-be-stage">
-        <CardCanvas doc={doc} selected={sel} onSelect={select} dispatch={dispatch} width={340} />
+        <CardCanvas
+          doc={doc}
+          selected={sel}
+          onSelect={select}
+          dispatch={dispatch}
+          width={340}
+          onAddLogo={addLogo}
+        />
         {!sel && <p className="lvt-be-hint">{t("Tap any part of the card to edit it.")}</p>}
         {status && (
           <p
@@ -471,6 +517,7 @@ export function CardEditor({ initial, onClose }: Props) {
             sel={sel}
             dispatch={dispatch}
             onPickStampIcon={() => setIconPicker(true)}
+            onAddLogo={addLogo}
           />
         )}
       </CardPopover>
@@ -595,11 +642,13 @@ function ComponentEditor({
   sel,
   dispatch,
   onPickStampIcon,
+  onAddLogo,
 }: {
   doc: CardDoc;
   sel: Exclude<SlotKind, null>;
   dispatch: Dispatch;
   onPickStampIcon: () => void;
+  onAddLogo: (rect?: DOMRect) => void;
 }) {
   const { t } = useT();
 
@@ -619,7 +668,51 @@ function ComponentEditor({
     );
   }
 
-  if (sel === "logo") return <ImageEditor doc={doc} slot="logo" dispatch={dispatch} />;
+  if (sel === "logo") {
+    // Logo is optional & uploaded directly from the card's "+" mark; here we only
+    // fine-tune the fit (or replace/remove). No big upload field.
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 10, minWidth: 240 }}>
+        {doc.logo ? (
+          <>
+            <div>
+              <label className="lvt-be-eyebrow">{t("Fit & zoom")}</label>
+              <input
+                type="range"
+                min={1}
+                max={3}
+                step={0.01}
+                value={doc.logo.scale}
+                onChange={(e) =>
+                  dispatch("image.scale", { slot: "logo", scale: Number(e.target.value) })
+                }
+                style={{ width: "100%" }}
+              />
+              <p className="body" style={{ fontSize: ".72rem", color: "var(--muted)", margin: 0 }}>
+                {t("Drag the logo on the card to reposition.")}
+              </p>
+            </div>
+            <div className="lvt-be-row">
+              <button type="button" className="btn ghost" onClick={() => onAddLogo()}>
+                {t("Replace")}
+              </button>
+              <button
+                type="button"
+                className="btn ghost"
+                onClick={() => dispatch("image.clear", { slot: "logo" })}
+              >
+                {t("Remove")}
+              </button>
+            </div>
+          </>
+        ) : (
+          <button type="button" className="btn" onClick={() => onAddLogo()}>
+            {t("Upload a logo")}
+          </button>
+        )}
+      </div>
+    );
+  }
   if (sel === "hero") return <ImageEditor doc={doc} slot="hero" dispatch={dispatch} />;
   if (sel === "back") return <FieldListEditor doc={doc} list="backFields" dispatch={dispatch} />;
 

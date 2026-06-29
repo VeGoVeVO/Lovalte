@@ -36,6 +36,8 @@ interface Props {
   dispatch?: (toolId: string, args?: Record<string, unknown>) => void;
   width?: number;
   readOnly?: boolean;
+  /** Open the OS file picker to add the (optional) logo, anchored at the "+" mark. */
+  onAddLogo?: (rect?: DOMRect) => void;
 }
 
 const sampleValue = (doc: CardDoc) => (doc.type === "cashback" ? "$5.25" : "120");
@@ -313,6 +315,7 @@ export function CardCanvas({
   dispatch = NOOP,
   width = 340,
   readOnly = false,
+  onAddLogo = NOOP,
 }: Props) {
   const { t } = useT();
   const editable = !readOnly;
@@ -468,20 +471,42 @@ export function CardCanvas({
       {/* Header: logo + name + header fields */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "13px 15px 11px" }}>
         <div style={{ width: 34, height: 34, flexShrink: 0 }}>
-          <ImgSlot
-            slot="logo"
-            src={doc.logo?.src ?? null}
-            tx={doc.logo?.tx ?? 0}
-            ty={doc.logo?.ty ?? 0}
-            scale={doc.logo?.scale ?? 1}
-            height={34}
-            round={9}
-            active={selected === "logo"}
-            label={t("Logo")}
-            editable={editable}
-            onSelect={(el) => onSelect("logo", el)}
-            dispatch={dispatch}
-          />
+          {editable && !doc.logo?.src ? (
+            <button
+              type="button"
+              aria-label={t("Add logo")}
+              onClick={(e) => onAddLogo(e.currentTarget.getBoundingClientRect())}
+              style={{
+                width: 34,
+                height: 34,
+                borderRadius: 9,
+                cursor: "pointer",
+                padding: 0,
+                border: "1.5px dashed rgba(255,255,255,.5)",
+                background: "rgba(255,255,255,.08)",
+                color: "rgba(255,255,255,.85)",
+                display: "grid",
+                placeItems: "center",
+              }}
+            >
+              <DynamicIcon name={"image-plus" as never} size={16} />
+            </button>
+          ) : (
+            <ImgSlot
+              slot="logo"
+              src={doc.logo?.src ?? null}
+              tx={doc.logo?.tx ?? 0}
+              ty={doc.logo?.ty ?? 0}
+              scale={doc.logo?.scale ?? 1}
+              height={34}
+              round={9}
+              active={selected === "logo"}
+              label={t("Logo")}
+              editable={editable}
+              onSelect={(el) => onSelect("logo", el)}
+              dispatch={dispatch}
+            />
+          )}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           {editable ? (
