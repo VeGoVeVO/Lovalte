@@ -2,7 +2,7 @@
   "name": "lovalte",
   "version": "0.1.0",
   "private": true,
-  "description": "Lovalte \u2014 loyalty cards in Apple Wallet (multi-tenant SaaS).",
+  "description": "Lovalte — loyalty cards in Apple Wallet (multi-tenant SaaS).",
   "workspaces": [
     "apps/*"
   ],
@@ -23,6 +23,9 @@
     "passkit-generator": {
       "joi": "17.13.4"
     }
+  },
+  "dependencies": {
+    "google-auth-library": "^9.0.0"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.62.0",
