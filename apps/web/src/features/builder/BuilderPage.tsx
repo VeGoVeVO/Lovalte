@@ -103,7 +103,7 @@ export function BuilderPage() {
       {list.length > 0 && (
         <div
           className="grid-3"
-          style={{ gridTemplateColumns: "repeat(auto-fill, 260px)", justifyContent: "center" }}
+          style={{ gridTemplateColumns: "repeat(auto-fit, 260px)", justifyContent: "center" }}
         >
           {list.map((card) => (
             <GlassCard
@@ -124,30 +124,13 @@ export function BuilderPage() {
                 style={{
                   display: "flex",
                   justifyContent: "space-between",
-                  alignItems: "center",
+                  alignItems: "flex-start",
                   gap: "0.5rem",
                 }}
               >
-                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", minWidth: 0, flex: 1 }}>
-                  <h2 className="cardt" style={{ margin: 0, flex: 1, minWidth: 0 }}>
-                    <FitText text={card.name} />
-                  </h2>
-                  <span
-                    style={{
-                      fontSize: "0.7rem",
-                      fontWeight: 500,
-                      padding: "0.2rem 0.55rem",
-                      borderRadius: 999,
-                      flexShrink: 0,
-                      background:
-                        card.status === "published" ? "rgba(0,180,90,.13)" : "rgba(200,160,0,.11)",
-                      border: `1px solid ${card.status === "published" ? "rgba(0,180,90,.3)" : "rgba(200,160,0,.26)"}`,
-                      color: card.status === "published" ? "rgb(0,150,70)" : "rgb(150,110,0)",
-                    }}
-                  >
-                    {t(card.status)}
-                  </span>
-                </div>
+                <h2 className="cardt" style={{ margin: 0, flex: 1, minWidth: 0 }}>
+                  <FitText text={card.name} />
+                </h2>
                 <button
                   type="button"
                   aria-label={t("Delete template: {name}", { name: card.name })}
@@ -185,6 +168,22 @@ export function BuilderPage() {
                     <path d="M9 6V4h6v2" />
                   </svg>
                 </button>
+              </div>
+              <div style={{ marginTop: "0.55rem" }}>
+                <span
+                  style={{
+                    fontSize: "0.7rem",
+                    fontWeight: 500,
+                    padding: "0.2rem 0.55rem",
+                    borderRadius: 999,
+                    background:
+                      card.status === "published" ? "rgba(0,180,90,.13)" : "rgba(200,160,0,.11)",
+                    border: `1px solid ${card.status === "published" ? "rgba(0,180,90,.3)" : "rgba(200,160,0,.26)"}`,
+                    color: card.status === "published" ? "rgb(0,150,70)" : "rgb(150,110,0)",
+                  }}
+                >
+                  {t(card.status)}
+                </span>
               </div>
               <p className="body" style={{ margin: "0.6rem 0 0", fontSize: "0.82rem" }}>
                 v{card.version} · {new Date(card.updatedAt).toLocaleDateString()}
