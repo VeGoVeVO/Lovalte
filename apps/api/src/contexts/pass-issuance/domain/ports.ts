@@ -9,6 +9,9 @@ export interface FieldDefinition {
   label: string;
   region: "header" | "primary" | "secondary" | "auxiliary" | "back";
   changeMessage?: string;
+  /** Static default value the merchant typed (header/secondary/back). Shown on the
+   *  pass when the holder has no per-holder value for this key. */
+  value?: string;
   /** On the primary field: how to format its raw counter (points | stamps | cashback). */
   loyaltyType?: "points" | "stamps" | "cashback";
   /** Stamps/points goal used when formatting (e.g. "6 / 10"). */

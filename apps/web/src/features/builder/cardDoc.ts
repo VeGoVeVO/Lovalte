@@ -220,8 +220,9 @@ export const rgbToHex = (rgb?: string) => {
 export type ToolFn = (doc: CardDoc, args: Record<string, unknown>) => CardDoc;
 const layer = (d: CardDoc, slot: Slot) => d[slot];
 
-/** Apple Wallet storeCard field-count limits per editable list. */
-export const FIELD_CAPS = { headerFields: 3, fields: 4, backFields: 20 } as const;
+/** Apple Wallet storeCard field-count limits per editable list. Header is capped
+ *  at 1 (only one field fits cleanly top-right next to the logo/name). */
+export const FIELD_CAPS = { headerFields: 1, fields: 4, backFields: 20 } as const;
 export type FieldList = keyof typeof FIELD_CAPS;
 const fieldList = (a: Record<string, unknown>): FieldList =>
   a.list === "headerFields" || a.list === "backFields" ? a.list : "fields";

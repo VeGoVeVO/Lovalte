@@ -92,7 +92,10 @@ export class IssuePassHandler {
         : template.fieldDefinitions.map((d) => ({
             key: d.key,
             label: d.label,
-            value: (d.key === "points" || d.key === "balance" ? 0 : "") as string | number,
+            // Loyalty counter starts at 0; other fields seed from the merchant's
+            // typed default so the value (not just the label) renders on the pass.
+            value: (d.key === "points" || d.key === "balance" ? 0 : (d.value ?? "")) as
+              string | number,
           }));
     const pass = Pass.issue({
       passTypeId: cmd.passTypeId,

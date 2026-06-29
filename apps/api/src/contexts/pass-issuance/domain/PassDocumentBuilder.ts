@@ -74,7 +74,7 @@ export class PassDocumentBuilder {
         label: def.label,
         value: def.loyaltyType
           ? formatLoyalty(def.loyaltyType, fv?.value ?? 0, def.loyaltyGoal ?? 10)
-          : (fv?.value ?? ""),
+          : (fv?.value ?? def.value ?? ""),
         ...(def.changeMessage ? { changeMessage: def.changeMessage } : {}),
       };
       if (def.region === "header") header.push(entry);

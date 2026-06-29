@@ -548,7 +548,7 @@ export function CardCanvas({
             textAlign: "right",
           }}
         >
-          {doc.headerFields.slice(0, 3).map((f) => (
+          {doc.headerFields.slice(0, 1).map((f) => (
             <div key={f.id} style={{ display: "flex", alignItems: "flex-start", gap: 3 }}>
               <div>
                 <Editable
@@ -585,7 +585,7 @@ export function CardCanvas({
               {removeBtn("headerFields", f.id)}
             </div>
           ))}
-          {doc.headerFields.length < 3 && addBtn("headerFields", t("Header"))}
+          {doc.headerFields.length < 1 && addBtn("headerFields", t("Header"))}
         </div>
       </div>
 
@@ -663,13 +663,15 @@ export function CardCanvas({
         </div>
       )}
 
-      {/* Secondary fields row */}
+      {/* Secondary fields row — distributed across the width to match how Apple
+          Wallet lays out storeCard secondary fields (not clustered at the left). */}
       <div
         style={{
           margin: "12px 16px 0",
           display: "flex",
           gap: 16,
           flexWrap: "wrap",
+          justifyContent: "space-between",
           alignItems: "flex-start",
         }}
       >

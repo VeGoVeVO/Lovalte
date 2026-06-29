@@ -287,9 +287,12 @@ export function CardEditor({ initial, onClose }: Props) {
         { kind: "logo" as const, ref: doc.logo?.src ?? "" },
         { kind: "strip" as const, ref: doc.hero?.src ?? "" },
       ].filter((a) => a.ref);
-      await Promise.all(
-        assets.map((a) => assetMut.mutateAsync({ id: id!, kind: a.kind, ref: a.ref })),
-      );
+      // SEQUENTIAL, not Promise.all: each RegisterAssetRef does read-modify-write on
+      // the same template config; running them in parallel races and only the last
+      // ref survives (that's why the logo never reached the issued pass).
+      for (const a of assets) {
+        await assetMut.mutateAsync({ id: id!, kind: a.kind, ref: a.ref });
+      }
       setStatus(t("Draft saved."));
       return id;
     } catch (e) {

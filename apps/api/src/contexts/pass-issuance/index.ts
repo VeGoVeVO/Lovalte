@@ -108,8 +108,10 @@ export const registerPassIssuance: ContextModule = async (app, deps) => {
     // was missing from issued passes (brand.*Fields carry no region).
     const mapRegion = (arr: unknown, region: FieldDefinition["region"]): FieldDefinition[] =>
       (Array.isArray(arr) ? arr : []).map((f) => {
-        const o = f as { key: string; label: string };
-        return { key: o.key, label: o.label, region };
+        const o = f as { key: string; label: string; valueTemplate?: string };
+        // Carry the merchant's typed value so header/secondary/back fields render
+        // their VALUE on the pass (not just the label).
+        return { key: o.key, label: o.label, region, value: o.valueTemplate };
       });
     // The loyalty counter (key "points") is formatted "X / N" by PassDocumentBuilder
     // wherever it sits: primary (points/cashback) or secondary (stamps — the count
