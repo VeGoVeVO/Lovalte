@@ -36,16 +36,13 @@ type Step = "type" | "templates" | "editor";
 
 type Dispatch = (toolId: string, args?: Record<string, unknown>) => void;
 
-/** Editor title per selected component (the popover heading). */
+/** Popover heading per selected component (text is edited inline on the card). */
 const TITLES: Record<Exclude<SlotKind, null>, string> = {
   logo: "Logo",
-  name: "Business name",
   colors: "Colours",
   hero: "Strip photo",
   stamps: "Stamps",
-  primary: "Primary field",
-  header: "Header fields",
-  fields: "Fields",
+  reward: "Reward",
   back: "Back of the card",
 };
 
@@ -67,10 +64,11 @@ function makeIconDataUrl(bg: string, fg: string, name: string): string {
 }
 
 const editorCss = `
-.lvt-be-stage { max-width: 380px; margin: 0 auto; }
-.lvt-be-canvas { display:flex; justify-content:center; padding:18px 0 8px; border-radius:22px;
-  background:radial-gradient(60% 60% at 50% 0%,rgba(169,245,255,.22),transparent),rgba(255,255,255,.45); }
-.lvt-be-hint { margin:14px auto 0; max-width:18rem; text-align:center; color:var(--muted); font-size:.82rem; text-wrap:balance; }
+.lvt-be-stage { width: 340px; max-width: 100%; margin: 0 auto; display:flex; flex-direction:column; align-items:center; }
+.lvt-be-hint { margin:16px auto 0; max-width:18rem; text-align:center; color:var(--muted); font-size:.82rem; text-wrap:balance; }
+.lvt-ed { outline:none; cursor:text; border-radius:4px; }
+.lvt-ed:focus { box-shadow:0 0 0 2px rgba(58,134,255,.55); }
+.lvt-ed[data-ph]:empty::before { content: attr(data-ph); opacity:.5; }
 .lvt-be-rail { display:flex; gap:16px; overflow-x:auto; scroll-snap-type:x mandatory; padding:10px calc(50% - 130px) 18px;
   -webkit-overflow-scrolling:touch; }
 .lvt-be-rail::-webkit-scrollbar{ display:none; }
@@ -375,9 +373,7 @@ export function CardEditor({ initial, onClose }: Props) {
       </div>
 
       <div className="lvt-be-stage">
-        <div className="lvt-be-canvas">
-          <CardCanvas doc={doc} selected={sel} onSelect={select} dispatch={dispatch} width={340} />
-        </div>
+        <CardCanvas doc={doc} selected={sel} onSelect={select} dispatch={dispatch} width={340} />
         {!sel && <p className="lvt-be-hint">{t("Tap any part of the card to edit it.")}</p>}
         {status && (
           <p
@@ -539,20 +535,6 @@ function ComponentEditor({
 }) {
   const { t } = useT();
 
-  if (sel === "name") {
-    return (
-      <input
-        className="input"
-        autoFocus
-        value={doc.logoText}
-        maxLength={24}
-        placeholder={t("e.g. Abba Java")}
-        onChange={(e) => dispatch("text.logoText", { value: e.target.value })}
-        style={{ minWidth: 240 }}
-      />
-    );
-  }
-
   if (sel === "colors") {
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 240 }}>
@@ -577,41 +559,10 @@ function ComponentEditor({
 
   if (sel === "logo") return <ImageEditor doc={doc} slot="logo" dispatch={dispatch} />;
   if (sel === "hero") return <ImageEditor doc={doc} slot="hero" dispatch={dispatch} />;
-
-  if (sel === "primary") {
-    return (
-      <div style={{ minWidth: 240 }}>
-        <label className="lvt-be-eyebrow">{t("Label")}</label>
-        <input
-          className="input"
-          autoFocus
-          value={doc.primaryLabel}
-          maxLength={16}
-          placeholder={t("e.g. POINTS")}
-          onChange={(e) => dispatch("text.primaryLabel", { value: e.target.value })}
-        />
-      </div>
-    );
-  }
-
-  if (sel === "header")
-    return <FieldListEditor doc={doc} list="headerFields" dispatch={dispatch} />;
-  if (sel === "fields") return <FieldListEditor doc={doc} list="fields" dispatch={dispatch} />;
   if (sel === "back") return <FieldListEditor doc={doc} list="backFields" dispatch={dispatch} />;
 
-  // sel === "stamps"
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12, minWidth: 248 }}>
-      <div>
-        <label className="lvt-be-eyebrow">{t("Label")}</label>
-        <input
-          className="input"
-          value={doc.primaryLabel}
-          maxLength={16}
-          placeholder="STAMPS"
-          onChange={(e) => dispatch("text.primaryLabel", { value: e.target.value })}
-        />
-      </div>
+  if (sel === "reward") {
+    return (
       <div>
         <label className="lvt-be-eyebrow">{t("Stamps to reward")}</label>
         <div className="lvt-be-row">
@@ -635,7 +586,19 @@ function ComponentEditor({
             ＋
           </button>
         </div>
+        <p
+          className="body"
+          style={{ fontSize: ".72rem", color: "var(--muted)", margin: "8px 0 0" }}
+        >
+          {t("Edit the label by typing on the card.")}
+        </p>
       </div>
+    );
+  }
+
+  // sel === "stamps" — the stamp look (icon + art + background)
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12, minWidth: 240 }}>
       <div>
         <label className="lvt-be-eyebrow">{t("Stamp icon")}</label>
         <div className="lvt-be-row">

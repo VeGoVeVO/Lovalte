@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 import {
   useFloating,
   autoUpdate,
@@ -12,7 +12,6 @@ import {
   useInteractions,
   FloatingPortal,
   FloatingFocusManager,
-  type ReferenceType,
 } from "@floating-ui/react";
 
 const STYLE_ID = "lvt-pop-style";
@@ -21,22 +20,23 @@ const STYLE_ID = "lvt-pop-style";
 // viewport; on a phone it clamps to the width and slides above/below the element.
 const CSS = `
 .lvt-pop {
-  z-index: 2200; width: max-content; max-width: min(340px, calc(100vw - 16px));
+  z-index: 2200; width: max-content; max-width: min(320px, calc(100vw - 20px));
   border-radius: 16px; padding: 14px;
-  background: linear-gradient(180deg, rgba(255,255,255,.94), rgba(255,255,255,.88));
-  -webkit-backdrop-filter: blur(20px) saturate(180%); backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255,255,255,.7);
-  box-shadow: 0 1px 2px rgba(16,18,27,.06), 0 12px 34px -10px rgba(16,18,27,.42);
+  background: var(--card, linear-gradient(180deg, rgba(255,255,255,.95), rgba(255,255,255,.9)));
+  -webkit-backdrop-filter: blur(22px) saturate(180%); backdrop-filter: blur(22px) saturate(180%);
+  border: 1px solid var(--border, rgba(20,24,40,.1));
+  box-shadow: 0 1px 2px rgba(16,18,27,.06), 0 14px 38px -10px rgba(16,18,27,.45);
   -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+  color: var(--text, #1c2030);
   animation: lvtPopIn .16s cubic-bezier(.22,.61,.36,1) both;
 }
 .lvt-pop-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
-.lvt-pop-title { font-size:.7rem; font-weight:800; letter-spacing:.07em; text-transform:uppercase; color:#5b6170; margin:0; }
+.lvt-pop-title { font-size:.7rem; font-weight:800; letter-spacing:.07em; text-transform:uppercase; color:var(--muted, #5b6170); margin:0; }
 .lvt-pop-x { flex:0 0 auto; width:24px; height:24px; border:0; border-radius:7px; cursor:pointer; line-height:0;
-  color:#5b6170; background:rgba(20,24,40,.06); display:grid; place-items:center; transition:background .15s ease, color .15s ease; }
-.lvt-pop-x:hover { background:rgba(20,24,40,.12); color:#1c2030; }
+  color:var(--muted, #5b6170); background:rgba(20,24,40,.06); display:grid; place-items:center; transition:background .15s ease, color .15s ease; }
+.lvt-pop-x:hover { background:rgba(20,24,40,.12); color:var(--text, #1c2030); }
 .lvt-pop-arrow { position:absolute; width:10px; height:10px; rotate:45deg;
-  background:rgba(255,255,255,.92); border:1px solid rgba(255,255,255,.7); }
+  background:var(--card, rgba(255,255,255,.95)); border:1px solid var(--border, rgba(20,24,40,.1)); }
 @keyframes lvtPopIn { from { opacity:0; transform:translateY(6px) scale(.97) } to { opacity:1; transform:none } }
 @media (prefers-reduced-motion:reduce){ .lvt-pop { animation:none } }
 `;
@@ -50,7 +50,7 @@ function ensureStyle() {
 }
 
 interface Props {
-  anchor: ReferenceType | null;
+  anchor: HTMLElement | null;
   open: boolean;
   onClose: () => void;
   title: string;
@@ -68,26 +68,25 @@ export function CardPopover({ anchor, open, onClose, title, children }: Props) {
       if (!o) onClose();
     },
     placement: "right-start",
+    // fixed strategy + reactive `elements.reference` = positions correctly from
+    // the clicked card element's viewport rect (no race, survives scroll/portal).
+    strategy: "fixed",
+    elements: { reference: anchor },
     whileElementsMounted: autoUpdate,
     middleware: [
       offset(12),
-      flip({ fallbackPlacements: ["left-start", "bottom", "top"], padding: 8 }),
-      shift({ padding: 8 }),
+      flip({ fallbackPlacements: ["left-start", "bottom-start", "top-start"], padding: 10 }),
+      shift({ padding: 10 }),
       size({
-        padding: 8,
+        padding: 10,
         apply({ availableHeight, elements }) {
-          elements.floating.style.maxHeight = `${Math.max(180, availableHeight)}px`;
+          elements.floating.style.maxHeight = `${Math.max(200, availableHeight)}px`;
           elements.floating.style.overflowY = "auto";
         },
       }),
       arrow({ element: arrowRef, padding: 12 }),
     ],
   });
-
-  // The reference is an existing card element, set imperatively.
-  useEffect(() => {
-    refs.setReference(anchor);
-  }, [anchor, refs]);
 
   const dismiss = useDismiss(context, { outsidePress: true });
   const role = useRole(context, { role: "dialog" });

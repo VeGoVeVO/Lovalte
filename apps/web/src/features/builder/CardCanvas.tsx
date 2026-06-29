@@ -1,36 +1,74 @@
-import { useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useRef, type CSSProperties, type ReactNode } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { DynamicIcon } from "lucide-react/dynamic";
-import { useUploadImage, fileToDataUrl, validateImageFile } from "./useImages";
 import { useT } from "../../lib/i18n";
-import type { CardDoc, Slot } from "./cardDoc";
+import type { CardDoc, Slot, FieldList } from "./cardDoc";
 import { hexToRgb } from "./cardDoc";
 import { stampLayout, STRIP_RATIO, GRID_LEFT } from "./stampStrip";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif";
 
-/** Every editable component on the card. Clicking one selects + opens its editor. */
-export type SlotKind =
-  "logo" | "name" | "colors" | "hero" | "stamps" | "primary" | "header" | "fields" | "back" | null;
+/** Components that open a contextual popover (text is edited inline instead). */
+export type SlotKind = "logo" | "colors" | "hero" | "stamps" | "reward" | "back" | null;
 
 interface Props {
   doc: CardDoc;
   selected?: SlotKind;
-  /** Select a component to edit; `anchor` is the clicked element the popover attaches to. */
   onSelect?: (s: SlotKind, anchor?: HTMLElement | null) => void;
-  /** dispatch a builder tool (image.set / image.move). */
   dispatch?: (toolId: string, args?: Record<string, unknown>) => void;
   width?: number;
-  /** Display-only (template gallery): no upload / drag / selection. */
   readOnly?: boolean;
 }
 
-const sampleValue = (doc: CardDoc) => {
-  if (doc.type === "cashback") return "$5.25";
-  return "120";
-};
+const sampleValue = (doc: CardDoc) => (doc.type === "cashback" ? "$5.25" : "120");
 
-/** One editable image slot: empty -> click to upload; filled -> drag to reposition. */
+/**
+ * Inline-editable text drawn directly on the card. Uncontrolled contentEditable
+ * (no cursor jumps): the DOM is only re-synced from `value` when the element is
+ * NOT focused (undo/redo/template swaps), never mid-typing.
+ */
+function Editable({
+  value,
+  ph,
+  ariaLabel,
+  onInput,
+  style,
+}: {
+  value: string;
+  ph?: string;
+  ariaLabel: string;
+  onInput: (v: string) => void;
+  style?: CSSProperties;
+}) {
+  const ref = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (el && document.activeElement !== el && el.textContent !== value) el.textContent = value;
+  }, [value]);
+  return (
+    <span
+      ref={ref}
+      className="lvt-ed"
+      role="textbox"
+      aria-label={ariaLabel}
+      tabIndex={0}
+      contentEditable
+      suppressContentEditableWarning
+      data-ph={ph}
+      onInput={(e) => onInput(e.currentTarget.textContent || "")}
+      onClick={(e) => e.stopPropagation()}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          (e.target as HTMLElement).blur();
+        }
+      }}
+      style={style}
+    />
+  );
+}
+
+/** One image slot: click opens its popover (upload/scale); filled -> drag to reposition. */
 function ImgSlot({
   slot,
   src,
@@ -61,40 +99,20 @@ function ImgSlot({
   dispatch: (toolId: string, args?: Record<string, unknown>) => void;
 }) {
   const { t } = useT();
-  const inputRef = useRef<HTMLInputElement>(null);
-  const drag = useRef<{ x: number; y: number; tx: number; ty: number } | null>(null);
-  const upload = useUploadImage();
-  const [err, setErr] = useState<string | null>(null);
+  const drag = useRef<{ x: number; y: number; tx: number; ty: number; moved: boolean } | null>(
+    null,
+  );
 
-  const pick = async (file?: File) => {
-    if (!file) return;
-    const invalid = validateImageFile(file);
-    if (invalid) {
-      setErr(invalid);
-      return;
-    }
-    setErr(null);
-    try {
-      const dataUrl = await fileToDataUrl(file);
-      const res = await upload.mutateAsync({
-        kind: slot === "logo" ? "logo" : "strip",
-        source: "upload",
-        dataUrl,
-      });
-      dispatch("image.set", { slot, src: res.url });
-    } catch (e) {
-      setErr((e as { message?: string })?.message ?? t("Upload failed."));
-    }
-  };
   const down = (e: React.PointerEvent) => {
     if (!src) return;
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
-    drag.current = { x: e.clientX, y: e.clientY, tx, ty };
+    drag.current = { x: e.clientX, y: e.clientY, tx, ty, moved: false };
   };
   const move = (e: React.PointerEvent) => {
     if (!drag.current) return;
     const dx = (e.clientX - drag.current.x) / 120;
     const dy = (e.clientY - drag.current.y) / 120;
+    if (Math.abs(dx) + Math.abs(dy) > 0.02) drag.current.moved = true;
     dispatch("image.move", {
       slot,
       tx: Math.max(-1, Math.min(1, drag.current.tx + dx)),
@@ -109,11 +127,14 @@ function ImgSlot({
         "aria-label": src ? t("Move {label}", { label }) : t("Add {label}", { label }),
         onClick: (e: React.MouseEvent) => {
           e.stopPropagation();
+          if (drag.current?.moved) return; // a drag, not a click
           onSelect(e.currentTarget as HTMLElement);
-          if (!src) inputRef.current?.click();
         },
         onKeyDown: (e: React.KeyboardEvent) => {
-          if ((e.key === "Enter" || e.key === " ") && !src) inputRef.current?.click();
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onSelect(e.currentTarget as HTMLElement);
+          }
         },
         onPointerDown: down,
         onPointerMove: move,
@@ -167,69 +188,18 @@ function ImgSlot({
             fontWeight: 600,
           }}
         >
-          <span style={{ fontSize: round ? 18 : 20 }}>{upload.isPending ? "…" : "＋"}</span>
+          <span style={{ fontSize: round ? 18 : 20 }}>＋</span>
           {!round && <span>{label}</span>}
         </div>
       ) : null}
-      {src && active && (
-        <div
-          style={{
-            position: "absolute",
-            right: 6,
-            bottom: 6,
-            fontSize: 10,
-            fontWeight: 700,
-            color: "#fff",
-            background: "rgba(0,0,0,.45)",
-            padding: "2px 7px",
-            borderRadius: 20,
-          }}
-        >
-          {t("drag to fit")}
-        </div>
-      )}
-      {err && (
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            display: "grid",
-            placeItems: "center",
-            background: "rgba(120,20,20,.8)",
-            color: "#fff",
-            fontSize: 10,
-            padding: 6,
-            textAlign: "center",
-          }}
-        >
-          {err}
-        </div>
-      )}
-      {editable && (
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/png,image/jpeg,image/webp"
-          onChange={(e) => {
-            void pick(e.target.files?.[0]);
-            e.target.value = "";
-          }}
-          style={{ display: "none" }}
-          tabIndex={-1}
-        />
-      )}
     </div>
   );
 }
 
-/** "rgb(r, g, b)" -> "rgba(r, g, b, a)" for faint marks/rings. */
+/** "rgb(r, g, b)" -> "rgba(r, g, b, a)" for faint marks. */
 const fade = (rgb: string, a: number) => rgb.replace("rgb(", "rgba(").replace(")", `, ${a})`);
 
-/**
- * The stamp grid on the strip band — every empty slot shows the chosen icon faint
- * and every earned slot a filled disc with the icon knocked out (highlighted), so
- * a fresh card reads as "coffee x N". Same layout (stampLayout) as the baked frames.
- */
+/** Stamp grid: empty = chosen icon faint; earned = filled disc with icon knocked out. */
 function StampGrid({
   doc,
   fg,
@@ -264,7 +234,7 @@ function StampGrid({
       {Array.from({ length: doc.stampsGoal }).map((_, i) => {
         const got = i < doc.stampsEarned;
         const art = got ? doc.stampedRef : doc.unstampedRef;
-        if (art) {
+        if (art)
           return (
             <img
               key={i}
@@ -273,8 +243,7 @@ function StampGrid({
               style={{ width: dot, height: dot, objectFit: "contain" }}
             />
           );
-        }
-        if (got) {
+        if (got)
           return (
             <div
               key={i}
@@ -290,7 +259,6 @@ function StampGrid({
               <DynamicIcon name={doc.stampIcon as never} size={icon} color={bg} />
             </div>
           );
-        }
         return (
           <DynamicIcon
             key={i}
@@ -306,13 +274,13 @@ function StampGrid({
 
 const NOOP = () => {};
 
-/** The interactive 1:1 Wallet card the merchant edits by clicking its parts. */
+/** The interactive 1:1 Wallet card. Text edits inline; other parts open popovers. */
 export function CardCanvas({
   doc,
   selected = null,
   onSelect = NOOP,
   dispatch = NOOP,
-  width = 360,
+  width = 340,
   readOnly = false,
 }: Props) {
   const { t } = useT();
@@ -320,7 +288,6 @@ export function CardCanvas({
   const fg = hexToRgb(doc.theme.fg);
   const bg = hexToRgb(doc.theme.bg);
   const lbl = hexToRgb(doc.theme.label);
-  const brand = doc.logoText.trim() || t("Your Business");
   const labelStyle: CSSProperties = {
     fontSize: 9.5,
     letterSpacing: "0.06em",
@@ -330,7 +297,7 @@ export function CardCanvas({
     whiteSpace: "nowrap",
   };
 
-  /** A clickable, highlight-on-select region of the card. */
+  /** Clickable region that opens a popover and highlights when selected. */
   const Region = ({
     kind,
     children,
@@ -343,7 +310,6 @@ export function CardCanvas({
     label: string;
   }) => {
     if (!editable) return <div style={style}>{children}</div>;
-    const on = selected === kind;
     return (
       <div
         role="button"
@@ -362,7 +328,7 @@ export function CardCanvas({
         style={{
           cursor: "pointer",
           borderRadius: 8,
-          outline: on ? "2.5px solid #3a86ff" : "none",
+          outline: selected === kind ? "2.5px solid #3a86ff" : "none",
           outlineOffset: 3,
           ...style,
         }}
@@ -372,12 +338,54 @@ export function CardCanvas({
     );
   };
 
-  const fieldChip = (label: string, value: string) => (
-    <div style={{ minWidth: 0 }}>
-      <div style={{ ...labelStyle, fontSize: 9 }}>{label}</div>
-      <div style={{ fontSize: 14, fontWeight: 700, marginTop: 2 }}>{value}</div>
-    </div>
-  );
+  const removeBtn = (list: FieldList, id: string) =>
+    editable && (
+      <button
+        type="button"
+        aria-label={t("Remove")}
+        onClick={(e) => {
+          e.stopPropagation();
+          dispatch("field.remove", { list, id });
+        }}
+        style={{
+          border: 0,
+          background: "rgba(0,0,0,.28)",
+          color: "#fff",
+          width: 15,
+          height: 15,
+          borderRadius: "50%",
+          fontSize: 10,
+          lineHeight: 0,
+          cursor: "pointer",
+          flexShrink: 0,
+        }}
+      >
+        ✕
+      </button>
+    );
+
+  const addBtn = (list: FieldList, label: string) =>
+    editable && (
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          dispatch("field.add", { list });
+        }}
+        style={{
+          ...labelStyle,
+          color: lbl,
+          opacity: 0.65,
+          border: "1px dashed currentColor",
+          borderRadius: 6,
+          background: "none",
+          cursor: "pointer",
+          padding: "3px 7px",
+        }}
+      >
+        ＋ {label}
+      </button>
+    );
 
   return (
     <div
@@ -393,13 +401,13 @@ export function CardCanvas({
         borderRadius: 18,
         overflow: "hidden",
         fontFamily: FONT,
-        userSelect: "none",
+        userSelect: editable ? "none" : "auto",
         boxShadow:
           "0 1px 0 rgba(255,255,255,.12) inset, 0 30px 70px -28px rgba(0,0,0,.6), 0 10px 26px -12px rgba(0,0,0,.45)",
         transition: "background .35s ease",
       }}
     >
-      {/* Header: logo + business name + header fields (top-right, max 3) */}
+      {/* Header: logo + name + header fields */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "13px 15px 11px" }}>
         <div style={{ width: 34, height: 34, flexShrink: 0 }}>
           <ImgSlot
@@ -417,91 +425,143 @@ export function CardCanvas({
             dispatch={dispatch}
           />
         </div>
-        <Region kind="name" label={t("Business name")} style={{ flex: 1, minWidth: 0 }}>
-          <span
-            style={{
-              display: "block",
-              fontSize: 15,
-              fontWeight: 700,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {brand}
-          </span>
-        </Region>
-        <Region kind="header" label={t("Header fields")} style={{ flexShrink: 0 }}>
-          {doc.headerFields.length > 0 ? (
-            <div style={{ display: "flex", gap: 12, textAlign: "right" }}>
-              {doc.headerFields.slice(0, 3).map((f) => (
-                <div key={f.id}>
-                  <div style={labelStyle}>{f.label}</div>
-                  <div style={{ fontSize: 13, fontWeight: 600 }}>{f.value}</div>
-                </div>
-              ))}
-            </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {editable ? (
+            <Editable
+              value={doc.logoText}
+              ph={t("Business name")}
+              ariaLabel={t("Business name")}
+              onInput={(v) => dispatch("text.logoText", { value: v })}
+              style={{ display: "block", fontSize: 15, fontWeight: 700 }}
+            />
           ) : (
-            editable && <span style={{ ...labelStyle, opacity: 0.55 }}>＋ {t("Header")}</span>
-          )}
-        </Region>
-      </div>
-
-      {/* Strip: stamp grid (with the "X / N" value) OR hero photo */}
-      {doc.type === "stamps" ? (
-        <Region kind="stamps" label={t("Stamps")} style={{ borderRadius: 0 }}>
-          <div
-            style={{
-              position: "relative",
-              height: width * STRIP_RATIO,
-              background: bg,
-              overflow: "hidden",
-            }}
-          >
-            {doc.hero?.src && (
-              <img
-                src={doc.hero.src}
-                alt=""
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                }}
-              />
-            )}
-            <StampGrid doc={doc} fg={fg} bg={bg} width={width} />
-            <div
+            <span
               style={{
-                position: "absolute",
-                left: 16,
-                top: 0,
-                bottom: 0,
-                width: `${GRID_LEFT * 100}%`,
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "center",
-                textShadow: doc.hero?.src ? "0 1px 6px rgba(0,0,0,.55)" : "none",
+                display: "block",
+                fontSize: 15,
+                fontWeight: 700,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
               }}
             >
-              <div
-                style={{
-                  fontSize: 30,
-                  fontWeight: 800,
-                  lineHeight: 1,
-                  letterSpacing: "-0.02em",
-                  fontVariantNumeric: "tabular-nums",
-                }}
-              >
-                {doc.stampsEarned} / {doc.stampsGoal}
+              {doc.logoText || t("Your Business")}
+            </span>
+          )}
+        </div>
+        <div
+          style={{
+            display: "flex",
+            gap: 12,
+            alignItems: "flex-start",
+            flexShrink: 0,
+            textAlign: "right",
+          }}
+        >
+          {doc.headerFields.slice(0, 3).map((f) => (
+            <div key={f.id} style={{ display: "flex", alignItems: "flex-start", gap: 3 }}>
+              <div>
+                <Editable
+                  value={f.label}
+                  ph={t("Label")}
+                  ariaLabel={t("Label")}
+                  onInput={(v) =>
+                    dispatch("field.set", {
+                      list: "headerFields",
+                      id: f.id,
+                      key: "label",
+                      value: v,
+                    })
+                  }
+                  style={{ ...labelStyle, display: "block" }}
+                />
+                <Editable
+                  value={f.value}
+                  ph={t("Value")}
+                  ariaLabel={t("Value")}
+                  onInput={(v) =>
+                    dispatch("field.set", {
+                      list: "headerFields",
+                      id: f.id,
+                      key: "value",
+                      value: v,
+                    })
+                  }
+                  style={{ display: "block", fontSize: 13, fontWeight: 600 }}
+                />
               </div>
-              <div style={{ ...labelStyle, fontSize: 11, marginTop: 3 }}>
-                {doc.primaryLabel || "STAMPS"}
-              </div>
+              {removeBtn("headerFields", f.id)}
             </div>
-          </div>
-        </Region>
+          ))}
+          {doc.headerFields.length < 3 && addBtn("headerFields", t("Header"))}
+        </div>
+      </div>
+
+      {/* Strip: stamps (count -> reward popover, grid -> stamps popover) OR hero */}
+      {doc.type === "stamps" ? (
+        <div
+          style={{
+            position: "relative",
+            height: width * STRIP_RATIO,
+            background: bg,
+            overflow: "hidden",
+          }}
+        >
+          {doc.hero?.src && (
+            <img
+              src={doc.hero.src}
+              alt=""
+              style={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+              }}
+            />
+          )}
+          <Region
+            kind="stamps"
+            label={t("Stamps")}
+            style={{ position: "absolute", inset: 0, borderRadius: 0 }}
+          >
+            <StampGrid doc={doc} fg={fg} bg={bg} width={width} />
+          </Region>
+          <Region
+            kind="reward"
+            label={t("Reward")}
+            style={{
+              position: "absolute",
+              left: 12,
+              top: 0,
+              bottom: 0,
+              width: `${GRID_LEFT * 100}%`,
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              textShadow: doc.hero?.src ? "0 1px 6px rgba(0,0,0,.55)" : "none",
+            }}
+          >
+            <div
+              style={{
+                fontSize: 30,
+                fontWeight: 800,
+                lineHeight: 1,
+                letterSpacing: "-0.02em",
+                fontVariantNumeric: "tabular-nums",
+              }}
+            >
+              {doc.stampsEarned} / {doc.stampsGoal}
+            </div>
+            <Editable
+              value={doc.primaryLabel}
+              ph="STAMPS"
+              ariaLabel={t("Label")}
+              onInput={(v) => dispatch("text.primaryLabel", { value: v })}
+              style={{ ...labelStyle, fontSize: 11, marginTop: 3, display: "block" }}
+            />
+          </Region>
+        </div>
       ) : (
         <ImgSlot
           slot="hero"
@@ -521,8 +581,14 @@ export function CardCanvas({
 
       {/* Primary value (non-stamps) */}
       {doc.type !== "stamps" && (
-        <Region kind="primary" label={t("Primary field")} style={{ margin: "10px 16px 0" }}>
-          <div style={labelStyle}>{doc.primaryLabel}</div>
+        <div style={{ margin: "10px 16px 0" }}>
+          <Editable
+            value={doc.primaryLabel}
+            ph="POINTS"
+            ariaLabel={t("Label")}
+            onInput={(v) => dispatch("text.primaryLabel", { value: v })}
+            style={{ ...labelStyle, display: "block" }}
+          />
           <div
             style={{
               fontSize: 30,
@@ -530,29 +596,57 @@ export function CardCanvas({
               lineHeight: 1,
               marginTop: 3,
               letterSpacing: "-0.02em",
+              fontVariantNumeric: "tabular-nums",
             }}
           >
             {sampleValue(doc)}
           </div>
-        </Region>
+        </div>
       )}
 
-      {/* Secondary fields row (all card types) */}
-      <Region kind="fields" label={t("Fields")} style={{ margin: "10px 16px 0" }}>
-        {doc.fields.length > 0 ? (
-          <div style={{ display: "flex", gap: 18, flexWrap: "wrap" }}>
-            {doc.fields.slice(0, 4).map((f) => (
-              <div key={f.id}>{fieldChip(f.label, f.value)}</div>
-            ))}
+      {/* Secondary fields row */}
+      <div
+        style={{
+          margin: "12px 16px 0",
+          display: "flex",
+          gap: 16,
+          flexWrap: "wrap",
+          alignItems: "flex-start",
+        }}
+      >
+        {doc.fields.slice(0, 4).map((f) => (
+          <div
+            key={f.id}
+            style={{ display: "flex", alignItems: "flex-start", gap: 3, minWidth: 0 }}
+          >
+            <div>
+              <Editable
+                value={f.label}
+                ph={t("Label")}
+                ariaLabel={t("Label")}
+                onInput={(v) =>
+                  dispatch("field.set", { list: "fields", id: f.id, key: "label", value: v })
+                }
+                style={{ ...labelStyle, fontSize: 9, display: "block" }}
+              />
+              <Editable
+                value={f.value}
+                ph={t("Value")}
+                ariaLabel={t("Value")}
+                onInput={(v) =>
+                  dispatch("field.set", { list: "fields", id: f.id, key: "value", value: v })
+                }
+                style={{ display: "block", fontSize: 14, fontWeight: 700, marginTop: 2 }}
+              />
+            </div>
+            {removeBtn("fields", f.id)}
           </div>
-        ) : (
-          editable && <span style={{ ...labelStyle, opacity: 0.55 }}>＋ {t("Add field")}</span>
-        )}
-      </Region>
+        ))}
+        {doc.fields.length < 4 && addBtn("fields", t("Add field"))}
+      </div>
 
       <div style={{ flex: 1, minHeight: 10 }} />
 
-      {/* Back-of-card fields affordance */}
       {editable && (
         <Region kind="back" label={t("Back of card")} style={{ margin: "0 16px 4px" }}>
           <span style={{ ...labelStyle, opacity: 0.55 }}>

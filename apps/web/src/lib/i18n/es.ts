@@ -458,6 +458,8 @@ export const ES: Record<string, string> = {
   "Tap any part of the card to edit it.": "Toca cualquier parte de la tarjeta para editarla.",
   Colours: "Colores",
   "Strip photo": "Foto de la banda",
+  Reward: "Recompensa",
+  "Edit the label by typing on the card.": "Edita la etiqueta escribiendo en la tarjeta.",
   "Primary field": "Campo principal",
   Header: "Cabecera",
   "Back of card": "Reverso",
