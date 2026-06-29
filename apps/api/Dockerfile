@@ -12,7 +12,7 @@ RUN npm ci
 COPY apps/api apps/api
 RUN npm run build --workspace apps/api \
  && cp -r apps/api/src/db/migrations apps/api/dist/db/migrations \
- && npm prune --omit=dev
+ && npm prune --omit=dev --workspaces
 
 # ── Minimal runtime ──────────────────────────────────────────────────────────
 FROM node:22-alpine AS runtime
