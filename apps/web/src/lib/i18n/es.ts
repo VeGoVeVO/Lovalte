@@ -426,4 +426,43 @@ export const ES: Record<string, string> = {
     "Arriba a la izquierda del pase. PNG hasta 160×50 pt (sube 320×100 px para retina).",
   "Full-width banner behind the points. PNG 375×144 pt (upload 750×288 px).":
     "Banner a todo el ancho tras los puntos. PNG 375×144 pt (sube 750×288 px).",
+
+  // ── Builder: canvas editor (type → templates → edit) ─────────────────
+  Undo: "Deshacer",
+  Redo: "Rehacer",
+  "What kind of card?": "¿Qué tipo de tarjeta?",
+  "This sets how rewards work and which templates you'll see.":
+    "Define cómo funcionan las recompensas y qué plantillas verás.",
+  "Earn & redeem": "Acumula y canjea",
+  "Buy N, get 1 free": "Compra N y llévate 1 gratis",
+  "Money back balance": "Saldo de reembolso",
+  "← Type": "← Tipo",
+  "Choose a {type} template": "Elige una plantilla de {type}",
+  "Swipe and tap the one you like - you can change everything next.":
+    "Desliza y toca la que te guste, luego podrás cambiarlo todo.",
+  "Use template {name}": "Usar la plantilla {name}",
+  "Editing {label}": "Editando {label}",
+  "Hero photo": "Foto principal",
+  "Fit & zoom": "Ajuste y zoom",
+  "Drag the photo on the card to reposition.": "Arrastra la foto en la tarjeta para recolocarla.",
+  "Click the slot on the card to add a photo.": "Toca el hueco en la tarjeta para añadir una foto.",
+  "Remove photo": "Quitar foto",
+  "e.g. Abba Java": "p. ej. Abba Java",
+  Text: "Texto",
+  Labels: "Etiquetas",
+  "Move {label}": "Mover {label}",
+  "Add {label}": "Añadir {label}",
+  "drag to fit": "arrastra para ajustar",
+
+  // ── Builder: stamp cards ─────────────────────────────────────────────
+  "Stamp icon": "Icono del sello",
+  "Stamps to reward": "Sellos para el premio",
+  "Stamp art (optional)": "Imágenes del sello (opcional)",
+  "Upload your own stamp images to replace the icon.":
+    "Sube tus propias imágenes de sello para sustituir el icono.",
+  Stamped: "Sellado",
+  "Shown for collected stamps.": "Se muestra en los sellos conseguidos.",
+  Unstamped: "Sin sellar",
+  "Shown for empty stamps.": "Se muestra en los sellos vacíos.",
+  Fields: "Campos",
 };

@@ -285,7 +285,7 @@ export function CardCanvas({
   const fg = hexToRgb(doc.theme.fg);
   const bg = hexToRgb(doc.theme.bg);
   const lbl = hexToRgb(doc.theme.label);
-  const brand = doc.logoText.trim() || doc.business || t("Your Business");
+  const brand = doc.logoText.trim() || t("Your Business");
   const labelStyle: CSSProperties = {
     fontSize: 9.5,
     letterSpacing: "0.06em",

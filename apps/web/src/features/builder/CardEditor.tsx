@@ -31,6 +31,23 @@ import { svgToPngDataUrl } from "./lucideRaster";
 
 type Step = "type" | "templates" | "editor";
 
+/** A tiny branded square used as the auto Apple icon when no logo was uploaded. */
+function makeIconDataUrl(bg: string, fg: string, name: string): string {
+  const c = document.createElement("canvas");
+  c.width = 174;
+  c.height = 174;
+  const ctx = c.getContext("2d");
+  if (!ctx) return "";
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, 174, 174);
+  ctx.fillStyle = fg;
+  ctx.font = "bold 96px -apple-system, system-ui, sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText((name.trim()[0] || "L").toUpperCase(), 87, 98);
+  return c.toDataURL("image/png");
+}
+
 const editorCss = `
 .lvt-be-grid { display:grid; grid-template-columns: 1fr minmax(300px,340px); gap:18px; align-items:start; }
 .lvt-be-canvas { display:flex; justify-content:center; padding:14px 0 26px; border-radius:22px;
@@ -151,8 +168,19 @@ export function CardEditor({ initial, onClose }: Props) {
         id = tmpl.id;
         setSavedId(id);
       }
+      // Apple requires an icon. Auto-derive it so the merchant never sets one:
+      // reuse the logo, else generate a tiny branded square from the name.
+      let iconRef = doc.iconRef || doc.logo?.src || "";
+      if (!iconRef) {
+        const res = await uploadImg.mutateAsync({
+          kind: "icon",
+          source: "upload",
+          dataUrl: makeIconDataUrl(doc.theme.bg, doc.theme.fg, doc.logoText),
+        });
+        iconRef = res.url;
+      }
       const assets = [
-        { kind: "icon" as const, ref: doc.iconRef },
+        { kind: "icon" as const, ref: iconRef },
         { kind: "logo" as const, ref: doc.logo?.src ?? "" },
         { kind: "strip" as const, ref: doc.hero?.src ?? "" },
       ].filter((a) => a.ref);
@@ -418,17 +446,9 @@ function Inspector({
         <label style={eyebrow}>{t("Business name")}</label>
         <input
           className="input"
-          value={doc.business}
-          onChange={(e) => dispatch("text.business", { value: e.target.value })}
-        />
-      </div>
-      <div>
-        <label style={eyebrow}>{t("Logo text")}</label>
-        <input
-          className="input"
           value={doc.logoText}
           maxLength={24}
-          placeholder={t("e.g. LOYALTY")}
+          placeholder={t("e.g. Abba Java")}
           onChange={(e) => dispatch("text.logoText", { value: e.target.value })}
         />
       </div>
@@ -550,18 +570,6 @@ function Inspector({
           ))}
         </div>
       )}
-
-      <div>
-        <label style={eyebrow}>{t("App icon *")}</label>
-        <AssetField
-          kind="icon"
-          label={t("Icon")}
-          hint={t("Required to publish. Square, no transparency.")}
-          value={doc.iconRef}
-          iconColor={doc.theme.fg}
-          onChange={(url) => dispatch("icon.set", { ref: url })}
-        />
-      </div>
     </div>
   );
 }

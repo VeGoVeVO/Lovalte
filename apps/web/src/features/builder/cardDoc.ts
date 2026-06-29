@@ -21,8 +21,7 @@ export interface DocField {
 export interface CardDoc {
   type: LoyaltyType;
   templateId: string;
-  business: string;
-  logoText: string;
+  logoText: string; // the single brand name (organizationName + Wallet name)
   theme: { bg: string; fg: string; label: string }; // hex
   logo: ImageLayer | null;
   hero: ImageLayer | null;
@@ -80,7 +79,7 @@ export const TEMPLATES: Record<LoyaltyType, Template[]> = {
       apply: {
         templateId: "p-coffee",
         theme: { bg: "#5c1f29", fg: "#ffffff", label: "#d8a48a" },
-        business: "Coffee Shop",
+        logoText: "Coffee Shop",
         primaryLabel: "POINTS",
         fields: [df("NAME", "Juan Chavez"), df("REWARD", "$3.00")],
       },
@@ -91,7 +90,7 @@ export const TEMPLATES: Record<LoyaltyType, Template[]> = {
       apply: {
         templateId: "p-noir",
         theme: { bg: "#14161e", fg: "#ffffff", label: "#8b93a7" },
-        business: "Your Brand",
+        logoText: "Your Brand",
         primaryLabel: "POINTS",
         fields: [df("MEMBER", "Alex Jones"), df("TIER", "Silver")],
       },
@@ -102,7 +101,7 @@ export const TEMPLATES: Record<LoyaltyType, Template[]> = {
       apply: {
         templateId: "p-mint",
         theme: { bg: "#0f5c46", fg: "#ffffff", label: "#a8e6cf" },
-        business: "Green Co",
+        logoText: "Green Co",
         primaryLabel: "POINTS",
         fields: [df("MEMBER", "Sam Lee")],
       },
@@ -115,7 +114,7 @@ export const TEMPLATES: Record<LoyaltyType, Template[]> = {
       apply: {
         templateId: "s-bean",
         theme: { bg: "#5a3a24", fg: "#ffffff", label: "#d8b48a" },
-        business: "abba java",
+        logoText: "abba java",
         stampIcon: "coffee",
         stampsGoal: 10,
         stampsEarned: 6,
@@ -128,7 +127,7 @@ export const TEMPLATES: Record<LoyaltyType, Template[]> = {
       apply: {
         templateId: "s-plum",
         theme: { bg: "#4a2238", fg: "#ffffff", label: "#e0a8c8" },
-        business: "Sweet Spot",
+        logoText: "Sweet Spot",
         stampIcon: "cake",
         stampsGoal: 8,
         stampsEarned: 3,
@@ -141,7 +140,7 @@ export const TEMPLATES: Record<LoyaltyType, Template[]> = {
       apply: {
         templateId: "s-noir",
         theme: { bg: "#1c1e26", fg: "#ffffff", label: "#9aa0b0" },
-        business: "Daily Grind",
+        logoText: "Daily Grind",
         stampIcon: "star",
         stampsGoal: 12,
         stampsEarned: 9,
@@ -156,7 +155,7 @@ export const TEMPLATES: Record<LoyaltyType, Template[]> = {
       apply: {
         templateId: "c-blue",
         theme: { bg: "#1d2c44", fg: "#ffffff", label: "#9fb6d6" },
-        business: "FuelPlus",
+        logoText: "FuelPlus",
         primaryLabel: "BALANCE",
         fields: [df("EARNED", "$1.40"), df("MEMBER", "Pat Kim")],
       },
@@ -167,7 +166,7 @@ export const TEMPLATES: Record<LoyaltyType, Template[]> = {
       apply: {
         templateId: "c-green",
         theme: { bg: "#143d2b", fg: "#ffffff", label: "#a8e0c0" },
-        business: "Fresh Mart",
+        logoText: "Fresh Mart",
         primaryLabel: "BALANCE",
         fields: [df("THIS MONTH", "$4.10")],
       },
@@ -179,7 +178,6 @@ export function initialDoc(type: LoyaltyType): CardDoc {
   const base: CardDoc = {
     type,
     templateId: "",
-    business: "Your Business",
     logoText: "",
     theme: { bg: "#1a1a2e", fg: "#ffffff", label: "#9999bb" },
     logo: null,
@@ -222,7 +220,6 @@ const layer = (d: CardDoc, slot: Slot) => d[slot];
 export const TOOLS: Record<string, ToolFn> = {
   "card.useTemplate": (d, a) => ({ ...d, ...(a.apply as Partial<CardDoc>) }),
   "theme.set": (d, a) => ({ ...d, theme: { ...d.theme, [a.key as string]: a.value as string } }),
-  "text.business": (d, a) => ({ ...d, business: a.value as string }),
   "text.logoText": (d, a) => ({ ...d, logoText: a.value as string }),
   "text.primaryLabel": (d, a) => ({ ...d, primaryLabel: a.value as string }),
   "image.set": (d, a) => ({
@@ -305,8 +302,8 @@ const toApiFields = (rows: DocField[], prefix: string): FieldDef[] =>
 
 export function docToInput(doc: CardDoc): TemplateInput {
   return {
-    name: (doc.business || "Card").trim(),
-    organizationName: doc.business.trim() || "Your Business",
+    name: doc.logoText.trim() || "Card",
+    organizationName: doc.logoText.trim() || "Your Business",
     logoText: doc.logoText.trim() || undefined,
     backgroundColor: hexToRgb(doc.theme.bg),
     foregroundColor: hexToRgb(doc.theme.fg),
@@ -334,8 +331,7 @@ export function docFromTemplate(tmpl: CardTemplateDTO): CardDoc {
   return {
     type: tmpl.rewardRule.cardType ?? "points",
     templateId: tmpl.id,
-    business: b.organizationName,
-    logoText: b.logoText ?? "",
+    logoText: b.logoText ?? b.organizationName ?? "",
     theme: {
       bg: rgbToHex(b.backgroundColor),
       fg: rgbToHex(b.foregroundColor),
