@@ -4,6 +4,8 @@ import type { RedemptionEvent } from "../domain/RedemptionEvent";
 export interface IRedemptionEventRepository {
   /** Persist a new redemption event. Silently ignores idempotency_key unique violations. */
   save(event: RedemptionEvent): Promise<void>;
+  /** Hard-delete all redemption_events rows for the given tenant. Called on TenantDeleted. */
+  purgeByTenant(tenantId: string): Promise<void>;
 }
 
 /**

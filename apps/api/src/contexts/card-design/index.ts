@@ -41,9 +41,9 @@ export const registerCardDesign: ContextModule = async (app, deps) => {
   };
 
   // Subscribe to cross-context events consumed by this context.
-  // Currently no upstream events required by Card Design.
-  // Example for future use:
-  // deps.bus.subscribe("TenantSuspended", async (e) => { ... });
+  deps.bus.subscribe("TenantDeleted", async (event) => {
+    await repo.purgeByTenant(String(event.payload.tenantId));
+  });
 
   registerCardDesignRoutes(app, deps, handlers);
 };

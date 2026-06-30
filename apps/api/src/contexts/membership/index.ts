@@ -82,6 +82,11 @@ export const registerMembership: ContextModule = async (app, deps) => {
     }
   });
 
+  // TenantDeleted (from Identity context) → hard-delete all tenant rows.
+  deps.bus.subscribe("TenantDeleted", async (event) => {
+    await memberRepo.purgeByTenant(String(event.payload.tenantId));
+  });
+
   // ── Routes ─────────────────────────────────────────────────────────────────
   registerMemberRoutes(app, deps, { getMember, getMemberActivity, listMembers });
 };

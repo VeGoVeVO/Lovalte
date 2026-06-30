@@ -34,7 +34,18 @@ export async function buildApp(deps: Deps, modules: ContextModule[]): Promise<Fa
     }
   });
 
-  await app.register(cors, { origin: deps.config.APP_BASE_URL, credentials: true });
+  // Exact-match allowlist (credentials:true forbids a wildcard). Capacitor WebView
+  // origins are fixed constants a real website cannot forge, so always allow them —
+  // the packaged app authenticates with no extra server env. CORS_ALLOWED_ORIGINS (or
+  // APP_BASE_URL) adds the web origin(s).
+  const NATIVE_APP_ORIGINS = ["https://localhost", "capacitor://localhost"];
+  const configuredOrigins = deps.config.CORS_ALLOWED_ORIGINS
+    ? deps.config.CORS_ALLOWED_ORIGINS.split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+    : [deps.config.APP_BASE_URL];
+  const corsOrigins = Array.from(new Set([...configuredOrigins, ...NATIVE_APP_ORIGINS]));
+  await app.register(cors, { origin: corsOrigins, credentials: true });
   await app.register(cookie, { secret: deps.config.SESSION_SECRET });
   await app.register(rateLimit, { max: 300, timeWindow: "1 minute" });
 

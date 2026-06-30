@@ -57,6 +57,15 @@ export class Tenant extends AggregateRoot<TenantId> {
     return new Tenant(TenantId.from(id), props);
   }
 
+  /**
+   * Permanently delete the account. Emits TenantDeleted so every bounded context
+   * purges its own tenant-scoped rows (members, passes, scans, analytics, …);
+   * identity then drops the tenant root. Irreversible.
+   */
+  delete(): void {
+    this.addEvent(this.makeEvent("TenantDeleted", { tenantId: this.id.value }));
+  }
+
   get name(): string {
     return this.props.name;
   }

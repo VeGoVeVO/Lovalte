@@ -24,5 +24,9 @@ export const registerScanning: ContextModule = async (app, deps) => {
   const repo = new RedemptionEventRepository(deps.pool);
   const handler = new RedeemScanHandler(repo, passLookup, cache, deps.bus, deps.clock);
 
+  deps.bus.subscribe("TenantDeleted", async (event) => {
+    await repo.purgeByTenant(String(event.payload.tenantId));
+  });
+
   registerScanningRoutes(app, deps, handler);
 };

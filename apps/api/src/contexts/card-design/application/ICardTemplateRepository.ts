@@ -22,4 +22,6 @@ export interface ICardTemplateRepository {
   delete(id: string, tenantId: string): Promise<void>;
   /** Count issued passes per template id (passes whose pass_type_id matches the template). */
   countIssuedByTemplateIds(tenantId: string, templateIds: string[]): Promise<Map<string, number>>;
+  /** Hard-delete ALL tenant-scoped rows across template_assets, card_templates, and card_images. */
+  purgeByTenant(tenantId: string): Promise<void>;
 }

@@ -42,6 +42,8 @@ export interface IRegistrationRepository {
   ): Promise<UpdatedSerialRow[]>;
   /** Push-notification trigger: push tokens for all devices registered to a pass. */
   findPushTokensByPassId(passId: string): Promise<string[]>;
+  /** Hard-delete all registrations belonging to a tenant (account-deletion flow). */
+  purgeByTenant(tenantId: string): Promise<void>;
 }
 
 // ---------------------------------------------------------------------------

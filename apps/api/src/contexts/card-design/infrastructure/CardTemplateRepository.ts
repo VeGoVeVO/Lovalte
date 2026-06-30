@@ -117,6 +117,16 @@ export class CardTemplateRepository implements ICardTemplateRepository {
     });
   }
 
+  async purgeByTenant(tenantId: string): Promise<void> {
+    await withTransaction(this.pool, async (client: PoolClient) => {
+      await client.query(`SELECT set_config('app.purge', 'on', true)`);
+      await client.query(`SELECT set_config('app.current_tenant', $1, true)`, [tenantId]);
+      await client.query(`DELETE FROM template_assets WHERE tenant_id = $1`, [tenantId]);
+      await client.query(`DELETE FROM card_templates  WHERE tenant_id = $1`, [tenantId]);
+      await client.query(`DELETE FROM card_images     WHERE tenant_id = $1`, [tenantId]);
+    });
+  }
+
   // ponytail: cross-context read of pass-issuance's `passes` table (count only).
   // Cleaner long-term = a PassIssued/PassDeleted projection owned by this
   // context; a read-only COUNT through a named port is the pragmatic ceiling.

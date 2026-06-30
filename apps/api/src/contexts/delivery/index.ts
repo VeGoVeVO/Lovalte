@@ -34,6 +34,11 @@ export const registerDelivery: ContextModule = async (app, deps) => {
   const getLatestPass = new GetLatestPassHandler(passRead, passBinary);
   const logDiagnostics = new LogDeviceDiagnosticsHandler();
 
+  // Subscribe: TenantDeleted → hard-delete all registrations for that tenant.
+  deps.bus.subscribe("TenantDeleted", async (event) => {
+    await regRepo.purgeByTenant(String((event.payload as { tenantId: string }).tenantId));
+  });
+
   // Subscribe: PassFieldsUpdated → query push tokens → APNs silent push.
   // Apple Wallet polls endpoints 9.2 + 9.3 on receipt of the silent push.
   deps.bus.subscribe("PassFieldsUpdated", async (event) => {

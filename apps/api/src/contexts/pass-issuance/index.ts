@@ -278,6 +278,16 @@ export const registerPassIssuance: ContextModule = async (app, deps) => {
     }
   });
 
+  /**
+   * TenantDeleted - hard-delete all pass-issuance data for the tenant.
+   * Passes are deleted first (FK references pass_types), then pass_types.
+   *
+   * Expected payload: { tenantId: string }
+   */
+  deps.bus.subscribe("TenantDeleted", async (event) => {
+    await passRepo.purgeByTenant(String((event.payload as Record<string, unknown>).tenantId));
+  });
+
   // ── Routes ───────────────────────────────────────────────────────────────
   registerPassRoutes(app, deps, {
     issuePass,

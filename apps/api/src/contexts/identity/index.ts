@@ -8,6 +8,7 @@ import { LoginHandler } from "./application/LoginHandler";
 import { InviteUserHandler } from "./application/InviteUserHandler";
 import { AcceptInvitationHandler } from "./application/AcceptInvitationHandler";
 import { ListUsersHandler } from "./application/ListUsersHandler";
+import { DeleteAccountHandler } from "./application/DeleteAccountHandler";
 import { registerIdentityRoutes } from "./presentation/routes";
 
 /**
@@ -29,6 +30,7 @@ export const registerIdentity: ContextModule = async (app, deps) => {
     invite: new InviteUserHandler(userRepo, invitationRepo, deps.bus),
     acceptInvitation: new AcceptInvitationHandler(invitationRepo, txRunner, deps.bus),
     listUsers: new ListUsersHandler(userRepo),
+    deleteAccount: new DeleteAccountHandler(tenantRepo, deps.bus),
   };
 
   // Cross-context subscriptions (none for identity in MVP - it is upstream to all)

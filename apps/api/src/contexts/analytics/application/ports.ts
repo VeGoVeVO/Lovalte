@@ -43,4 +43,7 @@ export interface IAnalyticsRepository {
     from: Date,
     to: Date,
   ): Promise<TimeseriesPoint[]>;
+
+  /** Hard-delete all analytics rows for a tenant (called on TenantDeleted). */
+  purgeByTenant(tenantId: string): Promise<void>;
 }

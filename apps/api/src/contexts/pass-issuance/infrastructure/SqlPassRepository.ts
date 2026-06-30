@@ -140,4 +140,20 @@ export class SqlPassRepository implements IPassRepository {
       client.release();
     }
   }
+
+  async purgeByTenant(tenantId: string): Promise<void> {
+    const client = await this.pool.connect();
+    try {
+      await client.query("BEGIN");
+      await client.query("SELECT set_config('app.current_tenant', $1, true)", [tenantId]);
+      await client.query("DELETE FROM passes      WHERE tenant_id = $1", [tenantId]);
+      await client.query("DELETE FROM pass_types  WHERE tenant_id = $1", [tenantId]);
+      await client.query("COMMIT");
+    } catch (e) {
+      await client.query("ROLLBACK");
+      throw e;
+    } finally {
+      client.release();
+    }
+  }
 }

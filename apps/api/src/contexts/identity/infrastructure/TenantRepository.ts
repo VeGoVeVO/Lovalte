@@ -1,4 +1,5 @@
 import type { Pool } from "pg";
+import { withTransaction } from "../../../db/pool";
 import { Tenant } from "../domain/Tenant";
 import { Slug } from "../domain/Slug";
 import type { ITenantRepository } from "../application/ports";
@@ -63,6 +64,16 @@ export class TenantRepository implements ITenantRepository {
         tenant.updatedAt,
       ],
     );
+  }
+
+  async deleteRoot(tenantId: string): Promise<void> {
+    await withTransaction(this.pool, async (client) => {
+      // app.purge lets the cascade pass the point_ledger delete trigger; current_tenant
+      // satisfies RLS on any FK-cascaded tenant-scoped rows. Both are transaction-local.
+      await client.query("SELECT set_config('app.purge', 'on', true)");
+      await client.query("SELECT set_config('app.current_tenant', $1, true)", [tenantId]);
+      await client.query(`DELETE FROM iam.tenants WHERE id = $1`, [tenantId]);
+    });
   }
 
   private toAggregate(row: TenantRow): Tenant {

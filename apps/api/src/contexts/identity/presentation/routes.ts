@@ -2,12 +2,20 @@ import { z } from "zod";
 import type { FastifyInstance } from "fastify";
 import type { Deps } from "../../../shared/deps";
 import { parse } from "../../../http/validation";
-import { requireAuth, getAuth, setSessionCookie, clearSessionCookie } from "../../../http/auth";
+import {
+  requireAuth,
+  getAuth,
+  setSessionCookie,
+  clearSessionCookie,
+  signSession,
+  type AuthContext,
+} from "../../../http/auth";
 import type { SignUpTenantHandler } from "../application/SignUpTenantHandler";
 import type { LoginHandler } from "../application/LoginHandler";
 import type { InviteUserHandler } from "../application/InviteUserHandler";
 import type { AcceptInvitationHandler } from "../application/AcceptInvitationHandler";
 import type { ListUsersHandler } from "../application/ListUsersHandler";
+import type { DeleteAccountHandler } from "../application/DeleteAccountHandler";
 
 export interface IdentityHandlers {
   signUp: SignUpTenantHandler;
@@ -15,6 +23,7 @@ export interface IdentityHandlers {
   invite: InviteUserHandler;
   acceptInvitation: AcceptInvitationHandler;
   listUsers: ListUsersHandler;
+  deleteAccount: DeleteAccountHandler;
 }
 
 const signUpSchema = z
@@ -66,18 +75,15 @@ export function registerIdentityRoutes(
     const input = parse(signUpSchema, req.body);
     const r = await handlers.signUp.execute(input);
     if (!r.ok) throw r.error;
-    setSessionCookie(
-      reply,
-      {
-        userId: r.value.userId,
-        tenantId: r.value.tenantId,
-        role: "owner",
-        email: input.email,
-        isAdmin: isAdminEmail(input.email),
-      },
-      secret,
-    );
-    return reply.status(201).send({ data: r.value });
+    const ctx: AuthContext = {
+      userId: r.value.userId,
+      tenantId: r.value.tenantId,
+      role: "owner",
+      email: input.email,
+      isAdmin: isAdminEmail(input.email),
+    };
+    setSessionCookie(reply, ctx, secret);
+    return reply.status(201).send({ data: { ...r.value, token: signSession(ctx, secret) } });
   });
 
   // POST /api/v1/auth/login - authenticate and issue session cookie
@@ -85,17 +91,14 @@ export function registerIdentityRoutes(
     const input = parse(loginSchema, req.body);
     const r = await handlers.login.execute(input);
     if (!r.ok) throw r.error;
-    setSessionCookie(
-      reply,
-      {
-        userId: r.value.userId,
-        tenantId: r.value.tenantId,
-        role: r.value.role,
-        email: r.value.email,
-        isAdmin: isAdminEmail(r.value.email),
-      },
-      secret,
-    );
+    const ctx: AuthContext = {
+      userId: r.value.userId,
+      tenantId: r.value.tenantId,
+      role: r.value.role,
+      email: r.value.email,
+      isAdmin: isAdminEmail(r.value.email),
+    };
+    setSessionCookie(reply, ctx, secret);
     return reply.status(200).send({
       data: {
         userId: r.value.userId,
@@ -103,6 +106,7 @@ export function registerIdentityRoutes(
         email: r.value.email,
         role: r.value.role,
         isAdmin: isAdminEmail(r.value.email),
+        token: signSession(ctx, secret),
       },
     });
   });
@@ -122,18 +126,15 @@ export function registerIdentityRoutes(
       hmacSecret: secret,
     });
     if (!r.ok) throw r.error;
-    setSessionCookie(
-      reply,
-      {
-        userId: r.value.userId,
-        tenantId: r.value.tenantId,
-        role: r.value.role,
-        email: r.value.email,
-        isAdmin: isAdminEmail(r.value.email),
-      },
-      secret,
-    );
-    return reply.status(200).send({ data: r.value });
+    const ctx: AuthContext = {
+      userId: r.value.userId,
+      tenantId: r.value.tenantId,
+      role: r.value.role,
+      email: r.value.email,
+      isAdmin: isAdminEmail(r.value.email),
+    };
+    setSessionCookie(reply, ctx, secret);
+    return reply.status(200).send({ data: { ...r.value, token: signSession(ctx, secret) } });
   });
 
   // POST /api/v1/users/invite - invite a staff or manager (owner or manager only)
@@ -171,4 +172,18 @@ export function registerIdentityRoutes(
   app.get("/api/v1/auth/me", { preHandler: requireAuth(secret) }, async (req, reply) => {
     return reply.status(200).send({ data: getAuth(req) });
   });
+
+  // DELETE /api/v1/auth/account - permanently delete the tenant account + all its
+  // data (Google Play / GDPR "delete account"). Owner only; irreversible.
+  app.delete(
+    "/api/v1/auth/account",
+    { preHandler: requireAuth(secret, ["owner"]) },
+    async (req, reply) => {
+      const auth = getAuth(req);
+      const r = await handlers.deleteAccount.execute({ tenantId: auth.tenantId });
+      if (!r.ok) throw r.error;
+      clearSessionCookie(reply);
+      return reply.status(204).send();
+    },
+  );
 }

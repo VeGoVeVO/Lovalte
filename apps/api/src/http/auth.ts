@@ -66,8 +66,16 @@ export function clearSessionCookie(reply: FastifyReply): void {
 }
 
 export function readAuth(req: FastifyRequest, secret: string): AuthContext | null {
+  // Web sends the session as a cookie; the native app (cross-origin WebView, no
+  // cookie) sends the same HMAC token as `Authorization: Bearer`. Cookie wins.
   const raw = (req.cookies as Record<string, string | undefined>)?.[COOKIE];
-  return raw ? verifySession(raw, secret) : null;
+  if (raw) {
+    const fromCookie = verifySession(raw, secret);
+    if (fromCookie) return fromCookie;
+  }
+  const authz = req.headers.authorization;
+  if (authz && authz.startsWith("Bearer ")) return verifySession(authz.slice(7), secret);
+  return null;
 }
 
 /** Fastify preHandler: require a valid session, optionally constrained to roles. */

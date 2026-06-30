@@ -12,6 +12,9 @@ const schema = z.object({
   // cross-tenant /admin support desk. Env-overridable; defaults to the founder.
   ADMIN_EMAIL: z.string().email().default("wtsouli@gmail.com"),
   APP_BASE_URL: z.string().url(),
+  // Comma-separated CORS allowlist. Defaults to APP_BASE_URL when unset. The native
+  // app build adds its WebView origins, e.g. "https://lovalte.com,capacitor://localhost,https://localhost".
+  CORS_ALLOWED_ORIGINS: z.string().optional(),
   WALLET_WEB_SERVICE_URL: z.string().url(),
   APPLE_TEAM_ID: z.string().optional(),
   APPLE_PASS_TYPE_ID: z.string().optional(),

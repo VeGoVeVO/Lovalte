@@ -7,6 +7,12 @@ export interface ITenantRepository {
   findBySlug(slug: string): Promise<Tenant | null>;
   findById(tenantId: string): Promise<Tenant | null>;
   save(tenant: Tenant): Promise<void>;
+  /**
+   * Hard-delete the tenant root row (FK-cascades iam.users + iam.invitations and
+   * any context rows still referencing the tenant). Runs with app.purge set so the
+   * append-only guards permit the cascade. Call AFTER per-context purgers have run.
+   */
+  deleteRoot(tenantId: string): Promise<void>;
 }
 
 /** Read/write access to the User aggregate. */

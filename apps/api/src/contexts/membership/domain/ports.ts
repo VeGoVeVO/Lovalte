@@ -19,6 +19,7 @@ export interface IMemberRepository {
   /** Members whose pass was issued from a given card template (per-card view). */
   listByCardTemplate(cardTemplateId: string, tenantId: string): Promise<Member[]>;
   save(member: Member): Promise<void>;
+  purgeByTenant(tenantId: string): Promise<void>;
 }
 
 /** Port: append-only point ledger. */

@@ -48,4 +48,12 @@ export class RedemptionEventRepository implements IRedemptionEventRepository {
       }
     });
   }
+
+  async purgeByTenant(tenantId: string): Promise<void> {
+    await withTransaction(this.pool, async (client) => {
+      await client.query("SELECT set_config('app.purge', 'on', true)");
+      await client.query("SELECT set_config('app.current_tenant', $1, true)", [tenantId]);
+      await client.query("DELETE FROM redemption_events WHERE tenant_id = $1", [tenantId]);
+    });
+  }
 }

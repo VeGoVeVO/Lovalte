@@ -119,6 +119,11 @@ export const registerAnalytics: ContextModule = async (
     });
   });
 
+  // TenantDeleted → hard-delete all analytics rows for the tenant
+  deps.bus.subscribe("TenantDeleted", async (event) => {
+    await repo.purgeByTenant(String(event.payload["tenantId"]));
+  });
+
   // ── REST routes ────────────────────────────────────────────────────────
   registerAnalyticsRoutes(app, deps, overviewHandler, timeseriesHandler);
 };
