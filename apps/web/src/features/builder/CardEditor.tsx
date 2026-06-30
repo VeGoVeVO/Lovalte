@@ -115,10 +115,25 @@ const editorCss = `
 .lvt-be-publish:active:not(:disabled){ transform:translateY(0) scale(.97); }
 .lvt-be-publish:disabled { opacity:.55; cursor:default; }
 .lvt-be-publish:focus-visible { outline:none; box-shadow:0 0 0 4px rgba(139,123,216,.45); }
-.lvt-be-dual-stage { display:flex; gap:24px; justify-content:center; align-items:flex-start; overflow-x:auto; flex-wrap:wrap; }
+.lvt-be-dual-stage { display:flex; gap:24px; justify-content:center; align-items:flex-start; flex-wrap:wrap; }
 .lvt-be-platform-col { display:flex; flex-direction:column; align-items:center; gap:8px; }
 .lvt-be-platform-label { font-size:.72rem; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
-@media(max-width:700px){ .lvt-be-dual-stage { flex-direction:column; align-items:center; } }
+/* Platform tabs: hidden on desktop (both cards show); on mobile they pick which one is visible. */
+.lvt-be-tabs { display:none; gap:8px; justify-content:center; margin-bottom:16px; }
+.lvt-be-tab { flex:0 0 auto; height:36px; padding:0 18px; border-radius:11px; font-weight:600; font-size:.84rem; cursor:pointer;
+  border:1px solid rgba(255,255,255,.7); color:var(--text,#20242A);
+  background:linear-gradient(180deg, rgba(255,255,255,.9), rgba(255,255,255,.6));
+  -webkit-backdrop-filter:blur(14px) saturate(160%); backdrop-filter:blur(14px) saturate(160%);
+  box-shadow:0 1px 0 rgba(255,255,255,.85) inset; transition:transform .12s ease, box-shadow .2s ease, border-color .2s ease; }
+.lvt-be-tab[aria-pressed="true"]{ border-color:rgba(169,245,255,.9); box-shadow:0 0 0 2px rgba(169,245,255,.45), 0 1px 0 rgba(255,255,255,.95) inset; }
+.lvt-be-tab:active{ transform:scale(.97); }
+.lvt-be-tab:focus-visible{ outline:none; box-shadow:0 0 0 4px rgba(169,245,255,.4); }
+@media(max-width:700px){
+  .lvt-be-tabs { display:flex; }
+  .lvt-be-dual-stage { flex-direction:column; align-items:center; }
+  .lvt-be-platform-col[data-active="false"] { display:none; }
+  .lvt-be-platform-label { display:none; }
+}
 .lvt-be-hint { margin:18px auto 0; max-width:18rem; text-align:center; color:var(--muted); font-size:.82rem; text-wrap:balance; }
 .lvt-ed { outline:none; cursor:text; border-radius:5px; transition:box-shadow .15s ease; }
 .lvt-ed:focus { box-shadow:0 0 0 2px rgba(169,245,255,.85); }
@@ -135,7 +150,7 @@ const editorCss = `
   display:grid; place-items:center; box-shadow:0 1px 0 rgba(255,255,255,.85) inset; }
 .lvt-be-eyebrow{ font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin:0 0 6px; display:block; }
 .lvt-be-row{ display:flex; align-items:center; gap:10px; }
-@media (prefers-reduced-motion:reduce){ .lvt-be-slide, .lvt-be-tool, .lvt-be-publish, .lvt-ed{ transition:none; } }
+@media (prefers-reduced-motion:reduce){ .lvt-be-slide, .lvt-be-tool, .lvt-be-publish, .lvt-ed, .lvt-be-tab{ transition:none; } }
 `;
 
 interface Props {
@@ -172,6 +187,8 @@ export function CardEditor({ initial, onClose }: Props) {
   const [anchor, setAnchor] = useState<PopAnchor>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [iconPicker, setIconPicker] = useState(false);
+  // Mobile shows one wallet at a time via tabs; desktop shows both side by side.
+  const [platform, setPlatform] = useState<"apple" | "google">("apple");
   const doc = hist[idx];
 
   const dispatch: Dispatch = (toolId, args = {}) => {
@@ -500,26 +517,44 @@ export function CardEditor({ initial, onClose }: Props) {
         aria-hidden="true"
         tabIndex={-1}
       />
+      <div className="lvt-be-tabs" role="group" aria-label={t("Choose wallet preview")}>
+        <button
+          type="button"
+          className="lvt-be-tab"
+          aria-pressed={platform === "apple"}
+          onClick={() => { setPlatform("apple"); closePop(); }}
+        >
+          {t("Apple Wallet")}
+        </button>
+        <button
+          type="button"
+          className="lvt-be-tab"
+          aria-pressed={platform === "google"}
+          onClick={() => { setPlatform("google"); closePop(); }}
+        >
+          {t("Google Wallet")}
+        </button>
+      </div>
       <div className="lvt-be-dual-stage">
-        <div className="lvt-be-platform-col">
+        <div className="lvt-be-platform-col" data-active={platform === "apple" ? "true" : "false"}>
           <span className="lvt-be-platform-label">{t("Apple Wallet")}</span>
           <CardCanvas
             doc={doc}
             selected={sel}
             onSelect={(s, el) => { setGSel(null); select(s, el); }}
             dispatch={dispatch}
-            width={300}
+            width={340}
             onAddLogo={addLogo}
           />
         </div>
-        <div className="lvt-be-platform-col">
+        <div className="lvt-be-platform-col" data-active={platform === "google" ? "true" : "false"}>
           <span className="lvt-be-platform-label">{t("Google Wallet")}</span>
           <GoogleCardCanvas
             doc={doc}
             selected={gSel}
             onSelect={(s, el) => { setSel(null); setGSel(s); setAnchor(el ?? null); }}
             dispatch={dispatch}
-            width={300}
+            width={340}
           />
         </div>
       </div>
