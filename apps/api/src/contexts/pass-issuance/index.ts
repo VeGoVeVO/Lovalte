@@ -97,6 +97,9 @@ export const registerPassIssuance: ContextModule = async (app, deps) => {
     const row = tpl.rows[0];
     const brand = (row?.config?.brand ?? {}) as Record<string, unknown>;
     const rewardRule = (row?.config?.rewardRule ?? {}) as Record<string, unknown>;
+    // Google Wallet has its own logo/hero (the genericObject.logo / heroImage). They
+    // live in config.googleOverrides, separate from the Apple brand refs.
+    const googleOv = (row?.config?.googleOverrides ?? {}) as Record<string, unknown>;
     const orgName = (brand.organizationName as string) ?? row?.name ?? "Lovalte";
     // Loyalty mechanic drives how the primary value is formatted on the pass.
     const loyaltyType =
@@ -144,6 +147,11 @@ export const registerPassIssuance: ContextModule = async (app, deps) => {
         icon: (brand.iconRef as string) ?? "",
         logo: (brand.logoRef as string) ?? "",
         strip: (brand.stripRef as string) ?? "",
+        // Google's own logo/hero. Prefer the Google override, fall back to the Apple
+        // logo/strip so the Google card still gets an image. Kept under separate keys
+        // so they never clobber the Apple refs (which a shared key used to do).
+        googleLogo: (googleOv.logoSrc as string) || (brand.logoRef as string) || "",
+        googleStrip: (googleOv.heroSrc as string) || (brand.stripRef as string) || "",
         // Stamp cards carry one pre-rendered strip per earned-count, baked in the
         // browser at publish. Flatten them as strip_<n>; GetPassPkpassHandler picks
         // strip_<earned> at sign time so the grid matches the customer's progress.

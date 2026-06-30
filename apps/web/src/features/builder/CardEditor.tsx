@@ -316,15 +316,15 @@ export function CardEditor({ initial, onClose }: Props) {
         });
         iconRef = res.url;
       }
-      let assets = [
+      const assets = [
         { kind: "icon" as const, ref: iconRef },
         { kind: "logo" as const, ref: doc.logo?.src ?? "" },
         { kind: "strip" as const, ref: doc.hero?.src ?? "" },
       ].filter((a) => a.ref);
-      if (doc.googleOverrides?.logoSrc && doc.googleOverrides.logoSrc !== doc.logo?.src)
-        assets.push({ kind: "logo" as const, ref: doc.googleOverrides.logoSrc });
-      if (doc.googleOverrides?.heroSrc && doc.googleOverrides.heroSrc !== doc.hero?.src)
-        assets.push({ kind: "strip" as const, ref: doc.googleOverrides.heroSrc });
+      // Google's logo/hero are NOT registered as Apple assets — doing so overwrote
+      // brand.logoRef/stripRef (last write wins). They reach Google via the template's
+      // googleOverrides (docToInput → setGoogleOverrides → config.googleOverrides),
+      // which the pass-issuance projection now maps to imageAssetRefs.googleLogo/Strip.
       // SEQUENTIAL, not Promise.all: each RegisterAssetRef does read-modify-write on
       // the same template config; running them in parallel races and only the last
       // ref survives (that's why the logo never reached the issued pass).

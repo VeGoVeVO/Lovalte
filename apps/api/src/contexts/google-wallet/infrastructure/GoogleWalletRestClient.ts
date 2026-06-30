@@ -67,7 +67,14 @@ export class GoogleWalletRestClient implements IGoogleWalletRestClient {
   }
 
   async patchObject(objectId: string, patch: GwObjectPatch): Promise<void> {
-    const res = await this.request("PATCH", `/genericObject/${encodeURIComponent(objectId)}`, patch);
+    // Map the flat patch to Google's genericObject shape (logo/heroImage are nested
+    // sourceUri objects, like createObject). PATCH merges, so we only send what's set.
+    const body: Record<string, unknown> = {};
+    if (patch.textModulesData !== undefined) body.textModulesData = patch.textModulesData;
+    if (patch.state !== undefined) body.state = patch.state;
+    if (patch.logoImageUri) body.logo = { sourceUri: { uri: patch.logoImageUri } };
+    if (patch.heroImageUri) body.heroImage = { sourceUri: { uri: patch.heroImageUri } };
+    const res = await this.request("PATCH", `/genericObject/${encodeURIComponent(objectId)}`, body);
     if (!res.ok) throw new Error(`GW patchObject ${res.status}: ${await res.text()}`);
   }
 }

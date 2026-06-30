@@ -33,6 +33,9 @@ export interface GwObjectData {
 
 export interface GwObjectPatch {
   textModulesData?: GwTextModule[];
+  /** Absolute HTTPS URIs; the REST client maps these to logo/heroImage on PATCH. */
+  logoImageUri?: string;
+  heroImageUri?: string;
   state?: "ACTIVE" | "EXPIRED";
 }
 
