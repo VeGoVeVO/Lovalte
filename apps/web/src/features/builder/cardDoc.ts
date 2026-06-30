@@ -257,8 +257,12 @@ export function resolveGoogleDoc(doc: CardDoc): ResolvedGoogleDoc {
   const ov = doc.googleOverrides ?? {};
   return {
     bg:          ov.bg          ?? doc.theme.bg,
+    // Mirror the backend genericObject exactly (GetPassSaveUrlHandler):
+    //   cardTitle = organizationName (= logoText), header = logoText ?? organizationName.
+    // Both collapse to the brand name, so Google renders it twice (small + large) —
+    // that is the real on-device render, not a bug.
     cardTitle:   ov.cardTitle   ?? doc.logoText,
-    header:      ov.header      ?? (doc.headerFields[0]?.value ?? ''),
+    header:      ov.header      ?? doc.logoText,
     logoSrc:     ov.logoSrc !== undefined ? (ov.logoSrc || null) : (doc.logo?.src ?? null),
     heroSrc:     ov.heroSrc !== undefined ? (ov.heroSrc || null) : (doc.hero?.src ?? null),
     textModules: ov.textModules ?? deriveGoogleTextModules(doc),

@@ -1,4 +1,5 @@
 import { useEffect, useRef, type CSSProperties, type ReactNode } from "react";
+import { QRCodeSVG } from "qrcode.react";
 import { useT } from "../../lib/i18n";
 import type { PopAnchor } from "./CardPopover";
 import type { CardDoc } from "./cardDoc";
@@ -12,7 +13,7 @@ interface GoogleCardCanvasProps {
   selected?: GSlotKind;
   onSelect?: (slot: GSlotKind, anchor?: PopAnchor) => void;
   dispatch?: Dispatch;
-  width?: number; // default 300
+  width?: number; // default 340
   readOnly?: boolean;
 }
 
@@ -107,23 +108,30 @@ const GoogleGBadge = () => (
 
 const FONT = "Google Sans, Roboto, -apple-system, system-ui, sans-serif";
 
-/** Faithful Google Wallet Generic pass preview. Natural width 400, scaled to `width`. */
+/**
+ * Faithful Google Wallet GENERIC pass front. Google renders genericObjects with a
+ * FIXED template (no layout control), so this mirrors that exact order — verified
+ * against the live Wallet render + Google's generic-pass docs:
+ *   1. logo (circular) + cardTitle (small)   ← brand label, top row
+ *   2. header                                 ← large bold pass title
+ *   3. barcode (QR_CODE)                      ← large, centered
+ *   4. heroImage                              ← full-width banner, BOTTOM (3:1)
+ * textModulesData are NOT shown on the front (Details view only, unless a
+ * cardTemplateOverride is set — which our backend does not), so they are omitted
+ * here to match what users actually see. Natural width 340, scaled to `width`.
+ */
 export function GoogleCardCanvas({
   doc,
   selected = null,
   onSelect = NOOP,
   dispatch = NOOP,
-  width = 300,
+  width = 340,
   readOnly = false,
 }: GoogleCardCanvasProps) {
   const { t } = useT();
   const g = resolveGoogleDoc(doc);
   const editable = !readOnly;
   const textColor = contrastText(g.bg);
-  const mutedColor =
-    textColor === "#ffffff" ? "rgba(255,255,255,.6)" : "rgba(32,33,36,.5)";
-  const dividerColor =
-    textColor === "#ffffff" ? "rgba(255,255,255,.15)" : "rgba(32,33,36,.12)";
 
   /** Clickable region that opens a popover and highlights when selected. In
    *  readOnly mode degrades to a plain div. Always calls stopPropagation so
@@ -168,17 +176,17 @@ export function GoogleCardCanvas({
     );
   };
 
-  const heroH = Math.round(width * 0.22);
-  const cardH = Math.round(width * 0.62);
-  const primaryMod = g.textModules.find((m) => m.id === "primary_points");
-  const listMods = g.textModules.filter((m) => m.id !== "primary_points");
+  // QR sized to dominate the card centre, mirroring the real on-device barcode.
+  const qrSize = Math.round(width * 0.42);
 
   return (
     <div
+      // Clicking empty card space picks the background colour (the 'colors' slot).
+      // Inner Regions / editables stopPropagation so they fire their own slot.
+      onClick={editable ? (e) => onSelect("colors", rectAnchor(e.currentTarget)) : undefined}
       style={{
         width,
         maxWidth: "100%",
-        height: cardH,
         display: "flex",
         flexDirection: "column",
         background: g.bg,
@@ -191,36 +199,102 @@ export function GoogleCardCanvas({
           "0 1px 0 rgba(255,255,255,.12) inset, 0 20px 50px -20px rgba(0,0,0,.5), 0 8px 20px -10px rgba(0,0,0,.35)",
       }}
     >
-      {/* ── Hero banner ─────────────────────────────────────────────────────── */}
+      {/* ── Top row: circular logo + cardTitle (small brand label) + Google G ── */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 14px 8px" }}>
+        <Region
+          kind="logo"
+          label={t("Logo")}
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: "50%",
+            flexShrink: 0,
+            overflow: "hidden",
+            display: "grid",
+            placeItems: "center",
+            background: g.logoSrc ? "transparent" : "rgba(255,255,255,.18)",
+            border: g.logoSrc || !editable ? "none" : "1.5px dashed rgba(255,255,255,.5)",
+          }}
+        >
+          {g.logoSrc ? (
+            <img src={g.logoSrc} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          ) : editable ? (
+            <span style={{ fontSize: 18, opacity: 0.8, color: textColor }}>＋</span>
+          ) : (
+            // Google's own fallback: first letter of cardTitle in a circle.
+            <span style={{ fontSize: 18, fontWeight: 700, color: textColor }}>
+              {(g.cardTitle.trim()[0] || "L").toUpperCase()}
+            </span>
+          )}
+        </Region>
+
+        {editable ? (
+          <Editable
+            value={g.cardTitle}
+            ariaLabel={t("Card title")}
+            onBlur={(v) => dispatch("google.override.cardTitle", { value: v })}
+            style={{ flex: 1, fontSize: 12.5, fontWeight: 600, color: textColor, minWidth: 0, letterSpacing: "0.01em" }}
+          />
+        ) : (
+          <span
+            style={{
+              flex: 1,
+              fontSize: 12.5,
+              fontWeight: 600,
+              minWidth: 0,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {g.cardTitle}
+          </span>
+        )}
+
+        <GoogleGBadge />
+      </div>
+
+      {/* ── Header: large bold pass title (the most prominent text) ──────────── */}
+      <div style={{ padding: "0 14px 14px" }}>
+        {editable ? (
+          <Editable
+            value={g.header}
+            ariaLabel={t("Pass title")}
+            onBlur={(v) => dispatch("google.override.header", { value: v })}
+            style={{ display: "block", fontSize: 23, fontWeight: 700, color: textColor, lineHeight: 1.2, letterSpacing: "-0.01em" }}
+          />
+        ) : (
+          <span style={{ display: "block", fontSize: 23, fontWeight: 700, lineHeight: 1.2, letterSpacing: "-0.01em" }}>
+            {g.header}
+          </span>
+        )}
+      </div>
+
+      {/* ── Barcode: large centered QR (the passId) ─────────────────────────── */}
+      <div style={{ display: "flex", justifyContent: "center", padding: "2px 0 16px" }}>
+        <div style={{ background: "#ffffff", padding: 11, borderRadius: 12, lineHeight: 0 }}>
+          <QRCodeSVG value="LVT-000120" size={qrSize} bgColor="#ffffff" fgColor="#0b0b0b" level="M" />
+        </div>
+      </div>
+
+      {/* ── Hero image: full-width banner anchored to the BOTTOM (3:1) ───────── */}
       <Region
         kind="hero"
         label={t("Hero image")}
-        style={{
-          position: "relative",
-          height: heroH,
-          flexShrink: 0,
-          borderRadius: 0,
-          overflow: "hidden",
-        }}
+        style={{ position: "relative", width: "100%", aspectRatio: "1032 / 336", overflow: "hidden", borderRadius: 0 }}
       >
         {g.heroSrc ? (
           <img
             src={g.heroSrc}
             alt=""
-            style={{
-              position: "absolute",
-              inset: 0,
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-            }}
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
           />
         ) : (
           <div
             style={{
               position: "absolute",
               inset: 0,
-              background: "rgba(0,0,0,.14)",
+              background: "rgba(0,0,0,.18)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -233,202 +307,6 @@ export function GoogleCardCanvas({
             )}
           </div>
         )}
-      </Region>
-
-      {/* ── Card body — 'colors' Region ──────────────────────────────────────
-           Clicking empty body space opens the bg picker. Inner Regions
-           (logo, textModules) stopPropagation so they fire their own slot. */}
-      <Region
-        kind="colors"
-        label={t("Background")}
-        style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, borderRadius: 0 }}
-      >
-        {/* Header row — 'logo' Region: logo thumbnail + card title + G badge */}
-        <Region
-          kind="logo"
-          label={t("Logo")}
-          style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 12px 5px", flexShrink: 0, borderRadius: 0 }}
-        >
-          {/* Logo thumbnail */}
-          <div
-            style={{
-              width: 28,
-              height: 28,
-              borderRadius: 7,
-              flexShrink: 0,
-              overflow: "hidden",
-              background: g.logoSrc ? "transparent" : "rgba(255,255,255,.18)",
-              border: g.logoSrc || !editable ? "none" : "1.5px dashed rgba(255,255,255,.5)",
-            }}
-          >
-            {g.logoSrc ? (
-              <img
-                src={g.logoSrc}
-                alt=""
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-              />
-            ) : editable ? (
-              <div style={{ width: "100%", height: "100%", display: "grid", placeItems: "center" }}>
-                <span style={{ fontSize: 14, opacity: 0.75, color: textColor }}>＋</span>
-              </div>
-            ) : null}
-          </div>
-
-          {/* Card title — inline editable; stopPropagates own click so Region doesn't fire */}
-          {editable ? (
-            <Editable
-              value={g.cardTitle}
-              ariaLabel={t("Card title")}
-              onBlur={(v) => dispatch("google.override.cardTitle", { value: v })}
-              style={{ flex: 1, fontSize: 13, fontWeight: 600, color: textColor, minWidth: 0 }}
-            />
-          ) : (
-            <span
-              style={{
-                flex: 1,
-                fontSize: 13,
-                fontWeight: 600,
-                minWidth: 0,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {g.cardTitle}
-            </span>
-          )}
-
-          <GoogleGBadge />
-        </Region>
-
-        {/* Thin divider */}
-        <div
-          style={{ height: 1, background: dividerColor, marginInline: 12, flexShrink: 0 }}
-        />
-
-        {/* Primary loyalty value */}
-        <div style={{ padding: "7px 12px 3px", flexShrink: 0 }}>
-          <div
-            style={{
-              fontSize: 9,
-              fontWeight: 600,
-              letterSpacing: "0.06em",
-              textTransform: "uppercase",
-              color: mutedColor,
-              marginBottom: 2,
-            }}
-          >
-            {primaryMod?.header ?? "POINTS"}
-          </div>
-          <div
-            style={{
-              fontSize: 20,
-              fontWeight: 700,
-              letterSpacing: "-0.02em",
-              lineHeight: 1.15,
-              fontVariantNumeric: "tabular-nums",
-            }}
-          >
-            {g.loyaltyDisplay}
-          </div>
-        </div>
-
-        {/* Text modules list — one Region for the whole list */}
-        <Region
-          kind="textModules"
-          label={t("Text fields")}
-          style={{ flex: 1, padding: "4px 12px 2px", minHeight: 0, borderRadius: 0, overflow: "hidden" }}
-        >
-          {listMods.slice(0, 3).map((m) => (
-            <div
-              key={m.id}
-              style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}
-            >
-              <span
-                style={{
-                  fontSize: 9,
-                  fontWeight: 600,
-                  letterSpacing: "0.05em",
-                  textTransform: "uppercase",
-                  color: mutedColor,
-                  marginRight: 6,
-                  flexShrink: 0,
-                }}
-              >
-                {m.header}
-              </span>
-              <span
-                style={{
-                  fontSize: 10,
-                  fontWeight: 500,
-                  color: textColor,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {m.body}
-              </span>
-            </div>
-          ))}
-          {listMods.length === 0 && editable && (
-            <span style={{ fontSize: 9, opacity: 0.4, color: textColor }}>
-              {t("No text fields")}
-            </span>
-          )}
-        </Region>
-
-        {/* QR placeholder strip */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 5,
-            padding: "3px 12px 7px",
-            flexShrink: 0,
-          }}
-        >
-          <div
-            style={{
-              width: 32,
-              height: 32,
-              background: "#ffffff",
-              borderRadius: 5,
-              display: "grid",
-              placeItems: "center",
-            }}
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
-              <rect x="2" y="2" width="9" height="9" rx="1.5" fill="none" stroke="#0b0b0b" strokeWidth="1.5" />
-              <rect x="4" y="4" width="5" height="5" fill="#0b0b0b" />
-              <rect x="13" y="2" width="9" height="9" rx="1.5" fill="none" stroke="#0b0b0b" strokeWidth="1.5" />
-              <rect x="15" y="4" width="5" height="5" fill="#0b0b0b" />
-              <rect x="2" y="13" width="9" height="9" rx="1.5" fill="none" stroke="#0b0b0b" strokeWidth="1.5" />
-              <rect x="4" y="15" width="5" height="5" fill="#0b0b0b" />
-              <rect x="13" y="13" width="2" height="2" fill="#0b0b0b" />
-              <rect x="16" y="13" width="2" height="2" fill="#0b0b0b" />
-              <rect x="19" y="13" width="2" height="2" fill="#0b0b0b" />
-              <rect x="13" y="16" width="2" height="2" fill="#0b0b0b" />
-              <rect x="16" y="16" width="2" height="2" fill="#0b0b0b" />
-              <rect x="19" y="16" width="2" height="2" fill="#0b0b0b" />
-              <rect x="13" y="19" width="2" height="2" fill="#0b0b0b" />
-              <rect x="16" y="19" width="2" height="2" fill="#0b0b0b" />
-              <rect x="19" y="19" width="2" height="2" fill="#0b0b0b" />
-            </svg>
-          </div>
-          <span
-            style={{
-              fontSize: 8,
-              fontWeight: 600,
-              letterSpacing: "0.05em",
-              textTransform: "uppercase",
-              color: mutedColor,
-            }}
-          >
-            QR
-          </span>
-        </div>
       </Region>
     </div>
   );
