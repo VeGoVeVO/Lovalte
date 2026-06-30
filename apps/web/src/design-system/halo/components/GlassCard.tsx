@@ -1,11 +1,31 @@
-import { useRef } from "react";
+import {
+  useRef,
+  type CSSProperties,
+  type HTMLAttributes,
+  type MouseEvent,
+  type ReactNode,
+} from "react";
+
+type GlassCardProps = HTMLAttributes<HTMLDivElement> & {
+  children: ReactNode;
+  className?: string;
+  hover?: boolean;
+  light?: boolean;
+  style?: CSSProperties;
+};
 
 /* glass card primitive (pointer-tracked specular light) - verbatim from the original Halo component. */
-export function GlassCard({ className = "", hover = false, light = false, children, ...rest }) {
-  const ref = useRef(null);
+export function GlassCard({
+  className = "",
+  hover = false,
+  light = false,
+  children,
+  ...rest
+}: GlassCardProps) {
+  const ref = useRef<HTMLDivElement | null>(null);
   const raf = useRef(0);
 
-  const onMove = (e) => {
+  const onMove = (e: MouseEvent<HTMLDivElement>) => {
     const el = ref.current;
     if (!el) return;
     cancelAnimationFrame(raf.current);

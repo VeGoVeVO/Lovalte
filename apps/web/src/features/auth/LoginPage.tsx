@@ -1,14 +1,17 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { api, type ApiError } from "../../lib/api";
 import { AppShell } from "../../lib/AppShell";
 import { GlassCard, GlassInput, GlassButton } from "../../design-system/halo";
 import { useT } from "../../lib/i18n";
+import { resolveNextPath } from "../../lib/nativeNavigation";
+import { persistNativeSession } from "../../lib/nativeSession";
 
 /* Owner/staff sign-in. Posts to the Identity context (POST /api/v1/auth/login),
    which sets the httpOnly session cookie, then routes into the dashboard. */
 export function LoginPage() {
   const nav = useNavigate();
+  const location = useLocation();
   const { t } = useT();
   const [slug, setSlug] = useState("");
   const [email, setEmail] = useState("");
@@ -21,12 +24,13 @@ export function LoginPage() {
     setBusy(true);
     setError(null);
     try {
-      await api.post("/api/v1/auth/login", {
+      const session = await api.post<{ token: string }>("/api/v1/auth/login", {
         email,
         password,
         ...(slug.trim() ? { slug: slug.trim() } : {}),
       });
-      nav("/app");
+      persistNativeSession(session);
+      nav(resolveNextPath(location.search));
     } catch (err) {
       setError((err as ApiError).message ?? t("Login failed"));
     } finally {

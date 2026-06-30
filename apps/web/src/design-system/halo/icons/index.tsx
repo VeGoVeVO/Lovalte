@@ -1,6 +1,10 @@
+import type { SVGProps } from "react";
+
+type IconProps = SVGProps<SVGSVGElement>;
+
 /* Thin outline icons (hand-built, stroke 1.25) - verbatim from the original Halo component. */
 export const Icon = {
-  Sun: (p) => (
+  Sun: (p: IconProps) => (
     <svg
       viewBox="0 0 24 24"
       width="22"
@@ -16,7 +20,7 @@ export const Icon = {
       <path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6L17 7M7 17l-1.4 1.4" />
     </svg>
   ),
-  Presence: (p) => (
+  Presence: (p: IconProps) => (
     <svg
       viewBox="0 0 24 24"
       width="22"
@@ -33,7 +37,7 @@ export const Icon = {
       <path d="M6 6a9 9 0 0 0 0 12M18 6a9 9 0 0 1 0 12" opacity=".55" />
     </svg>
   ),
-  Glass: (p) => (
+  Glass: (p: IconProps) => (
     <svg
       viewBox="0 0 24 24"
       width="22"
@@ -49,7 +53,7 @@ export const Icon = {
       <path d="M12 3v18M4 8l8 5 8-5" opacity=".5" />
     </svg>
   ),
-  Arrow: (p) => (
+  Arrow: (p: IconProps) => (
     <svg
       viewBox="0 0 24 24"
       width="17"
@@ -64,7 +68,7 @@ export const Icon = {
       <path d="M5 12h14M13 6l6 6-6 6" />
     </svg>
   ),
-  Play: (p) => (
+  Play: (p: IconProps) => (
     <svg
       viewBox="0 0 24 24"
       width="16"
@@ -79,7 +83,7 @@ export const Icon = {
       <path d="M8 5.5v13l11-6.5z" />
     </svg>
   ),
-  Check: (p) => (
+  Check: (p: IconProps) => (
     <svg
       viewBox="0 0 24 24"
       width="18"

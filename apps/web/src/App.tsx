@@ -1,4 +1,5 @@
-import { Routes, Route } from "react-router-dom";
+import { useEffect } from "react";
+import { Routes, Route, useNavigate } from "react-router-dom";
 import { globalCss, AmbientBackground } from "./design-system/halo";
 import { APP_VERSION } from "./version";
 import { LovalteLanding } from "./features/marketing/LovalteLanding";
@@ -14,10 +15,29 @@ import { AdminPage } from "./features/admin/AdminPage";
 import { IssuePassPage } from "./features/wallet/IssuePassPage";
 import { EnrollPage } from "./features/wallet/EnrollPage";
 import { ScanPage } from "./features/scan/ScanPage";
+import { registerNativeUrlHandler } from "./lib/nativeNavigation";
 
 /* Route map. Marketing landing (Halo) at '/'; auth pages standalone; the whole
    authenticated app (/app/*) sits behind the RequireAuth guard (GET /auth/me). */
 export function App() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    let cleanup: (() => void) | undefined;
+
+    registerNativeUrlHandler((path) => {
+      navigate(path);
+    }).then((listener) => {
+      cleanup = () => {
+        void listener?.remove();
+      };
+    });
+
+    return () => {
+      cleanup?.();
+    };
+  }, [navigate]);
+
   return (
     <>
       <style>{globalCss}</style>

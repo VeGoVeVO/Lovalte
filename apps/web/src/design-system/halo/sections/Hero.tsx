@@ -1,3 +1,4 @@
+import type { RefObject } from "react";
 import { GlassButton } from "../components/GlassButton";
 import { Icon } from "../icons";
 import { scrollTo } from "../lib/scrollTo";
@@ -5,7 +6,7 @@ import { scrollTo } from "../lib/scrollTo";
 /* hero with parallax glass disc - verbatim from the original Halo component.
    `discRef` is owned by the page composition (HaloLanding) which drives the
    pointer parallax effect; passed down so the JSX stays unchanged. */
-export function Hero({ discRef }) {
+export function Hero({ discRef }: { discRef: RefObject<HTMLDivElement> }) {
   return (
     <section aria-labelledby="hero-title" style={{ paddingTop: 0 }}>
       <div className="container">

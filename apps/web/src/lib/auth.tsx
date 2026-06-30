@@ -1,4 +1,4 @@
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "./api";
 
@@ -29,17 +29,25 @@ const Loading = () => (
 
 /** Route guard: renders the nested app routes when authenticated, else -> /login. */
 export function RequireAuth() {
+  const location = useLocation();
   const { data, isLoading, isError } = useSession();
   if (isLoading) return <Loading />;
-  if (isError || !data) return <Navigate to="/login" replace />;
+  if (isError || !data) {
+    const next = encodeURIComponent(`${location.pathname}${location.search}${location.hash}`);
+    return <Navigate to={`/login?next=${next}`} replace />;
+  }
   return <Outlet />;
 }
 
 /** Route guard: platform super-admin only. Non-admins go to the app; guests -> /login. */
 export function RequireAdmin() {
+  const location = useLocation();
   const { data, isLoading, isError } = useSession();
   if (isLoading) return <Loading />;
-  if (isError || !data) return <Navigate to="/login" replace />;
+  if (isError || !data) {
+    const next = encodeURIComponent(`${location.pathname}${location.search}${location.hash}`);
+    return <Navigate to={`/login?next=${next}`} replace />;
+  }
   if (!data.isAdmin) return <Navigate to="/app" replace />;
   return <Outlet />;
 }

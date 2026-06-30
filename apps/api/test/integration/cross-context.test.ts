@@ -32,6 +32,8 @@ function cookieOf(res: { cookies: Array<{ name: string; value: string }> }): str
   return `lovalte_session=${c.value}`;
 }
 
+type ApiEnvelope<T> = { data: T };
+
 async function signup(label: string) {
   const email = `owner+${label}-${RUN}@cafe.test`;
   const res = await app.inject({
@@ -61,9 +63,9 @@ const templateBody = {
 };
 
 // success envelope is inconsistent across contexts ({data} vs bare) - unwrap either
-function body(res: { json: () => any }): any {
+function body<T>(res: { json: () => unknown }): T {
   const j = res.json();
-  return j && typeof j === "object" && "data" in j ? j.data : j;
+  return (j && typeof j === "object" && "data" in j ? (j as ApiEnvelope<T>).data : j) as T;
 }
 
 beforeAll(async () => {
@@ -141,7 +143,9 @@ describe("card-design lifecycle", () => {
     expect(list.statusCode).toBe(200);
     const rows = body(list);
     const items = Array.isArray(rows) ? rows : (rows.items ?? rows.templates ?? []);
-    expect(items.some((t: any) => (t.id ?? t.templateId) === id)).toBe(true);
+    expect(
+      items.some((t: { id?: string; templateId?: string }) => (t.id ?? t.templateId) === id),
+    ).toBe(true);
   });
 });
 
@@ -198,6 +202,8 @@ describe("tenant isolation", () => {
     expect(list.statusCode).toBe(200);
     const rows = body(list);
     const items = Array.isArray(rows) ? rows : (rows.items ?? rows.templates ?? []);
-    expect(items.some((t: any) => (t.id ?? t.templateId) === aId)).toBe(false);
+    expect(
+      items.some((t: { id?: string; templateId?: string }) => (t.id ?? t.templateId) === aId),
+    ).toBe(false);
   });
 });

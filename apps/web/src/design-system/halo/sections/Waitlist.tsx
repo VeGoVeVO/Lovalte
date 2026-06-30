@@ -1,3 +1,4 @@
+import type { ChangeEvent, KeyboardEvent } from "react";
 import { Reveal } from "../components/Reveal";
 import { GlassCard } from "../components/GlassCard";
 import { GlassInput } from "../components/GlassInput";
@@ -7,7 +8,17 @@ import { Icon } from "../icons";
 /* waitlist capture - verbatim from the original Halo component.
    `email`, `setEmail`, `joined`, `join` are owned by the page composition
    (HaloLanding) and passed down so the form JSX stays unchanged. */
-export function Waitlist({ email, setEmail, joined, join }) {
+export function Waitlist({
+  email,
+  setEmail,
+  joined,
+  join,
+}: {
+  email: string;
+  setEmail: (value: string) => void;
+  joined: boolean;
+  join: () => void;
+}) {
   return (
     <section id="waitlist" aria-labelledby="waitlist-title" style={{ paddingTop: 0 }}>
       <div className="container">
@@ -36,8 +47,8 @@ export function Waitlist({ email, setEmail, joined, join }) {
                   aria-label="Email address"
                   placeholder="you@email.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && join()}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+                  onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => e.key === "Enter" && join()}
                 />
                 <GlassButton onClick={join}>
                   Join the list <Icon.Arrow />

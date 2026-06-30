@@ -5,6 +5,7 @@ import { api } from "./api";
 import { useSession } from "./auth";
 import { haloCss } from "../design-system/halo";
 import { useT, LanguageSwitcher } from "./i18n";
+import { clearNativeSession } from "./nativeSession";
 
 const NAV: { to: string; label: string }[] = [
   { to: "/app", label: "Dashboard" },
@@ -133,6 +134,7 @@ export function AppShell({
   const logout = useMutation({
     mutationFn: () => api.post("/api/v1/auth/logout"),
     onSettled: () => {
+      clearNativeSession();
       qc.clear();
       nav("/login");
     },

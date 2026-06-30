@@ -32,7 +32,6 @@ async function migrate(): Promise<void> {
       await client.query(sql);
       await client.query("INSERT INTO _migrations (id) VALUES ($1)", [file]);
       await client.query("COMMIT");
-      // eslint-disable-next-line no-console
       console.log(`applied ${file}`);
     } catch (e) {
       await client.query("ROLLBACK");
@@ -47,7 +46,6 @@ async function migrate(): Promise<void> {
 migrate()
   .then(() => process.exit(0))
   .catch((e) => {
-    // eslint-disable-next-line no-console
     console.error(e);
     process.exit(1);
   });

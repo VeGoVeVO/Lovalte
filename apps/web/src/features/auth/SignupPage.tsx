@@ -4,6 +4,7 @@ import { api, type ApiError } from "../../lib/api";
 import { AppShell } from "../../lib/AppShell";
 import { GlassCard, GlassInput, GlassButton } from "../../design-system/halo";
 import { useT } from "../../lib/i18n";
+import { persistNativeSession } from "../../lib/nativeSession";
 
 /* Business onboarding - creates the Tenant + owner User in one transaction
    (Identity context: POST /api/v1/auth/signup), sets the session, enters the app. */
@@ -25,7 +26,12 @@ export function SignupPage() {
     }
     setBusy(true);
     try {
-      await api.post("/api/v1/auth/signup", { businessName: business, email, password });
+      const session = await api.post<{ token: string }>("/api/v1/auth/signup", {
+        businessName: business,
+        email,
+        password,
+      });
+      persistNativeSession(session);
       nav("/app");
     } catch (err) {
       setError((err as ApiError).message ?? t("Sign up failed"));

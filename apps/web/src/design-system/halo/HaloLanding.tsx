@@ -19,13 +19,13 @@ import { Footer } from "./sections/Footer";
 export default function HaloLanding() {
   const [email, setEmail] = useState("");
   const [joined, setJoined] = useState(false);
-  const discRef = useRef(null);
+  const discRef = useRef<HTMLDivElement | null>(null);
 
   /* gentle pointer parallax on the hero disc - layers shift with motion */
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     let raf = 0;
-    const onMove = (e) => {
+    const onMove = (e: MouseEvent) => {
       const nx = e.clientX / window.innerWidth - 0.5;
       const ny = e.clientY / window.innerHeight - 0.5;
       cancelAnimationFrame(raf);
