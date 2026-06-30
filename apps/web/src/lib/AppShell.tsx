@@ -88,6 +88,13 @@ const shellCss = `
     -webkit-tap-highlight-color: transparent; }
   .lvt-tab.active { color:#3a86ff; }
   .lvt-tab svg { width:23px; height:23px; }
+  /* Keyboard up: a fixed bottom bar pins just above the keyboard and covers the
+     focused field. Native apps hide the tab bar while typing — do the same, and
+     reclaim the 80px it reserved so the form isn't padded for a bar that's gone.
+     Scoped to text-entry fields so non-keyboard controls (range/color/checkbox)
+     don't flicker the bar. */
+  .halo:has(textarea:focus, [contenteditable]:focus, input:focus:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="button"]):not([type="submit"]):not([type="file"])) .lvt-tabbar { display: none; }
+  .halo:has(textarea:focus, [contenteditable]:focus, input:focus:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="button"]):not([type="submit"]):not([type="file"])) .lvt-main { padding-bottom: calc(1.25rem + env(safe-area-inset-bottom)) !important; }
 }
 @media (prefers-reduced-motion: reduce){ .lvt-more-menu { animation:none; } }
 /* Accessibility: opaque fallback when the user asks for reduced transparency. */
@@ -134,7 +141,7 @@ export function AppShell({
     to === "/app" ? loc.pathname === "/app" : loc.pathname.startsWith(to);
 
   return (
-    <div className="halo" style={{ minHeight: "100vh" }}>
+    <div className="halo" style={{ minHeight: "100dvh" }}>
       <style>{haloCss}</style>
       <style>{shellCss}</style>
       <div className="content">

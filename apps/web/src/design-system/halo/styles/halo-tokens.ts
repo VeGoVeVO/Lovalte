@@ -60,6 +60,7 @@ export const css = `
   letter-spacing:-.011em;
   position:relative;
   min-height:100vh;
+  min-height:100dvh; /* shrinks with the on-screen keyboard; vh above is the fallback */
   overflow-x:hidden;
 }
 .halo *{ box-sizing:border-box; }

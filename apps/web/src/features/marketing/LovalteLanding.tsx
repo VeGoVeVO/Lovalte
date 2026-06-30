@@ -70,7 +70,7 @@ const STEPS = [
 export function LovalteLanding() {
   const { t } = useT();
   return (
-    <div className="halo" style={{ minHeight: "100vh" }}>
+    <div className="halo" style={{ minHeight: "100dvh" }}>
       <style>{haloCss}</style>
 
       <div className="ambient" aria-hidden="true">

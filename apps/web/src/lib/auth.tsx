@@ -22,7 +22,7 @@ export function useSession() {
 }
 
 const Loading = () => (
-  <div style={{ minHeight: "100vh", display: "grid", placeItems: "center", color: "#6F7684" }}>
+  <div style={{ minHeight: "100dvh", display: "grid", placeItems: "center", color: "#6F7684" }}>
     Loading…
   </div>
 );

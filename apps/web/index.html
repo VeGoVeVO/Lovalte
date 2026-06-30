@@ -4,10 +4,13 @@
     <meta charset="UTF-8" />
     <!-- viewport-fit=cover resolves env(safe-area-inset-*) on notched iPhones.
          maximum-scale=1 stops iOS auto-zooming when a small input/contentEditable
-         is focused (it was shifting the builder layout). -->
+         is focused (it was shifting the builder layout).
+         interactive-widget=resizes-content shrinks the layout viewport when the
+         on-screen keyboard opens, so 100dvh reflects the space above it and the
+         browser scrolls the focused field into view instead of leaving it hidden. -->
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"
+      content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, interactive-widget=resizes-content"
     />
     <meta
       name="description"
