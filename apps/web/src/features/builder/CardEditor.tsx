@@ -116,7 +116,7 @@ const editorCss = `
 .lvt-be-publish:disabled { opacity:.55; cursor:default; }
 .lvt-be-publish:focus-visible { outline:none; box-shadow:0 0 0 4px rgba(139,123,216,.45); }
 .lvt-be-dual-stage { display:flex; gap:24px; justify-content:center; align-items:flex-start; flex-wrap:wrap; }
-.lvt-be-platform-col { display:flex; flex-direction:column; align-items:center; gap:8px; }
+.lvt-be-platform-col { display:flex; flex-direction:column; align-items:center; gap:8px; max-width:100%; }
 .lvt-be-platform-label { font-size:.72rem; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
 /* Platform tabs: hidden on desktop (both cards show); on mobile they pick which one is visible. */
 .lvt-be-tabs { display:none; gap:8px; justify-content:center; margin-bottom:16px; }

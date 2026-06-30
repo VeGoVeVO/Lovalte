@@ -177,6 +177,7 @@ export function GoogleCardCanvas({
     <div
       style={{
         width,
+        maxWidth: "100%",
         height: cardH,
         display: "flex",
         flexDirection: "column",

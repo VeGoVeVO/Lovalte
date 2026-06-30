@@ -471,8 +471,10 @@ export function CardCanvas({
         setBgChip({ x: e.clientX, y: e.clientY });
       }}
       style={{
-        width: "100%",
-        maxWidth: width,
+        // Definite width (not width:100%), else the card collapses to min-content
+        // inside the shrink-wrap flex column and never reaches its intended size.
+        width,
+        maxWidth: "100%",
         minHeight: width * 1.34,
         display: "flex",
         flexDirection: "column",
