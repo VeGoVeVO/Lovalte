@@ -115,7 +115,7 @@ const FONT = "Google Sans, Roboto, -apple-system, system-ui, sans-serif";
  *   1. logo (circular) + cardTitle (small)   ← brand label, top row
  *   2. header                                 ← large bold pass title
  *   3. barcode (QR_CODE)                      ← large, centered
- *   4. heroImage                              ← full-width banner, BOTTOM (3:1)
+ *   4. heroImage                              ← full-width block, BOTTOM (1032×812, ~1.27:1)
  * textModulesData are NOT shown on the front (Details view only, unless a
  * cardTemplateOverride is set — which our backend does not), so they are omitted
  * here to match what users actually see. Natural width 340, scaled to `width`.
@@ -176,8 +176,9 @@ export function GoogleCardCanvas({
     );
   };
 
-  // QR sized to dominate the card centre, mirroring the real on-device barcode.
-  const qrSize = Math.round(width * 0.42);
+  // QR sized to dominate the card centre, mirroring the real on-device barcode
+  // (Google renders the QR at ~55% of card width with generous padding).
+  const qrSize = Math.round(width * 0.54);
 
   return (
     <div
@@ -212,17 +213,18 @@ export function GoogleCardCanvas({
             overflow: "hidden",
             display: "grid",
             placeItems: "center",
-            background: g.logoSrc ? "transparent" : "rgba(255,255,255,.18)",
-            border: g.logoSrc || !editable ? "none" : "1.5px dashed rgba(255,255,255,.5)",
+            // Google masks the logo into a circle on a LIGHT tile (not the pass
+            // colour). Replicate the white tile so a white/transparent logo shows
+            // the same faded/invisible result here as on the real device.
+            background: "#ffffff",
+            border: "1px solid rgba(0,0,0,.10)",
           }}
         >
           {g.logoSrc ? (
             <img src={g.logoSrc} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-          ) : editable ? (
-            <span style={{ fontSize: 18, opacity: 0.8, color: textColor }}>＋</span>
           ) : (
-            // Google's own fallback: first letter of cardTitle in a circle.
-            <span style={{ fontSize: 18, fontWeight: 700, color: textColor }}>
+            // No logo → Google falls back to the first letter of cardTitle in a disc.
+            <span style={{ fontSize: 18, fontWeight: 700, color: g.bg }}>
               {(g.cardTitle.trim()[0] || "L").toUpperCase()}
             </span>
           )}
@@ -271,7 +273,7 @@ export function GoogleCardCanvas({
       </div>
 
       {/* ── Barcode: large centered QR (the passId) ─────────────────────────── */}
-      <div style={{ display: "flex", justifyContent: "center", padding: "2px 0 16px" }}>
+      <div style={{ display: "flex", justifyContent: "center", padding: "12px 0 24px" }}>
         <div style={{ background: "#ffffff", padding: 11, borderRadius: 12, lineHeight: 0 }}>
           <QRCodeSVG value="LVT-000120" size={qrSize} bgColor="#ffffff" fgColor="#0b0b0b" level="M" />
         </div>
@@ -281,7 +283,7 @@ export function GoogleCardCanvas({
       <Region
         kind="hero"
         label={t("Hero image")}
-        style={{ position: "relative", width: "100%", aspectRatio: "1032 / 336", overflow: "hidden", borderRadius: 0 }}
+        style={{ position: "relative", width: "100%", aspectRatio: "1032 / 812", overflow: "hidden", borderRadius: 0 }}
       >
         {g.heroSrc ? (
           <img
