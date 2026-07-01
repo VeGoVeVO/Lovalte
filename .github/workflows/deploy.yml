@@ -42,8 +42,10 @@ jobs:
                 printf '\nRESEND_API_KEY=${{ secrets.RESEND_API_KEY }}\n' >> .env.production
               fi
             fi
-            if ! grep -q '^EMAIL_FROM=' .env.production; then
-              printf 'EMAIL_FROM=Lovalte <hello@lovalte.com>\n' >> .env.production
+            if grep -q '^EMAIL_FROM=' .env.production; then
+              sed -i 's|^EMAIL_FROM=.*|EMAIL_FROM="Lovalte <hello@lovalte.com>"|' .env.production
+            else
+              printf 'EMAIL_FROM="Lovalte <hello@lovalte.com>"\n' >> .env.production
             fi
             if ! grep -q '^SUPPORT_EMAIL=' .env.production; then
               printf 'SUPPORT_EMAIL=support@lovalte.com\n' >> .env.production
