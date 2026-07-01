@@ -158,6 +158,11 @@ export const ES: Record<string, string> = {
   "Creating…": "Creando…",
   "Create business": "Crear negocio",
   "Sign up failed": "Error al crear la cuenta",
+  "Sign in with Apple": "Iniciar sesión con Apple",
+  "Continue with Apple": "Continuar con Apple",
+  "Apple sign in failed": "Error al iniciar sesión con Apple",
+  "Apple sign up failed": "Error al crear la cuenta con Apple",
+  "Business name is required.": "El nombre del negocio es obligatorio.",
   "Already have an account?": "¿Ya tienes cuenta?",
   "Something went wrong. Please try again.": "Algo ha salido mal. Inténtalo de nuevo.",
 

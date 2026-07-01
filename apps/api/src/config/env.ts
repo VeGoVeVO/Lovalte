@@ -17,6 +17,10 @@ const schema = z.object({
   CORS_ALLOWED_ORIGINS: z.string().optional(),
   WALLET_WEB_SERVICE_URL: z.string().url(),
   APPLE_TEAM_ID: z.string().optional(),
+  // Comma-separated accepted audiences for Sign in with Apple identity tokens.
+  // Native iOS tokens use the app bundle id (default: com.lovalte.app); web tokens
+  // may use an Apple Services ID if you configure browser sign-in later.
+  APPLE_SIGN_IN_CLIENT_IDS: z.string().default("com.lovalte.app"),
   APPLE_PASS_TYPE_ID: z.string().optional(),
   APPLE_SIGNER_CERT_PATH: z.string().optional(),
   APPLE_SIGNER_KEY_PATH: z.string().optional(),

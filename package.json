@@ -34,5 +34,8 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.1.1",
     "prettier": "^3.9.1"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-darwin-arm64": "^4.62.2"
   }
 }

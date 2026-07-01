@@ -5,10 +5,13 @@ import { InvitationRepository } from "./infrastructure/InvitationRepository";
 import { IdentityTxRunner } from "./infrastructure/IdentityTxRunner";
 import { SignUpTenantHandler } from "./application/SignUpTenantHandler";
 import { LoginHandler } from "./application/LoginHandler";
+import { LoginWithAppleHandler } from "./application/LoginWithAppleHandler";
+import { SignUpTenantWithAppleHandler } from "./application/SignUpTenantWithAppleHandler";
 import { InviteUserHandler } from "./application/InviteUserHandler";
 import { AcceptInvitationHandler } from "./application/AcceptInvitationHandler";
 import { ListUsersHandler } from "./application/ListUsersHandler";
 import { DeleteAccountHandler } from "./application/DeleteAccountHandler";
+import { AppleIdentityTokenVerifier } from "./infrastructure/AppleIdentityTokenVerifier";
 import { registerIdentityRoutes } from "./presentation/routes";
 
 /**
@@ -22,11 +25,19 @@ export const registerIdentity: ContextModule = async (app, deps) => {
   const userRepo = new UserRepository(deps.pool);
   const invitationRepo = new InvitationRepository(deps.pool);
   const txRunner = new IdentityTxRunner(deps.pool);
+  const appleVerifier = new AppleIdentityTokenVerifier(
+    deps.config.APPLE_SIGN_IN_CLIENT_IDS.split(",")
+      .map((id) => id.trim())
+      .filter(Boolean),
+  );
 
   // Application handlers
   const handlers = {
     signUp: new SignUpTenantHandler(tenantRepo, txRunner, deps.bus),
     login: new LoginHandler(tenantRepo, userRepo),
+    appleLogin: new LoginWithAppleHandler(tenantRepo, userRepo),
+    appleSignUp: new SignUpTenantWithAppleHandler(tenantRepo, txRunner, deps.bus),
+    appleVerifier,
     invite: new InviteUserHandler(userRepo, invitationRepo, deps.bus),
     acceptInvitation: new AcceptInvitationHandler(invitationRepo, txRunner, deps.bus),
     listUsers: new ListUsersHandler(userRepo),

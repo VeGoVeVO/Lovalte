@@ -12,14 +12,20 @@ import {
 } from "../../../http/auth";
 import type { SignUpTenantHandler } from "../application/SignUpTenantHandler";
 import type { LoginHandler } from "../application/LoginHandler";
+import type { LoginWithAppleHandler } from "../application/LoginWithAppleHandler";
+import type { SignUpTenantWithAppleHandler } from "../application/SignUpTenantWithAppleHandler";
 import type { InviteUserHandler } from "../application/InviteUserHandler";
 import type { AcceptInvitationHandler } from "../application/AcceptInvitationHandler";
 import type { ListUsersHandler } from "../application/ListUsersHandler";
 import type { DeleteAccountHandler } from "../application/DeleteAccountHandler";
+import type { AppleIdentityTokenVerifier } from "../infrastructure/AppleIdentityTokenVerifier";
 
 export interface IdentityHandlers {
   signUp: SignUpTenantHandler;
   login: LoginHandler;
+  appleLogin: LoginWithAppleHandler;
+  appleSignUp: SignUpTenantWithAppleHandler;
+  appleVerifier: AppleIdentityTokenVerifier;
   invite: InviteUserHandler;
   acceptInvitation: AcceptInvitationHandler;
   listUsers: ListUsersHandler;
@@ -39,6 +45,22 @@ const loginSchema = z
     email: z.string().email().max(254),
     password: z.string().max(128),
     slug: z.string().min(1).max(63).optional(),
+  })
+  .strict();
+
+const appleLoginSchema = z
+  .object({
+    identityToken: z.string().min(20),
+    nonce: z.string().min(8).max(128).optional(),
+    slug: z.string().min(1).max(63).optional(),
+  })
+  .strict();
+
+const appleSignUpSchema = z
+  .object({
+    identityToken: z.string().min(20),
+    nonce: z.string().min(8).max(128).optional(),
+    businessName: z.string().min(1).max(100),
   })
   .strict();
 
@@ -109,6 +131,52 @@ export function registerIdentityRoutes(
         token: signSession(ctx, secret),
       },
     });
+  });
+
+  // POST /api/v1/auth/apple/login - authenticate an existing user with Apple ID
+  app.post("/api/v1/auth/apple/login", async (req, reply) => {
+    const input = parse(appleLoginSchema, req.body);
+    const apple = await handlers.appleVerifier.verify(input.identityToken, input.nonce);
+    const r = await handlers.appleLogin.execute({ email: apple.email, slug: input.slug });
+    if (!r.ok) throw r.error;
+    const ctx: AuthContext = {
+      userId: r.value.userId,
+      tenantId: r.value.tenantId,
+      role: r.value.role,
+      email: r.value.email,
+      isAdmin: isAdminEmail(r.value.email),
+    };
+    setSessionCookie(reply, ctx, secret);
+    return reply.status(200).send({
+      data: {
+        userId: r.value.userId,
+        tenantId: r.value.tenantId,
+        email: r.value.email,
+        role: r.value.role,
+        isAdmin: isAdminEmail(r.value.email),
+        token: signSession(ctx, secret),
+      },
+    });
+  });
+
+  // POST /api/v1/auth/apple/signup - create tenant owner with Apple ID
+  app.post("/api/v1/auth/apple/signup", async (req, reply) => {
+    const input = parse(appleSignUpSchema, req.body);
+    const apple = await handlers.appleVerifier.verify(input.identityToken, input.nonce);
+    const r = await handlers.appleSignUp.execute({
+      email: apple.email,
+      businessName: input.businessName,
+    });
+    if (!r.ok) throw r.error;
+    const ctx: AuthContext = {
+      userId: r.value.userId,
+      tenantId: r.value.tenantId,
+      role: "owner",
+      email: r.value.email,
+      isAdmin: isAdminEmail(r.value.email),
+    };
+    setSessionCookie(reply, ctx, secret);
+    return reply.status(201).send({ data: { ...r.value, token: signSession(ctx, secret) } });
   });
 
   // POST /api/v1/auth/logout - clear session cookie

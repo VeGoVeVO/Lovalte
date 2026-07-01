@@ -4,8 +4,10 @@ import { api, type ApiError } from "../../lib/api";
 import { AppShell } from "../../lib/AppShell";
 import { GlassCard, GlassInput, GlassButton } from "../../design-system/halo";
 import { useT } from "../../lib/i18n";
+import { requestAppleIdentity } from "../../lib/appleAuth";
 import { resolveNextPath } from "../../lib/nativeNavigation";
 import { persistNativeSession } from "../../lib/nativeSession";
+import { AppleAuthButton } from "./AppleAuthButton";
 
 /* Owner/staff sign-in. Posts to the Identity context (POST /api/v1/auth/login),
    which sets the httpOnly session cookie, then routes into the dashboard. */
@@ -33,6 +35,24 @@ export function LoginPage() {
       nav(resolveNextPath(location.search));
     } catch (err) {
       setError((err as ApiError).message ?? t("Login failed"));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const signInWithApple = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      const apple = await requestAppleIdentity();
+      const session = await api.post<{ token: string }>("/api/v1/auth/apple/login", {
+        ...apple,
+        ...(slug.trim() ? { slug: slug.trim() } : {}),
+      });
+      persistNativeSession(session);
+      nav(resolveNextPath(location.search));
+    } catch (err) {
+      setError((err as ApiError).message ?? t("Apple sign in failed"));
     } finally {
       setBusy(false);
     }
@@ -74,6 +94,12 @@ export function LoginPage() {
           <GlassButton type="submit" disabled={busy}>
             {busy ? t("Signing in…") : t("Sign in")}
           </GlassButton>
+          <AppleAuthButton
+            label={busy ? t("Signing in…") : t("Sign in with Apple")}
+            disabled={busy}
+            onClick={signInWithApple}
+            aria-label={t("Sign in with Apple")}
+          />
         </form>
         <p className="body" style={{ marginTop: "1rem" }}>
           {t("New here?")} <Link to="/signup">{t("Create a business")}</Link>

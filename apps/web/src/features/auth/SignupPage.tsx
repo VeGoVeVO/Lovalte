@@ -4,7 +4,9 @@ import { api, type ApiError } from "../../lib/api";
 import { AppShell } from "../../lib/AppShell";
 import { GlassCard, GlassInput, GlassButton } from "../../design-system/halo";
 import { useT } from "../../lib/i18n";
+import { requestAppleIdentity } from "../../lib/appleAuth";
 import { persistNativeSession } from "../../lib/nativeSession";
+import { AppleAuthButton } from "./AppleAuthButton";
 
 /* Business onboarding - creates the Tenant + owner User in one transaction
    (Identity context: POST /api/v1/auth/signup), sets the session, enters the app. */
@@ -35,6 +37,28 @@ export function SignupPage() {
       nav("/app");
     } catch (err) {
       setError((err as ApiError).message ?? t("Sign up failed"));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const signUpWithApple = async () => {
+    setError(null);
+    if (!business.trim()) {
+      setError(t("Business name is required."));
+      return;
+    }
+    setBusy(true);
+    try {
+      const apple = await requestAppleIdentity();
+      const session = await api.post<{ token: string }>("/api/v1/auth/apple/signup", {
+        ...apple,
+        businessName: business,
+      });
+      persistNativeSession(session);
+      nav("/app");
+    } catch (err) {
+      setError((err as ApiError).message ?? t("Apple sign up failed"));
     } finally {
       setBusy(false);
     }
@@ -76,6 +100,12 @@ export function SignupPage() {
           <GlassButton type="submit" disabled={busy}>
             {busy ? t("Creating…") : t("Create business")}
           </GlassButton>
+          <AppleAuthButton
+            label={busy ? t("Creating…") : t("Continue with Apple")}
+            disabled={busy}
+            onClick={signUpWithApple}
+            aria-label={t("Continue with Apple")}
+          />
         </form>
         <p className="body" style={{ marginTop: "1rem" }}>
           {t("Already have an account?")} <Link to="/login">{t("Sign in")}</Link>
