@@ -8,6 +8,7 @@ name: Deploy
 #   DEPLOY_USER    deploy
 #   DEPLOY_SSH_KEY private key of the droplet CI key (deploy/README step)
 #   APP_DIR        /home/deploy/Lovalte
+#   RESEND_API_KEY API key for transactional email delivery
 on:
   push:
     branches: [main]
@@ -32,4 +33,19 @@ jobs:
             set -euo pipefail
             cd ${{ secrets.APP_DIR }}
             git pull --ff-only
+            touch .env.production
+            chmod 600 .env.production
+            if [ -n "${{ secrets.RESEND_API_KEY }}" ]; then
+              if grep -q '^RESEND_API_KEY=' .env.production; then
+                sed -i 's|^RESEND_API_KEY=.*|RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}|' .env.production
+              else
+                printf '\nRESEND_API_KEY=${{ secrets.RESEND_API_KEY }}\n' >> .env.production
+              fi
+            fi
+            if ! grep -q '^EMAIL_FROM=' .env.production; then
+              printf 'EMAIL_FROM=Lovalte <hello@lovalte.com>\n' >> .env.production
+            fi
+            if ! grep -q '^SUPPORT_EMAIL=' .env.production; then
+              printf 'SUPPORT_EMAIL=support@lovalte.com\n' >> .env.production
+            fi
             bash deploy/deploy.sh
