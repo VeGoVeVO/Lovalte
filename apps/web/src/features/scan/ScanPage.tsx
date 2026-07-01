@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { api, type ApiError } from "../../lib/api";
 import { AppShell } from "../../lib/AppShell";
@@ -51,6 +51,7 @@ export function ScanPage() {
   const { videoRef, status, detectedToken, capturedImage, startCamera, stopCamera, clearToken } =
     useBarcodeScanner();
   const [manualToken, setManualToken] = useState("");
+  const autoStartedRef = useRef(false);
 
   const mutation = useMutation({
     mutationFn: ({ qrToken, action }: { qrToken: string; action: "award" | "redeem" }) =>
@@ -64,6 +65,12 @@ export function ScanPage() {
   /* Derived state */
   const showManualFallback = status === "denied" || status === "unsupported";
   const activeToken = detectedToken ?? (manualToken.trim() || null);
+
+  useEffect(() => {
+    if (autoStartedRef.current || status !== "idle" || detectedToken) return;
+    autoStartedRef.current = true;
+    void startCamera();
+  }, [detectedToken, startCamera, status]);
 
   /* Helpers */
   const handleAction = (action: "award" | "redeem") => {
@@ -83,6 +90,7 @@ export function ScanPage() {
   const handleScanAgain = () => {
     clearToken();
     mutation.reset();
+    void startCamera();
   };
 
   /* Build the single live-region string so screen readers hear one update. */
