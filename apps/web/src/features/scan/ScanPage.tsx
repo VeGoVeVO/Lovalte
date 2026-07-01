@@ -48,7 +48,7 @@ const scanCss = `
  */
 export function ScanPage() {
   const { t } = useT();
-  const { videoRef, status, detectedToken, capturedImage, startCamera, stopCamera, clearToken } =
+  const { videoRef, status, detectedToken, capturedImage, startCamera, clearToken } =
     useBarcodeScanner();
   const [manualToken, setManualToken] = useState("");
   const autoStartedRef = useRef(false);
@@ -90,7 +90,6 @@ export function ScanPage() {
   const handleScanAgain = () => {
     clearToken();
     mutation.reset();
-    void startCamera();
   };
 
   /* Build the single live-region string so screen readers hear one update. */
@@ -107,10 +106,6 @@ export function ScanPage() {
   } else if (mutation.isError) {
     liveText =
       (mutation.error as unknown as ApiError)?.message ?? t("Scan failed. Please try again.");
-  } else if (status === "requesting") {
-    liveText = t("Requesting camera permission…");
-  } else if (status === "scanning") {
-    liveText = t("Scanning for QR code…");
   }
 
   /* ── Render ─────────────────────────────────────────────────────────── */
@@ -136,39 +131,18 @@ export function ScanPage() {
             : t("Point the camera at a customer's QR code to award or redeem points.")}
         </p>
 
-        {/* ── Camera section (hidden when in manual-fallback mode or after detection) */}
-        {!showManualFallback && !detectedToken && (
-          <>
-            {status === "idle" && (
-              <GlassButton onClick={startCamera} aria-label={t("Start camera to scan a QR code")}>
-                {t("Start Camera")}
-              </GlassButton>
-            )}
-
-            {/*
-              Keep the <video> in the DOM (just hidden) while the camera section
-              is visible so videoRef is attached before getUserMedia resolves.
-              No CSS animation/transition on the video - prefers-reduced-motion safe.
-            */}
-            <div
-              role="region"
-              aria-label={t("Camera viewfinder")}
-              style={{ display: status === "scanning" ? "block" : "none" }}
-              aria-hidden={status !== "scanning"}
-            >
-              <div className="scan-view">
-                <video ref={videoRef} playsInline muted />
-                <div className="scan-frame" aria-hidden="true" />
-                <div className="scan-line" aria-hidden="true" />
-              </div>
-              <p className="eyebrow" style={{ textAlign: "center", margin: "0.6rem 0 0" }}>
-                {t("Hold the customer's card QR inside the frame")}
-              </p>
-              <GlassButton variant="ghost" onClick={stopCamera} aria-label={t("Stop the camera")}>
-                {t("Stop Camera")}
-              </GlassButton>
+        {/* ── Camera section (hidden only when manual fallback is required) */}
+        {!showManualFallback && (
+          <div role="region" aria-label={t("Camera viewfinder")}>
+            <div className="scan-view">
+              <video ref={videoRef} playsInline muted />
+              <div className="scan-frame" aria-hidden="true" />
+              <div className="scan-line" aria-hidden="true" />
             </div>
-          </>
+            <p className="eyebrow" style={{ textAlign: "center", margin: "0.6rem 0 0" }}>
+              {t("Hold the customer's card QR inside the frame")}
+            </p>
+          </div>
         )}
 
         {/* ── Manual fallback input */}

@@ -77,21 +77,6 @@ export interface TemplateInput {
   googleOverrides?: GoogleOverrides;
 }
 
-// ── Local PUT wrapper (api.ts exposes get/post/del only) ─────────────────────
-
-async function put<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(path, {
-    method: "PUT",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  const text = await res.text();
-  const data = text ? JSON.parse(text) : null;
-  if (!res.ok) throw (data?.error ?? { code: "INTERNAL", message: res.statusText }) as ApiError;
-  return (data && typeof data === "object" && "data" in data ? data.data : data) as T;
-}
-
 // ── Query key ─────────────────────────────────────────────────────────────────
 
 const QK = ["card-templates"] as const;
@@ -116,7 +101,7 @@ export function useCreateTemplate() {
 export function useUpdateTemplate() {
   const qc = useQueryClient();
   return useMutation<CardTemplateDTO, ApiError, { id: string; input: TemplateInput }>({
-    mutationFn: ({ id, input }) => put<CardTemplateDTO>(`/api/v1/card-templates/${id}`, input),
+    mutationFn: ({ id, input }) => api.put<CardTemplateDTO>(`/api/v1/card-templates/${id}`, input),
     onSuccess: () => qc.invalidateQueries({ queryKey: QK }),
   });
 }

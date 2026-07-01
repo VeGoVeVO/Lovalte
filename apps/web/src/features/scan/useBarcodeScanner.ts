@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import QrScanner from "qr-scanner";
 
-export type ScannerStatus = "idle" | "requesting" | "scanning" | "denied" | "unsupported";
+export type ScannerStatus = "idle" | "scanning" | "denied" | "unsupported";
 
 export interface UseBarcodeScanner {
   videoRef: React.RefObject<HTMLVideoElement>;
@@ -10,7 +10,6 @@ export interface UseBarcodeScanner {
   /** Data URL of the auto-cropped QR (for the confirmation animation). */
   capturedImage: string | null;
   startCamera: () => Promise<void>;
-  stopCamera: () => void;
   clearToken: () => void;
 }
 
@@ -54,6 +53,7 @@ export function useBarcodeScanner(): UseBarcodeScanner {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const activeRef = useRef(false);
   const timerRef = useRef<number>(0);
+  const detectedTokenRef = useRef<string | null>(null);
 
   const [status, setStatus] = useState<ScannerStatus>(() =>
     typeof navigator !== "undefined" && typeof navigator.mediaDevices?.getUserMedia === "function"
@@ -74,17 +74,16 @@ export function useBarcodeScanner(): UseBarcodeScanner {
 
   useEffect(() => () => stop(), [stop]);
 
-  const stopCamera = useCallback(() => {
-    stop();
-    setStatus("idle");
-  }, [stop]);
-
   const startCamera = useCallback(async () => {
     if (typeof navigator.mediaDevices?.getUserMedia !== "function") {
       setStatus("unsupported");
       return;
     }
-    setStatus("requesting");
+    if (streamRef.current && activeRef.current) {
+      setStatus("scanning");
+      return;
+    }
+    setStatus("scanning");
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
@@ -115,11 +114,11 @@ export function useBarcodeScanner(): UseBarcodeScanner {
           ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
           try {
             const res = await QrScanner.scanImage(canvas, { returnDetailedScanResult: true });
-            setCapturedImage(cropQr(canvas, res.cornerPoints));
-            setDetectedToken(res.data);
-            stop();
-            setStatus("idle");
-            return;
+            if (detectedTokenRef.current !== res.data) {
+              detectedTokenRef.current = res.data;
+              setCapturedImage(cropQr(canvas, res.cornerPoints));
+              setDetectedToken(res.data);
+            }
           } catch {
             /* no QR in this frame - keep scanning */
           }
@@ -135,9 +134,10 @@ export function useBarcodeScanner(): UseBarcodeScanner {
   }, [stop]);
 
   const clearToken = useCallback(() => {
+    detectedTokenRef.current = null;
     setDetectedToken(null);
     setCapturedImage(null);
   }, []);
 
-  return { videoRef, status, detectedToken, capturedImage, startCamera, stopCamera, clearToken };
+  return { videoRef, status, detectedToken, capturedImage, startCamera, clearToken };
 }

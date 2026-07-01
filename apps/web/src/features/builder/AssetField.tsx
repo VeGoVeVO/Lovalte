@@ -1,5 +1,6 @@
 import { useRef, useState, type ChangeEvent } from "react";
 import { GlassButton } from "../../design-system/halo";
+import { apiAssetUrl } from "../../lib/api";
 import { IconPicker } from "./IconPicker";
 import { svgToPngDataUrl } from "./lucideRaster";
 import { useUploadImage, fileToDataUrl, validateImageFile } from "./useImages";
@@ -81,7 +82,7 @@ export function AssetField({ kind, label, hint, value, onChange, iconColor }: As
       >
         {value ? (
           <img
-            src={value}
+            src={apiAssetUrl(value)}
             alt={t("{label} preview", { label })}
             width={56}
             height={56}

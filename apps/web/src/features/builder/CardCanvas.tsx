@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { QRCodeSVG } from "qrcode.react";
 import { DynamicIcon } from "lucide-react/dynamic";
 import { ColorPicker } from "../../design-system/halo";
+import { apiAssetUrl } from "../../lib/api";
 import { useT } from "../../lib/i18n";
 import type { CardDoc, Slot, FieldList } from "./cardDoc";
 import type { PopAnchor } from "./CardPopover";
@@ -201,7 +202,7 @@ function ImgSlot({
     >
       {src ? (
         <img
-          src={src}
+          src={apiAssetUrl(src)}
           alt=""
           draggable={false}
           style={{
@@ -284,7 +285,7 @@ function StampGrid({
           return (
             <img
               key={i}
-              src={art}
+              src={apiAssetUrl(art)}
               alt=""
               style={{ width: dot, height: dot, objectFit: "contain" }}
             />
@@ -622,7 +623,7 @@ export function CardCanvas({
         >
           {doc.hero?.src && (
             <img
-              src={doc.hero.src}
+              src={apiAssetUrl(doc.hero.src)}
               alt=""
               style={{
                 position: "absolute",

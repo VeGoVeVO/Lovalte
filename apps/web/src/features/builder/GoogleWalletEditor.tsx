@@ -1,5 +1,6 @@
 import { useRef, useState, type ChangeEvent } from "react";
 import { GlassButton, ColorPicker } from "../../design-system/halo";
+import { apiAssetUrl } from "../../lib/api";
 import { useT } from "../../lib/i18n";
 import {
   useCreateTemplate,
@@ -64,7 +65,7 @@ function GWalletPreview({
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         {logoUrl ? (
           <img
-            src={logoUrl}
+            src={apiAssetUrl(logoUrl)}
             alt=""
             style={{
               width: 32,
@@ -125,9 +126,7 @@ function GWalletPreview({
 
       {/* Center value */}
       <div style={{ textAlign: "center" }}>
-        <div
-          style={{ fontSize: 28, fontWeight: 700, color: fg, letterSpacing: "-0.02em" }}
-        >
+        <div style={{ fontSize: 28, fontWeight: 700, color: fg, letterSpacing: "-0.02em" }}>
           {valueLabel}
         </div>
         <div
@@ -184,12 +183,8 @@ export function GoogleWalletEditor({ initial, onClose }: Props) {
   const [org, setOrg] = useState(initial?.brand.organizationName ?? "");
   const [bg, setBg] = useState(initial?.brand.backgroundColor ?? "#1A73E8");
   const [fg, setFg] = useState(initial?.brand.foregroundColor ?? "#FFFFFF");
-  const [cardType, setCardType] = useState<LoyaltyType>(
-    initial?.rewardRule.cardType ?? "points",
-  );
-  const [pointsPerVisit, setPointsPerVisit] = useState(
-    initial?.rewardRule.pointsPerVisit ?? 1,
-  );
+  const [cardType, setCardType] = useState<LoyaltyType>(initial?.rewardRule.cardType ?? "points");
+  const [pointsPerVisit, setPointsPerVisit] = useState(initial?.rewardRule.pointsPerVisit ?? 1);
   const [rewardThreshold, setRewardThreshold] = useState(
     initial?.rewardRule.rewardThreshold ?? 100,
   );
@@ -289,7 +284,13 @@ export function GoogleWalletEditor({ initial, onClose }: Props) {
         <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           <span
             className="body"
-            style={{ fontSize: ".78rem", color: "var(--muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".05em" }}
+            style={{
+              fontSize: ".78rem",
+              color: "var(--muted)",
+              fontWeight: 600,
+              textTransform: "uppercase",
+              letterSpacing: ".05em",
+            }}
           >
             {t("Card name")}
           </span>
@@ -305,7 +306,13 @@ export function GoogleWalletEditor({ initial, onClose }: Props) {
         <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           <span
             className="body"
-            style={{ fontSize: ".78rem", color: "var(--muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".05em" }}
+            style={{
+              fontSize: ".78rem",
+              color: "var(--muted)",
+              fontWeight: 600,
+              textTransform: "uppercase",
+              letterSpacing: ".05em",
+            }}
           >
             {t("Organization name")}
           </span>
@@ -321,7 +328,13 @@ export function GoogleWalletEditor({ initial, onClose }: Props) {
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           <span
             className="body"
-            style={{ fontSize: ".78rem", color: "var(--muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".05em" }}
+            style={{
+              fontSize: ".78rem",
+              color: "var(--muted)",
+              fontWeight: 600,
+              textTransform: "uppercase",
+              letterSpacing: ".05em",
+            }}
           >
             {t("Background color")}
           </span>
@@ -331,7 +344,13 @@ export function GoogleWalletEditor({ initial, onClose }: Props) {
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           <span
             className="body"
-            style={{ fontSize: ".78rem", color: "var(--muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".05em" }}
+            style={{
+              fontSize: ".78rem",
+              color: "var(--muted)",
+              fontWeight: 600,
+              textTransform: "uppercase",
+              letterSpacing: ".05em",
+            }}
           >
             {t("Text color")}
           </span>
@@ -341,7 +360,13 @@ export function GoogleWalletEditor({ initial, onClose }: Props) {
         <div style={{ display: "flex", flexDirection: "column", gap: 6, gridColumn: "1 / -1" }}>
           <span
             className="body"
-            style={{ fontSize: ".78rem", color: "var(--muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".05em" }}
+            style={{
+              fontSize: ".78rem",
+              color: "var(--muted)",
+              fontWeight: 600,
+              textTransform: "uppercase",
+              letterSpacing: ".05em",
+            }}
           >
             {t("Loyalty type")}
           </span>
@@ -363,7 +388,13 @@ export function GoogleWalletEditor({ initial, onClose }: Props) {
         <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           <span
             className="body"
-            style={{ fontSize: ".78rem", color: "var(--muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".05em" }}
+            style={{
+              fontSize: ".78rem",
+              color: "var(--muted)",
+              fontWeight: 600,
+              textTransform: "uppercase",
+              letterSpacing: ".05em",
+            }}
           >
             {t("Points per visit")}
           </span>
@@ -379,7 +410,13 @@ export function GoogleWalletEditor({ initial, onClose }: Props) {
         <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           <span
             className="body"
-            style={{ fontSize: ".78rem", color: "var(--muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".05em" }}
+            style={{
+              fontSize: ".78rem",
+              color: "var(--muted)",
+              fontWeight: 600,
+              textTransform: "uppercase",
+              letterSpacing: ".05em",
+            }}
           >
             {t("Reward threshold")}
           </span>
@@ -395,7 +432,13 @@ export function GoogleWalletEditor({ initial, onClose }: Props) {
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           <span
             className="body"
-            style={{ fontSize: ".78rem", color: "var(--muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".05em" }}
+            style={{
+              fontSize: ".78rem",
+              color: "var(--muted)",
+              fontWeight: 600,
+              textTransform: "uppercase",
+              letterSpacing: ".05em",
+            }}
           >
             {t("Logo")}
           </span>

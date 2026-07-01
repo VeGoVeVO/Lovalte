@@ -1,5 +1,6 @@
 import { useEffect, useRef, type CSSProperties, type ReactNode } from "react";
 import { QRCodeSVG } from "qrcode.react";
+import { apiAssetUrl } from "../../lib/api";
 import { useT } from "../../lib/i18n";
 import type { PopAnchor } from "./CardPopover";
 import type { CardDoc } from "./cardDoc";
@@ -221,7 +222,11 @@ export function GoogleCardCanvas({
           }}
         >
           {g.logoSrc ? (
-            <img src={g.logoSrc} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            <img
+              src={apiAssetUrl(g.logoSrc)}
+              alt=""
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
           ) : (
             // No logo → Google falls back to the first letter of cardTitle in a disc.
             <span style={{ fontSize: 18, fontWeight: 700, color: g.bg }}>
@@ -235,7 +240,14 @@ export function GoogleCardCanvas({
             value={g.cardTitle}
             ariaLabel={t("Card title")}
             onBlur={(v) => dispatch("google.override.cardTitle", { value: v })}
-            style={{ flex: 1, fontSize: 12.5, fontWeight: 600, color: textColor, minWidth: 0, letterSpacing: "0.01em" }}
+            style={{
+              flex: 1,
+              fontSize: 12.5,
+              fontWeight: 600,
+              color: textColor,
+              minWidth: 0,
+              letterSpacing: "0.01em",
+            }}
           />
         ) : (
           <span
@@ -263,10 +275,25 @@ export function GoogleCardCanvas({
             value={g.header}
             ariaLabel={t("Pass title")}
             onBlur={(v) => dispatch("google.override.header", { value: v })}
-            style={{ display: "block", fontSize: 23, fontWeight: 700, color: textColor, lineHeight: 1.2, letterSpacing: "-0.01em" }}
+            style={{
+              display: "block",
+              fontSize: 23,
+              fontWeight: 700,
+              color: textColor,
+              lineHeight: 1.2,
+              letterSpacing: "-0.01em",
+            }}
           />
         ) : (
-          <span style={{ display: "block", fontSize: 23, fontWeight: 700, lineHeight: 1.2, letterSpacing: "-0.01em" }}>
+          <span
+            style={{
+              display: "block",
+              fontSize: 23,
+              fontWeight: 700,
+              lineHeight: 1.2,
+              letterSpacing: "-0.01em",
+            }}
+          >
             {g.header}
           </span>
         )}
@@ -275,7 +302,13 @@ export function GoogleCardCanvas({
       {/* ── Barcode: large centered QR (the passId) ─────────────────────────── */}
       <div style={{ display: "flex", justifyContent: "center", padding: "12px 0 24px" }}>
         <div style={{ background: "#ffffff", padding: 11, borderRadius: 12, lineHeight: 0 }}>
-          <QRCodeSVG value="LVT-000120" size={qrSize} bgColor="#ffffff" fgColor="#0b0b0b" level="M" />
+          <QRCodeSVG
+            value="LVT-000120"
+            size={qrSize}
+            bgColor="#ffffff"
+            fgColor="#0b0b0b"
+            level="M"
+          />
         </div>
       </div>
 
@@ -283,13 +316,25 @@ export function GoogleCardCanvas({
       <Region
         kind="hero"
         label={t("Hero image")}
-        style={{ position: "relative", width: "100%", aspectRatio: "1032 / 812", overflow: "hidden", borderRadius: 0 }}
+        style={{
+          position: "relative",
+          width: "100%",
+          aspectRatio: "1032 / 812",
+          overflow: "hidden",
+          borderRadius: 0,
+        }}
       >
         {g.heroSrc ? (
           <img
-            src={g.heroSrc}
+            src={apiAssetUrl(g.heroSrc)}
             alt=""
-            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+            }}
           />
         ) : (
           <div
@@ -303,7 +348,9 @@ export function GoogleCardCanvas({
             }}
           >
             {editable && (
-              <span style={{ fontSize: 10, opacity: 0.55, color: textColor, letterSpacing: "0.04em" }}>
+              <span
+                style={{ fontSize: 10, opacity: 0.55, color: textColor, letterSpacing: "0.04em" }}
+              >
                 {t("Hero image")}
               </span>
             )}

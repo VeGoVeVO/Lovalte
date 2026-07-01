@@ -12,6 +12,12 @@ declare const __API_BASE__: string;
 const API_BASE = __API_BASE__;
 export const SESSION_TOKEN_KEY = "lovalte_session_token";
 
+export function apiAssetUrl(ref: string | null | undefined): string {
+  if (!ref) return "";
+  if (/^(?:data:|blob:|https?:\/\/)/i.test(ref)) return ref;
+  return API_BASE + (ref.startsWith("/") ? ref : `/${ref}`);
+}
+
 function bearerHeader(): Record<string, string> {
   const t = typeof localStorage !== "undefined" ? localStorage.getItem(SESSION_TOKEN_KEY) : null;
   return t ? { Authorization: `Bearer ${t}` } : {};
@@ -47,6 +53,11 @@ export const api = {
   patch: <T>(path: string, body?: unknown) =>
     req<T>(path, {
       method: "PATCH",
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    }),
+  put: <T>(path: string, body?: unknown) =>
+    req<T>(path, {
+      method: "PUT",
       body: body !== undefined ? JSON.stringify(body) : undefined,
     }),
   del: <T>(path: string) => req<T>(path, { method: "DELETE" }),
