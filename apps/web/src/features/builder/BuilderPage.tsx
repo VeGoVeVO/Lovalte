@@ -6,6 +6,7 @@ import { useTemplates, useDeleteTemplate, type CardTemplateDTO } from "./useTemp
 import { DeleteTemplateModal } from "./DeleteTemplateModal";
 import { CardEditor } from "./CardEditor";
 import { GoogleWalletEditor } from "./GoogleWalletEditor";
+import { IssueCardPanel } from "../wallet/IssueCardPanel";
 
 type EditTarget = CardTemplateDTO | "new" | null;
 
@@ -47,6 +48,7 @@ export function BuilderPage() {
   const { t } = useT();
   const [editing, setEditing] = useState<EditTarget>(null);
   const [confirmCard, setConfirmCard] = useState<CardTemplateDTO | null>(null);
+  const [issueCard, setIssueCard] = useState<CardTemplateDTO | null>(null);
 
   const templates = useTemplates();
   const deleteMut = useDeleteTemplate();
@@ -75,28 +77,14 @@ export function BuilderPage() {
 
   const list = templates.data ?? [];
   return (
-    <AppShell>
-      <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1.5rem" }}>
-        <div style={{ flex: 1 }} aria-hidden="true" />
-        <h1
-          className="cardt"
-          style={{
-            margin: 0,
-            textAlign: "center",
-            fontSize: "clamp(1.1rem,1rem + 0.5vw,1.3rem)",
-            fontWeight: 600,
-            letterSpacing: "-0.01em",
-          }}
-        >
-          {t("Card Builder")}
-        </h1>
-        <div style={{ flex: 1, display: "flex", justifyContent: "flex-end" }}>
-          <GlassButton type="button" onClick={() => setEditing("new")}>
-            {t("+ New card")}
-          </GlassButton>
-        </div>
-      </div>
-
+    <AppShell
+      title={t("Card Builder")}
+      titleAction={
+        <GlassButton type="button" onClick={() => setEditing("new")}>
+          {t("+ New card")}
+        </GlassButton>
+      }
+    >
       {templates.isLoading && (
         <p className="body" aria-live="polite">
           {t("Loading templates…")}
@@ -232,10 +220,50 @@ export function BuilderPage() {
               <p className="body" style={{ margin: "0.6rem 0 0", fontSize: "0.82rem" }}>
                 v{card.version} · {new Date(card.updatedAt).toLocaleDateString()}
               </p>
+              <div style={{ display: "flex", gap: ".5rem", flexWrap: "wrap", marginTop: ".85rem" }}>
+                <button
+                  type="button"
+                  className="btn"
+                  disabled={card.status !== "published"}
+                  aria-label={t("Issue {name}", { name: card.name })}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIssueCard(card);
+                  }}
+                  style={{
+                    minHeight: 38,
+                    padding: ".45rem .8rem",
+                    fontSize: ".84rem",
+                  }}
+                >
+                  {t("Issue")}
+                </button>
+                {card.status !== "published" ? (
+                  <span className="body" style={{ margin: 0, alignSelf: "center", fontSize: ".76rem" }}>
+                    {t("Publish first")}
+                  </span>
+                ) : null}
+              </div>
             </GlassCard>
           ))}
         </div>
       )}
+
+      {issueCard ? (
+        <div style={{ maxWidth: 680, margin: "1.25rem auto 0" }}>
+          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: ".55rem" }}>
+            <button
+              type="button"
+              className="btn ghost"
+              onClick={() => setIssueCard(null)}
+              style={{ padding: ".45rem .7rem", fontSize: ".86rem" }}
+            >
+              {t("Close")}
+            </button>
+          </div>
+          <IssueCardPanel templateId={issueCard.id} cardName={issueCard.name} />
+        </div>
+      ) : null}
 
       {confirmCard && (
         <DeleteTemplateModal

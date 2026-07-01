@@ -34,6 +34,7 @@ function makeTxRunner(): IIdentityTxRunner {
   return {
     async signUpTx() {},
     async acceptInvitationTx() {},
+    async resetPasswordTx() {},
   };
 }
 
@@ -103,6 +104,7 @@ describe("SignUpTenantHandler", () => {
         capturedTenant = tenant;
       },
       async acceptInvitationTx() {},
+      async resetPasswordTx() {},
     };
     const handler = new SignUpTenantHandler(makeTenantsRepo(null), txRunner, makeBus());
 

@@ -18,7 +18,10 @@ import type { InviteUserHandler } from "../application/InviteUserHandler";
 import type { AcceptInvitationHandler } from "../application/AcceptInvitationHandler";
 import type { ListUsersHandler } from "../application/ListUsersHandler";
 import type { DeleteAccountHandler } from "../application/DeleteAccountHandler";
+import type { RequestPasswordResetHandler } from "../application/RequestPasswordResetHandler";
+import type { ResetPasswordHandler } from "../application/ResetPasswordHandler";
 import type { AppleIdentityTokenVerifier } from "../infrastructure/AppleIdentityTokenVerifier";
+import type { IdentityEmailSender } from "../application/ports";
 
 export interface IdentityHandlers {
   signUp: SignUpTenantHandler;
@@ -30,6 +33,9 @@ export interface IdentityHandlers {
   acceptInvitation: AcceptInvitationHandler;
   listUsers: ListUsersHandler;
   deleteAccount: DeleteAccountHandler;
+  requestPasswordReset: RequestPasswordResetHandler;
+  resetPassword: ResetPasswordHandler;
+  emailSender: IdentityEmailSender;
 }
 
 const signUpSchema = z
@@ -45,6 +51,19 @@ const loginSchema = z
     email: z.string().email().max(254),
     password: z.string().max(128),
     slug: z.string().min(1).max(63).optional(),
+  })
+  .strict();
+
+const requestPasswordResetSchema = z
+  .object({
+    email: z.string().email().max(254),
+  })
+  .strict();
+
+const resetPasswordSchema = z
+  .object({
+    token: z.string().min(64).max(128),
+    password: z.string().min(12).max(128),
   })
   .strict();
 
@@ -89,8 +108,7 @@ export function registerIdentityRoutes(
 ): void {
   const secret = deps.config.SESSION_SECRET;
   const adminEmail = deps.config.ADMIN_EMAIL.toLowerCase();
-  const isAdminEmail = (email: string): boolean =>
-    email.toLowerCase().trim() === adminEmail;
+  const isAdminEmail = (email: string): boolean => email.toLowerCase().trim() === adminEmail;
 
   // POST /api/v1/auth/signup - create a new tenant + owner account
   app.post("/api/v1/auth/signup", async (req, reply) => {
@@ -105,6 +123,9 @@ export function registerIdentityRoutes(
       isAdmin: isAdminEmail(input.email),
     };
     setSessionCookie(reply, ctx, secret);
+    void handlers.emailSender
+      .sendWelcomeEmail({ to: r.value.email, businessName: input.businessName })
+      .catch((err) => req.log.error({ err }, "welcome email failed"));
     return reply.status(201).send({ data: { ...r.value, token: signSession(ctx, secret) } });
   });
 
@@ -176,7 +197,35 @@ export function registerIdentityRoutes(
       isAdmin: isAdminEmail(r.value.email),
     };
     setSessionCookie(reply, ctx, secret);
+    void handlers.emailSender
+      .sendWelcomeEmail({ to: r.value.email, businessName: input.businessName })
+      .catch((err) => req.log.error({ err }, "welcome email failed"));
     return reply.status(201).send({ data: { ...r.value, token: signSession(ctx, secret) } });
+  });
+
+  // POST /api/v1/auth/password-reset/request - email a reset link when possible.
+  // Always returns 204 to avoid leaking whether the address exists.
+  app.post("/api/v1/auth/password-reset/request", async (req, reply) => {
+    const input = parse(requestPasswordResetSchema, req.body);
+    const r = await handlers.requestPasswordReset.execute({
+      email: input.email,
+      hmacSecret: secret,
+      appBaseUrl: deps.config.APP_BASE_URL,
+    });
+    if (!r.ok) req.log.error({ err: r.error }, "password reset request failed");
+    return reply.status(204).send();
+  });
+
+  // POST /api/v1/auth/password-reset/confirm - consume a reset token and set password.
+  app.post("/api/v1/auth/password-reset/confirm", async (req, reply) => {
+    const input = parse(resetPasswordSchema, req.body);
+    const r = await handlers.resetPassword.execute({
+      token: input.token,
+      password: input.password,
+      hmacSecret: secret,
+    });
+    if (!r.ok) throw r.error;
+    return reply.status(204).send();
   });
 
   // POST /api/v1/auth/logout - clear session cookie
@@ -202,6 +251,9 @@ export function registerIdentityRoutes(
       isAdmin: isAdminEmail(r.value.email),
     };
     setSessionCookie(reply, ctx, secret);
+    void handlers.emailSender
+      .sendWelcomeEmail({ to: r.value.email })
+      .catch((err) => req.log.error({ err }, "welcome email failed"));
     return reply.status(200).send({ data: { ...r.value, token: signSession(ctx, secret) } });
   });
 
@@ -220,6 +272,15 @@ export function registerIdentityRoutes(
         hmacSecret: secret,
       });
       if (!r.ok) throw r.error;
+      const acceptUrl = new URL("/accept-invitation", deps.config.APP_BASE_URL);
+      acceptUrl.searchParams.set("token", r.value.token);
+      void handlers.emailSender
+        .sendInvitationEmail({
+          to: r.value.email,
+          role: r.value.role,
+          acceptUrl: acceptUrl.toString(),
+        })
+        .catch((err) => req.log.error({ err }, "invitation email failed"));
       return reply.status(201).send({ data: r.value });
     },
   );

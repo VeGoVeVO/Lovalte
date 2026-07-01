@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { GlassCard, GlassButton, haloCss } from "../../design-system/halo";
 import { publicEnroll, fetchGoogleWalletUrl, type PublicEnrollDto } from "./useEnroll";
 import { useT } from "@/lib/i18n";
+import { addAppleWalletPass } from "@/lib/nativeWallet";
 
 type State =
   | { phase: "loading" }
@@ -44,6 +45,7 @@ export function EnrollPage() {
   const { t } = useT();
   const [state, setState] = useState<State>({ phase: "loading" });
   const [gwError, setGwError] = useState<string | null>(null);
+  const [appleBusy, setAppleBusy] = useState(false);
   const ran = useRef(false); // guard StrictMode double-invoke → avoid double enrollment
 
   useEffect(() => {
@@ -127,7 +129,7 @@ export function EnrollPage() {
 
             {state.phase === "done" && (() => {
               const wallet = detectWallet();
-              const appleHref = `/api/v1/public/passes/${state.pass.passId}/pkpass?t=${encodeURIComponent(state.pass.downloadToken)}`;
+              const applePath = `/api/v1/public/passes/${state.pass.passId}/pkpass?t=${encodeURIComponent(state.pass.downloadToken)}`;
               return (
                 <div role="status" aria-live="polite">
                   <div className="enroll-badge" aria-hidden="true">
@@ -155,10 +157,18 @@ export function EnrollPage() {
                   </p>
                   <div style={{ display: "flex", flexDirection: "column", gap: ".75rem", alignItems: "center" }}>
                     {(wallet === 'ios' || wallet === 'unknown') && (
-                      <a
+                      <button
+                        type="button"
                         className="enroll-wallet"
-                        href={appleHref}
+                        disabled={appleBusy}
                         aria-label={t("Add to Apple Wallet - downloads your pass")}
+                        onClick={() => {
+                          setGwError(null);
+                          setAppleBusy(true);
+                          addAppleWalletPass(applePath)
+                            .catch(() => setGwError(t("Could not open Apple Wallet. Please try again.")))
+                            .finally(() => setAppleBusy(false));
+                        }}
                       >
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                           <rect
@@ -173,8 +183,8 @@ export function EnrollPage() {
                           <path d="M2.5 10h19" stroke="currentColor" strokeWidth="1.7" />
                           <circle cx="17.5" cy="14.5" r="1.4" fill="currentColor" />
                         </svg>
-                        {t("Add to Apple Wallet")}
-                      </a>
+                        {appleBusy ? t("Opening Wallet…") : t("Add to Apple Wallet")}
+                      </button>
                     )}
                     {(wallet === 'android' || wallet === 'unknown') && (
                       <button

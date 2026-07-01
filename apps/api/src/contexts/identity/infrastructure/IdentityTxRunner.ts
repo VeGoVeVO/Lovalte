@@ -3,6 +3,7 @@ import { withTransaction } from "../../../db/pool";
 import type { Tenant } from "../domain/Tenant";
 import type { User } from "../domain/User";
 import type { Invitation } from "../domain/Invitation";
+import type { PasswordReset } from "../domain/PasswordReset";
 import type { IIdentityTxRunner } from "../application/ports";
 
 /**
@@ -77,6 +78,26 @@ export class IdentityTxRunner implements IIdentityTxRunner {
           user.createdAt,
           user.updatedAt,
         ],
+      );
+    });
+  }
+
+  async resetPasswordTx(reset: PasswordReset, user: User): Promise<void> {
+    const usedAt = reset.usedAt ?? new Date();
+
+    await withTransaction(this.pool, async (client) => {
+      await client.query(
+        `UPDATE iam.users
+            SET password_hash = $1, updated_at = $2
+          WHERE id = $3 AND tenant_id = $4`,
+        [user.passwordHash.encoded, user.updatedAt, user.id.value, user.tenantId],
+      );
+
+      await client.query(
+        `UPDATE iam.password_resets
+            SET used_at = $1
+          WHERE id = $2 AND used_at IS NULL`,
+        [usedAt, reset.id.value],
       );
     });
   }

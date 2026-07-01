@@ -116,7 +116,10 @@ const layoutCss = `
   .lvt-kpi-grid { grid-template-columns: repeat(2,1fr) !important; }
 }
 @media (max-width: 560px) {
-  .lvt-kpi-grid { grid-template-columns: 1fr !important; }
+  .lvt-kpi-grid { grid-template-columns: repeat(2,minmax(0,1fr)) !important; gap:.7rem !important; margin-bottom:1.35rem !important; }
+  .lvt-kpi-grid .meta { min-width:0; padding:.92rem .9rem; border-radius:18px; }
+  .lvt-kpi-grid .meta .n { font-size:1.42rem; line-height:1.05; }
+  .lvt-kpi-grid .meta .l { font-size:.74rem; line-height:1.25; margin-top:.32rem; }
 }
 @media (max-width: 767px) {
   .lvt-analytics-wrap { flex-direction: column; }
@@ -312,30 +315,9 @@ export function AnalyticsPage() {
   const metricLabel = METRICS.find((m) => m.value === metric)?.label ?? metric;
 
   return (
-    <AppShell>
-      <style>{layoutCss}</style>
-
-      {/* header: title + team toggle share one row */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: "1rem",
-          marginBottom: "1.5rem",
-        }}
-      >
-        <h1
-          className="cardt"
-          style={{
-            margin: 0,
-            fontSize: "clamp(1.2rem, 1rem + 1vw, 1.5rem)",
-            fontWeight: 600,
-            letterSpacing: "-0.015em",
-          }}
-        >
-          {t("Analytics")}
-        </h1>
+    <AppShell
+      title={t("Analytics")}
+      titleAction={
         <button
           type="button"
           className="btn"
@@ -360,7 +342,9 @@ export function AnalyticsPage() {
           </svg>
           {t("Team")}
         </button>
-      </div>
+      }
+    >
+      <style>{layoutCss}</style>
 
       {/* main layout: analytics content + staff sidebar */}
       <div className="lvt-analytics-wrap">

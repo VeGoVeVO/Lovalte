@@ -12,6 +12,9 @@ const schema = z.object({
   // cross-tenant /admin support desk. Env-overridable; defaults to the founder.
   ADMIN_EMAIL: z.string().email().default("wtsouli@gmail.com"),
   APP_BASE_URL: z.string().url(),
+  RESEND_API_KEY: z.string().optional(),
+  EMAIL_FROM: z.string().default("Lovalte <hello@lovalte.com>"),
+  SUPPORT_EMAIL: z.string().email().default("support@lovalte.com"),
   // Comma-separated CORS allowlist. Defaults to APP_BASE_URL when unset. The native
   // app build adds its WebView origins, e.g. "https://lovalte.com,capacitor://localhost,https://localhost".
   CORS_ALLOWED_ORIGINS: z.string().optional(),

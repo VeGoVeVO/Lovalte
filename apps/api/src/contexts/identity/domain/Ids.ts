@@ -27,3 +27,12 @@ export class InvitationId extends UniqueId {
     return new InvitationId(value);
   }
 }
+
+export class PasswordResetId extends UniqueId {
+  static override create(): PasswordResetId {
+    return new PasswordResetId(randomUUID());
+  }
+  static override from(value: string): PasswordResetId {
+    return new PasswordResetId(value);
+  }
+}

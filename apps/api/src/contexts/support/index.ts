@@ -10,6 +10,7 @@ import { AdminReplyTicketHandler } from "./application/AdminReplyTicketHandler";
 import { AdminUpdateTicketHandler } from "./application/AdminUpdateTicketHandler";
 import { AdminStatsHandler } from "./application/AdminStatsHandler";
 import { registerSupportRoutes } from "./presentation/routes";
+import { ResendIdentityEmailSender } from "../identity/infrastructure/ResendIdentityEmailSender";
 
 /**
  * Support / Helpdesk bounded context.
@@ -21,6 +22,15 @@ import { registerSupportRoutes } from "./presentation/routes";
  */
 export const registerSupport: ContextModule = async (app, deps) => {
   const tickets = new TicketRepository(deps.pool);
+  const emailSender = new ResendIdentityEmailSender(deps.config);
+
+  deps.bus.subscribe("TicketOpened", async (event) => {
+    await emailSender.sendSupportEmail({
+      subject: "New Lovalte support ticket",
+      text: `A support ticket was opened: ${String(event.payload["subject"] ?? "")}`,
+      html: `<p style="font-size:16px;line-height:1.6;margin:0;">A support ticket was opened in Lovalte.</p>`,
+    });
+  });
 
   registerSupportRoutes(app, deps, {
     createTicket: new CreateTicketHandler(tickets, deps.bus),

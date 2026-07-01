@@ -58,6 +58,7 @@ function makeTxRunner(): IIdentityTxRunner {
   return {
     async signUpTx() {},
     async acceptInvitationTx() {},
+    async resetPasswordTx() {},
   };
 }
 

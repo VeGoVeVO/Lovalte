@@ -34,6 +34,7 @@ function makeTxRunner(): IIdentityTxRunner {
   return {
     async signUpTx() {},
     async acceptInvitationTx() {},
+    async resetPasswordTx() {},
   };
 }
 
@@ -64,7 +65,11 @@ describe("SignUpTenantWithAppleHandler", () => {
       createdAt: new Date(),
       updatedAt: new Date(),
     });
-    const handler = new SignUpTenantWithAppleHandler(makeTenantsRepo(existing), makeTxRunner(), makeBus());
+    const handler = new SignUpTenantWithAppleHandler(
+      makeTenantsRepo(existing),
+      makeTxRunner(),
+      makeBus(),
+    );
 
     const result = await handler.execute({
       email: "owner@acme.com",

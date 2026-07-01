@@ -5,15 +5,17 @@ import { APP_VERSION } from "./version";
 import { PublicOnlyAuth, RequireAuth, RequireAdmin } from "./lib/auth";
 import { LoginPage } from "./features/auth/LoginPage";
 import { SignupPage } from "./features/auth/SignupPage";
+import { AcceptInvitationPage } from "./features/auth/AcceptInvitationPage";
+import { ForgotPasswordPage, ResetPasswordPage } from "./features/auth/PasswordResetPage";
 import { BuilderPage } from "./features/builder/BuilderPage";
 import { AnalyticsPage } from "./features/analytics/AnalyticsPage";
 import { MembersPage } from "./features/members/MembersPage";
 import { StaffPage } from "./features/staff/StaffPage";
 import { SupportPage } from "./features/support/SupportPage";
 import { AdminPage } from "./features/admin/AdminPage";
-import { IssuePassPage } from "./features/wallet/IssuePassPage";
 import { EnrollPage } from "./features/wallet/EnrollPage";
 import { ScanPage } from "./features/scan/ScanPage";
+import { SettingsPage } from "./features/settings/SettingsPage";
 import { registerNativeUrlHandler } from "./lib/nativeNavigation";
 
 /* Route map. Auth pages are public; the authenticated app (/app/*) sits behind
@@ -46,6 +48,9 @@ export function App() {
         <Route element={<PublicOnlyAuth />}>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
         </Route>
         <Route path="/enroll" element={<EnrollPage />} />
 
@@ -54,8 +59,10 @@ export function App() {
           <Route path="/app/builder" element={<BuilderPage />} />
           <Route path="/app/members" element={<MembersPage />} />
           <Route path="/app/staff" element={<StaffPage />} />
-          <Route path="/app/issue" element={<IssuePassPage />} />
+          <Route path="/app/issue" element={<Navigate to="/app/builder" replace />} />
           <Route path="/app/scan" element={<ScanPage />} />
+          <Route path="/app/settings" element={<SettingsPage />} />
+          <Route path="/app/support" element={<SupportPage />} />
           <Route path="/support" element={<SupportPage />} />
         </Route>
 

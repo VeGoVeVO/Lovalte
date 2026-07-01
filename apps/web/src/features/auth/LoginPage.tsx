@@ -18,7 +18,6 @@ export function LoginPage() {
   const location = useLocation();
   const qc = useQueryClient();
   const { t } = useT();
-  const [slug, setSlug] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -32,7 +31,6 @@ export function LoginPage() {
       const session = await api.post<{ token: string }>("/api/v1/auth/login", {
         email,
         password,
-        ...(slug.trim() ? { slug: slug.trim() } : {}),
       });
       persistNativeSession(session);
       qc.removeQueries({ queryKey: ["me"] });
@@ -51,7 +49,6 @@ export function LoginPage() {
       const apple = await requestAppleIdentity();
       const session = await api.post<{ token: string }>("/api/v1/auth/apple/login", {
         ...apple,
-        ...(slug.trim() ? { slug: slug.trim() } : {}),
       });
       persistNativeSession(session);
       qc.removeQueries({ queryKey: ["me"] });
@@ -78,15 +75,10 @@ export function LoginPage() {
           style={{ display: "flex", flexDirection: "column", gap: "1rem", width: "100%" }}
         >
           <GlassInput
-            placeholder={t("Business slug (optional)")}
-            aria-label={t("Business slug (optional)")}
-            value={slug}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSlug(e.target.value)}
-          />
-          <GlassInput
             type="email"
             placeholder="you@business.com"
             aria-label={t("Email")}
+            autoComplete="email"
             value={email}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
           />
@@ -94,6 +86,7 @@ export function LoginPage() {
             type="password"
             placeholder={t("Password")}
             aria-label={t("Password")}
+            autoComplete="current-password"
             value={password}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
           />
@@ -121,6 +114,9 @@ export function LoginPage() {
               {t("Use local test session")}
             </GlassButton>
           ) : null}
+          <p className="body" style={{ margin: 0 }}>
+            <Link to="/forgot-password">{t("Forgot password?")}</Link>
+          </p>
         </form>
         <p className="body" style={{ marginTop: "1rem" }}>
           {t("New here?")} <Link to="/signup">{t("Create a business")}</Link>

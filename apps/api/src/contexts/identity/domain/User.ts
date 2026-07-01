@@ -83,6 +83,11 @@ export class User extends AggregateRoot<UserId> {
     return this.props.passwordHash.verify(plaintext);
   }
 
+  resetPassword(passwordHash: PasswordHash): void {
+    this.props.passwordHash = passwordHash;
+    this.props.updatedAt = new Date();
+  }
+
   get tenantId(): string {
     return this.props.tenantId;
   }

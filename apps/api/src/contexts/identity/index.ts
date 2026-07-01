@@ -3,6 +3,8 @@ import { TenantRepository } from "./infrastructure/TenantRepository";
 import { UserRepository } from "./infrastructure/UserRepository";
 import { InvitationRepository } from "./infrastructure/InvitationRepository";
 import { IdentityTxRunner } from "./infrastructure/IdentityTxRunner";
+import { PasswordResetRepository } from "./infrastructure/PasswordResetRepository";
+import { ResendIdentityEmailSender } from "./infrastructure/ResendIdentityEmailSender";
 import { SignUpTenantHandler } from "./application/SignUpTenantHandler";
 import { LoginHandler } from "./application/LoginHandler";
 import { LoginWithAppleHandler } from "./application/LoginWithAppleHandler";
@@ -11,6 +13,8 @@ import { InviteUserHandler } from "./application/InviteUserHandler";
 import { AcceptInvitationHandler } from "./application/AcceptInvitationHandler";
 import { ListUsersHandler } from "./application/ListUsersHandler";
 import { DeleteAccountHandler } from "./application/DeleteAccountHandler";
+import { RequestPasswordResetHandler } from "./application/RequestPasswordResetHandler";
+import { ResetPasswordHandler } from "./application/ResetPasswordHandler";
 import { AppleIdentityTokenVerifier } from "./infrastructure/AppleIdentityTokenVerifier";
 import { registerIdentityRoutes } from "./presentation/routes";
 
@@ -24,7 +28,9 @@ export const registerIdentity: ContextModule = async (app, deps) => {
   const tenantRepo = new TenantRepository(deps.pool);
   const userRepo = new UserRepository(deps.pool);
   const invitationRepo = new InvitationRepository(deps.pool);
+  const resetRepo = new PasswordResetRepository(deps.pool);
   const txRunner = new IdentityTxRunner(deps.pool);
+  const emailSender = new ResendIdentityEmailSender(deps.config);
   const appleVerifier = new AppleIdentityTokenVerifier(
     deps.config.APPLE_SIGN_IN_CLIENT_IDS.split(",")
       .map((id) => id.trim())
@@ -42,6 +48,9 @@ export const registerIdentity: ContextModule = async (app, deps) => {
     acceptInvitation: new AcceptInvitationHandler(invitationRepo, txRunner, deps.bus),
     listUsers: new ListUsersHandler(userRepo),
     deleteAccount: new DeleteAccountHandler(tenantRepo, deps.bus),
+    requestPasswordReset: new RequestPasswordResetHandler(userRepo, resetRepo, emailSender),
+    resetPassword: new ResetPasswordHandler(userRepo, resetRepo, txRunner),
+    emailSender,
   };
 
   // Cross-context subscriptions (none for identity in MVP - it is upstream to all)

@@ -10,14 +10,22 @@ declare const __API_BASE__: string;
 const API_BASE = __API_BASE__;
 export const SESSION_TOKEN_KEY = "lovalte_session_token";
 
+export function apiUrl(path: string): string {
+  return API_BASE + (path.startsWith("/") ? path : `/${path}`);
+}
+
+export function getSessionToken(): string | null {
+  return typeof localStorage !== "undefined" ? localStorage.getItem(SESSION_TOKEN_KEY) : null;
+}
+
 export function apiAssetUrl(ref: string | null | undefined): string {
   if (!ref) return "";
   if (/^(?:data:|blob:|https?:\/\/)/i.test(ref)) return ref;
-  return API_BASE + (ref.startsWith("/") ? ref : `/${ref}`);
+  return apiUrl(ref);
 }
 
 function bearerHeader(): Record<string, string> {
-  const t = typeof localStorage !== "undefined" ? localStorage.getItem(SESSION_TOKEN_KEY) : null;
+  const t = getSessionToken();
   return t ? { Authorization: `Bearer ${t}` } : {};
 }
 
@@ -26,7 +34,7 @@ async function req<T>(path: string, opts: RequestInit = {}): Promise<T> {
   // carry `headers: undefined`) can never clobber the Content-Type. Without this,
   // POST bodies are sent without application/json and the API sees a raw string.
   const { headers: optHeaders, ...rest } = opts;
-  const res = await fetch(API_BASE + path, {
+  const res = await fetch(apiUrl(path), {
     credentials: "include",
     ...rest,
     headers: { "Content-Type": "application/json", ...bearerHeader(), ...(optHeaders ?? {}) },

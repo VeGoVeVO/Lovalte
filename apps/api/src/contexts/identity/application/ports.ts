@@ -1,6 +1,7 @@
 import type { Tenant } from "../domain/Tenant";
 import type { User } from "../domain/User";
 import type { Invitation } from "../domain/Invitation";
+import type { PasswordReset } from "../domain/PasswordReset";
 
 /** Read/write access to the Tenant aggregate. */
 export interface ITenantRepository {
@@ -36,6 +37,18 @@ export interface IInvitationRepository {
   markUsed(invitationId: string, usedAt: Date): Promise<void>;
 }
 
+/** Read/write access to PasswordReset records. */
+export interface IPasswordResetRepository {
+  findByTokenHash(tokenHash: string): Promise<PasswordReset | null>;
+  save(reset: PasswordReset): Promise<void>;
+}
+
+export interface IdentityEmailSender {
+  sendWelcomeEmail(input: { to: string; businessName?: string }): Promise<void>;
+  sendInvitationEmail(input: { to: string; role: string; acceptUrl: string }): Promise<void>;
+  sendPasswordResetEmail(input: { to: string; resetUrl: string }): Promise<void>;
+}
+
 /**
  * Runs multi-aggregate operations inside a single DB transaction.
  * Defined here (application boundary) so the handler stays free of pg types.
@@ -45,4 +58,6 @@ export interface IIdentityTxRunner {
   signUpTx(tenant: Tenant, user: User): Promise<void>;
   /** UPDATE invitation.used_at + INSERT accepted user atomically. */
   acceptInvitationTx(invitation: Invitation, user: User): Promise<void>;
+  /** UPDATE user password + mark reset used atomically. */
+  resetPasswordTx(reset: PasswordReset, user: User): Promise<void>;
 }

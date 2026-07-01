@@ -16,11 +16,18 @@ export const ES: Record<string, string> = {
   Analytics: "Estadísticas",
   Issue: "Emitir",
   Scan: "Escanear",
+  Settings: "Ajustes",
   Home: "Inicio",
   Cards: "Tarjetas",
   More: "Más",
   "Log out": "Cerrar sesión",
   Overview: "Resumen",
+  Language: "Idioma",
+  "Open tickets, reply to support, and follow up on help requests.":
+    "Abre tickets, responde a soporte y sigue tus solicitudes de ayuda.",
+  "Choose the language for this device.": "Elige el idioma para este dispositivo.",
+  "Sign out of this account on this device.":
+    "Cierra la sesión de esta cuenta en este dispositivo.",
 
   // ── Dashboard ────────────────────────────────────────────────────────
   "Sign in to view your dashboard.": "Inicia sesión para ver tu panel.",
@@ -147,6 +154,20 @@ export const ES: Record<string, string> = {
   "Business slug (optional)": "Identificador del negocio (opcional)",
   Email: "Correo electrónico",
   Password: "Contraseña",
+  "Forgot password?": "¿Has olvidado la contraseña?",
+  "Reset your password.": "Restablece tu contraseña.",
+  "If that email exists, a reset link is on its way.":
+    "Si ese correo existe, el enlace para restablecerla ya va de camino.",
+  "Could not send reset email.": "No se ha podido enviar el correo de recuperación.",
+  "Send reset link": "Enviar enlace",
+  "Back to sign in": "Volver al inicio de sesión",
+  "Choose a new password.": "Elige una contraseña nueva.",
+  "Could not reset password.": "No se ha podido cambiar la contraseña.",
+  "Save new password": "Guardar nueva contraseña",
+  "Join the workspace.": "Únete al espacio de trabajo.",
+  "Could not accept invitation.": "No se ha podido aceptar la invitación.",
+  "Joining…": "Entrando…",
+  "Join Lovalte": "Unirme a Lovalte",
   "Signing in…": "Iniciando sesión…",
   "Login failed": "Error al iniciar sesión",
   "New here?": "¿Es tu primera vez?",
@@ -175,6 +196,9 @@ export const ES: Record<string, string> = {
     "Tu tarjeta de fidelidad está lista. Añádela a Apple Wallet:",
   "Add to Apple Wallet": "Añadir a Apple Wallet",
   "Add to Apple Wallet - downloads your pass": "Añadir a Apple Wallet (descarga tu pase)",
+  "Opening Wallet…": "Abriendo Wallet…",
+  "Could not open Apple Wallet. Please try again.":
+    "No se ha podido abrir Apple Wallet. Inténtalo de nuevo.",
   "On iPhone this opens straight in Wallet. If nothing happens, open this page in Safari.":
     "En iPhone se abre directamente en Wallet. Si no pasa nada, abre esta página en Safari.",
   "You're in! 🎉": "¡Ya estás dentro! 🎉",
@@ -193,10 +217,25 @@ export const ES: Record<string, string> = {
   "No published cards yet. Create and publish a card in the builder first.":
     "Aún no tienes tarjetas publicadas. Crea y publica una tarjeta en el editor primero.",
   "Create enrollment QR": "Crear QR de alta",
+  "Create QR": "Crear QR",
   "Enrollment QR": "QR de alta",
   "Customers scan this to get their loyalty card":
     "Tus clientes lo escanean para conseguir su tarjeta de fidelidad",
+  "Customers scan this to get their loyalty card.":
+    "Tus clientes lo escanean para conseguir su tarjeta de fidelidad.",
   "Issue one to a walk-in": "Emite una a alguien que entra",
+  "Issue {name}": "Emitir {name}",
+  "Create a customer QR or add a test pass directly on this iPhone.":
+    "Crea un QR para clientes o añade un pase de prueba directamente en este iPhone.",
+  "Add test pass": "Añadir pase de prueba",
+  "Test pass is ready for Wallet.": "El pase de prueba está listo para Wallet.",
+  "Scan this QR to add the loyalty card to Wallet.":
+    "Escanea este QR para añadir la tarjeta de fidelidad a Wallet.",
+  "Scan to add this loyalty card to Wallet.":
+    "Escanea para añadir esta tarjeta de fidelidad a Wallet.",
+  Share: "Compartir",
+  "Print / PDF": "Imprimir / PDF",
+  "Publish first": "Publícala primero",
   "Issued pass": "Tarjeta emitida",
   "Issuing…": "Emitiendo…",
   "Pass issued - member {memberId}.": "Tarjeta emitida, cliente {memberId}.",
@@ -347,7 +386,6 @@ export const ES: Record<string, string> = {
   Build: "Crea",
   "Design your loyalty card and set the reward.":
     "Diseña tu tarjeta de fidelidad y define la recompensa.",
-  Share: "Comparte",
   "Customers add it to Apple Wallet in one tap.":
     "Tus clientes la añaden a Apple Wallet con un toque.",
   Grow: "Crece",
