@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { api, type ApiError } from "../../lib/api";
 import { AppShell } from "../../lib/AppShell";
@@ -7,6 +8,7 @@ import { useT } from "../../lib/i18n";
 import { requestAppleIdentity } from "../../lib/appleAuth";
 import { resolveNextPath } from "../../lib/nativeNavigation";
 import { persistNativeSession } from "../../lib/nativeSession";
+import { enableLocalTestSession } from "../../lib/auth";
 import { AppleAuthButton } from "./AppleAuthButton";
 
 /* Owner/staff sign-in. Posts to the Identity context (POST /api/v1/auth/login),
@@ -14,6 +16,7 @@ import { AppleAuthButton } from "./AppleAuthButton";
 export function LoginPage() {
   const nav = useNavigate();
   const location = useLocation();
+  const qc = useQueryClient();
   const { t } = useT();
   const [slug, setSlug] = useState("");
   const [email, setEmail] = useState("");
@@ -32,6 +35,7 @@ export function LoginPage() {
         ...(slug.trim() ? { slug: slug.trim() } : {}),
       });
       persistNativeSession(session);
+      qc.removeQueries({ queryKey: ["me"] });
       nav(resolveNextPath(location.search));
     } catch (err) {
       setError((err as ApiError).message ?? t("Login failed"));
@@ -50,12 +54,19 @@ export function LoginPage() {
         ...(slug.trim() ? { slug: slug.trim() } : {}),
       });
       persistNativeSession(session);
+      qc.removeQueries({ queryKey: ["me"] });
       nav(resolveNextPath(location.search));
     } catch (err) {
       setError((err as ApiError).message ?? t("Apple sign in failed"));
     } finally {
       setBusy(false);
     }
+  };
+
+  const useLocalTestSession = () => {
+    enableLocalTestSession();
+    qc.removeQueries({ queryKey: ["me"] });
+    nav(resolveNextPath(location.search));
   };
 
   return (
@@ -100,6 +111,16 @@ export function LoginPage() {
             onClick={signInWithApple}
             aria-label={t("Sign in with Apple")}
           />
+          {import.meta.env.DEV ? (
+            <GlassButton
+              type="button"
+              variant="ghost"
+              disabled={busy}
+              onClick={useLocalTestSession}
+            >
+              {t("Use local test session")}
+            </GlassButton>
+          ) : null}
         </form>
         <p className="body" style={{ marginTop: "1rem" }}>
           {t("New here?")} <Link to="/signup">{t("Create a business")}</Link>

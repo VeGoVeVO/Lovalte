@@ -1,9 +1,7 @@
-/* Thin typed fetch client. On web, shares the API origin via the Vite dev proxy
-   (/api, /wallet -> :3001) and sends the session cookie (credentials:'include').
-   In the native app build (Capacitor) the WebView is cross-origin, so requests go
-   to VITE_API_BASE_URL and carry the session token as `Authorization: Bearer`.
-   The token is only ever written to localStorage by the native login flow, so on
-   web `bearerHeader()` is a no-op and the cookie stays the sole credential. */
+/* Thin typed fetch client. Web/dev shares the API origin via the Vite dev proxy
+   (/api, /wallet -> :3001) and sends cookies. Native builds use __API_BASE__.
+   Login also stores the returned session token so both web and iOS can restore
+   auth after the browser/app process is closed. */
 export type ApiError = { code: string; message: string; details?: unknown };
 
 // Injected by vite.config.ts `define`: absolute API origin in the native app build

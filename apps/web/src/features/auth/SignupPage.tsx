@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, Link } from "react-router-dom";
 import { api, type ApiError } from "../../lib/api";
 import { AppShell } from "../../lib/AppShell";
@@ -12,6 +13,7 @@ import { AppleAuthButton } from "./AppleAuthButton";
    (Identity context: POST /api/v1/auth/signup), sets the session, enters the app. */
 export function SignupPage() {
   const nav = useNavigate();
+  const qc = useQueryClient();
   const { t } = useT();
   const [business, setBusiness] = useState("");
   const [email, setEmail] = useState("");
@@ -34,6 +36,7 @@ export function SignupPage() {
         password,
       });
       persistNativeSession(session);
+      qc.removeQueries({ queryKey: ["me"] });
       nav("/app");
     } catch (err) {
       setError((err as ApiError).message ?? t("Sign up failed"));
@@ -56,6 +59,7 @@ export function SignupPage() {
         businessName: business,
       });
       persistNativeSession(session);
+      qc.removeQueries({ queryKey: ["me"] });
       nav("/app");
     } catch (err) {
       setError((err as ApiError).message ?? t("Apple sign up failed"));

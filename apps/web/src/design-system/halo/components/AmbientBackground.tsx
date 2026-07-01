@@ -12,6 +12,7 @@ export function AmbientBackground() {
         @keyframes lvtDrift2 { 0%{transform:translate(0,0) scale(1) rotate(0deg)} 33%{transform:translate(-3vw,5vh) scale(1.08) rotate(-2deg)} 66%{transform:translate(4vw,-3vh) scale(.92) rotate(1deg)} 100%{transform:translate(0,0) scale(1) rotate(0deg)} }
         @keyframes lvtDrift3 { 0%{transform:translate(0,0) scale(1)} 50%{transform:translate(6vw,2vh) scale(1.03)} 100%{transform:translate(0,0) scale(1)} }
         .lvt-orb{ position:absolute; border-radius:50%; will-change:transform; }
+        @media (max-width: 767px){ .lvt-orb{ animation:none !important; will-change:auto; filter:blur(110px) !important; } }
         @media (prefers-reduced-motion: reduce){ .lvt-orb{ animation:none !important; } }
       `}</style>
       {/* zIndex 0 (not -1) keeps the orbs in the root stacking context so iOS

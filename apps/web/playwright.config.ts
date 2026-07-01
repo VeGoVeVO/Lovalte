@@ -1,5 +1,12 @@
 import { defineConfig } from "@playwright/test";
 
+const executablePath =
+  process.platform === "darwin"
+    ? "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"
+    : process.platform === "win32"
+      ? "C:/Program Files/BraveSoftware/Brave-Browser/Application/brave.exe"
+      : undefined;
+
 /* Frontend e2e against the running dev server (http://localhost:5173), using the
    locally-installed Brave (Chromium) - Playwright's own Chrome download needs admin. */
 export default defineConfig({
@@ -13,8 +20,6 @@ export default defineConfig({
     headless: true,
     viewport: { width: 1280, height: 800 },
     screenshot: "only-on-failure",
-    launchOptions: {
-      executablePath: "C:/Program Files/BraveSoftware/Brave-Browser/Application/brave.exe",
-    },
+    launchOptions: executablePath ? { executablePath } : undefined,
   },
 });

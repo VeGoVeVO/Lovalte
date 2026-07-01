@@ -7,18 +7,34 @@ const BUSINESS = `E2E Cafe ${RUN}`;
 const EMAIL = `e2e${RUN}@test.dev`;
 const PASSWORD = "hunter2hunter2";
 
-test("marketing landing renders", async ({ page }) => {
+test("root redirects to login", async ({ page }) => {
   await page.goto("/");
-  await expect(
-    page.getByRole("heading", { name: /Loyalty cards your customers actually keep/i }),
-  ).toBeVisible();
-  await page.screenshot({ path: "e2e/__screenshots__/landing.png" });
+  await page.waitForURL("**/login?**");
+  await expect(page.getByRole("button", { name: /^sign in$/i })).toBeVisible();
+  await page.screenshot({ path: "e2e/__screenshots__/login.png" });
 });
 
 test("auth guard redirects unauthenticated /app to /login", async ({ page }) => {
   await page.goto("/app");
-  await page.waitForURL("**/login");
+  await page.waitForURL("**/login?**");
   await expect(page.getByRole("button", { name: /sign in/i })).toBeVisible();
+});
+
+test("local test session opens app without real login", async ({ page }) => {
+  await page.goto("/login");
+  await page.getByRole("button", { name: /use local test session/i }).click();
+  await page.waitForURL("**/app");
+  await expect(page.getByRole("link", { name: /lovalte/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Overview" })).toBeVisible();
+});
+
+test("saved local session cannot stay on login screen", async ({ page }) => {
+  await page.goto("/login");
+  await page.evaluate(() => localStorage.setItem("lovalte_local_test_session", "1"));
+  await page.goto("/login");
+  await page.waitForURL("**/app");
+  await expect(page.getByRole("heading", { name: "Overview" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /^sign in$/i })).toHaveCount(0);
 });
 
 test("signup -> dashboard -> every app page renders -> logout", async ({ page }) => {
@@ -52,7 +68,7 @@ test("signup -> dashboard -> every app page renders -> logout", async ({ page })
     "/app/builder",
     "/app/members",
     "/app/staff",
-    "/app/analytics",
+    "/app",
     "/app/issue",
     "/app/scan",
   ]) {

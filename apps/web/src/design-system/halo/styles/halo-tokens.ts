@@ -215,7 +215,7 @@ export const css = `
 .halo .brand{ display:flex; align-items:center; gap:.6rem; font-weight:600;
   letter-spacing:-.02em; font-size:1.05rem; }
 .halo .brand .dot{ width:30px; height:30px; flex:0 0 auto; border-radius:9px;
-  background:url('/icons/icon-512.png') center/contain no-repeat;
+  background:url('/lovalte-mark.png') center/contain no-repeat;
   filter:drop-shadow(0 4px 10px -4px rgba(46,62,92,.4)); }
 .halo .navlinks{ display:flex; align-items:center; gap:.4rem; }
 .halo .navlinks a{ color:var(--muted); text-decoration:none; font-size:.95rem; font-weight:450;
@@ -315,6 +315,9 @@ export const css = `
 
 /* ── responsive ─────────────────────────────────────────── */
 @media (max-width:900px){
+  .halo .nav{ padding-top:calc(.65rem + env(safe-area-inset-top, 0px)); }
+  .halo .navbar{ gap:.55rem; padding:.52rem .62rem .52rem .9rem; }
+  .halo .navbar .btn{ padding:.72rem 1rem; }
   .halo .hero-wrap{ grid-template-columns:1fr; text-align:center; }
   .halo .hero-copy{ max-width:none; align-items:center; }
   .halo .hero-actions{ justify-content:center; }
@@ -324,6 +327,14 @@ export const css = `
   .halo .section-head{ margin-bottom:2.2rem; }
 }
 @media (max-width:520px){
+  .halo .nav .container{ padding:0; }
+  .halo .container{ padding:0 .85rem; }
+  .halo .navbar{ border-radius:0; border-left:0; border-right:0; }
+  .halo .navbar .brand{ font-size:1rem; gap:.5rem; }
+  .halo .navbar .brand .dot{ width:28px; height:28px; }
+  .halo .navcta{ gap:.45rem !important; }
+  .halo .navcta .btn.ghost{ display:none; }
+  .halo .navbar .btn{ min-height:44px; padding:.66rem .9rem; font-size:.95rem; }
   .halo .waitform{ flex-direction:column; }
 }
 
