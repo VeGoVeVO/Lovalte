@@ -8,7 +8,8 @@ import { fileURLToPath, URL } from "node:url";
 // an .env file (the repo policy forbids committing env files). To target a LAN IP for
 // local testing, change APP_API_BASE to e.g. "http://192.168.1.20:3001".
 const APP_API_BASE = "https://lovalte.com";
-const APPLE_SIGN_IN_CLIENT_ID = "com.lovalte.app";
+const APPLE_SIGN_IN_NATIVE_CLIENT_ID = "com.lovalte.app";
+const APPLE_SIGN_IN_WEB_CLIENT_ID = "com.lovalte.web";
 
 export default defineConfig(({ mode }) => ({
   plugins: [react()],
@@ -17,7 +18,8 @@ export default defineConfig(({ mode }) => ({
   },
   define: {
     __API_BASE__: JSON.stringify(mode === "app" ? APP_API_BASE : ""),
-    __APPLE_SIGN_IN_CLIENT_ID__: JSON.stringify(APPLE_SIGN_IN_CLIENT_ID),
+    __APPLE_SIGN_IN_NATIVE_CLIENT_ID__: JSON.stringify(APPLE_SIGN_IN_NATIVE_CLIENT_ID),
+    __APPLE_SIGN_IN_WEB_CLIENT_ID__: JSON.stringify(APPLE_SIGN_IN_WEB_CLIENT_ID),
   },
   server: {
     port: 5173,
