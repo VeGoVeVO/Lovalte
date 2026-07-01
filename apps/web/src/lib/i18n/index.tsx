@@ -7,19 +7,31 @@ import { ES } from "./es";
  * falling back to the English key when a translation is missing. No key registry
  * to keep in sync, and the JSX stays readable.
  *
- * Locale detection (industry-standard order): an explicit saved choice wins, then
- * the browser's ordered languages (navigator.languages), then English.
+ * Locale detection defaults to the device/browser's ordered languages, then
+ * English. If a user manually chooses EN/ES, that explicit choice persists.
  */
 export type Locale = "en" | "es";
 const STORAGE_KEY = "lovalte:lang";
+const MODE_STORAGE_KEY = "lovalte:lang-mode";
 
-function detectLocale(): Locale {
+function localeFromNavigator(): Locale {
   if (typeof window === "undefined") return "en";
-  const saved = window.localStorage.getItem(STORAGE_KEY);
-  if (saved === "en" || saved === "es") return saved;
   const langs = navigator.languages?.length ? navigator.languages : [navigator.language];
   for (const l of langs) if (l && l.toLowerCase().startsWith("es")) return "es";
   return "en";
+}
+
+function savedLocale(): Locale | "auto" {
+  if (typeof window === "undefined") return "auto";
+  const mode = window.localStorage.getItem(MODE_STORAGE_KEY);
+  if (mode !== "manual") return "auto";
+  const saved = window.localStorage.getItem(STORAGE_KEY);
+  return saved === "en" || saved === "es" ? saved : "auto";
+}
+
+function detectLocale(): Locale {
+  const saved = savedLocale();
+  return saved === "auto" ? localeFromNavigator() : saved;
 }
 
 type Vars = Record<string, string | number>;
@@ -32,33 +44,57 @@ function interpolate(s: string, vars?: Vars): string {
 
 interface I18n {
   locale: Locale;
+  localeMode: Locale | "auto";
   setLocale: (l: Locale) => void;
+  setAutoLocale: () => void;
   t: (en: string, vars?: Vars) => string;
 }
 
 const Ctx = createContext<I18n | null>(null);
 
 export function LocaleProvider({ children }: { children: ReactNode }) {
+  const [localeMode, setLocaleMode] = useState<Locale | "auto">(savedLocale);
   const [locale, setLocaleState] = useState<Locale>(detectLocale);
 
   useEffect(() => {
     document.documentElement.lang = locale;
   }, [locale]);
 
+  useEffect(() => {
+    if (localeMode !== "auto") return;
+    const syncLocale = () => setLocaleState(localeFromNavigator());
+    window.addEventListener("languagechange", syncLocale);
+    syncLocale();
+    return () => window.removeEventListener("languagechange", syncLocale);
+  }, [localeMode]);
+
   const value = useMemo<I18n>(
     () => ({
       locale,
+      localeMode,
       setLocale: (l) => {
+        setLocaleMode(l);
         setLocaleState(l);
         try {
+          window.localStorage.setItem(MODE_STORAGE_KEY, "manual");
           window.localStorage.setItem(STORAGE_KEY, l);
+        } catch {
+          /* private mode / storage disabled - language still applies for the session */
+        }
+      },
+      setAutoLocale: () => {
+        setLocaleMode("auto");
+        setLocaleState(localeFromNavigator());
+        try {
+          window.localStorage.setItem(MODE_STORAGE_KEY, "auto");
+          window.localStorage.removeItem(STORAGE_KEY);
         } catch {
           /* private mode / storage disabled - language still applies for the session */
         }
       },
       t: (en, vars) => interpolate(locale === "es" ? (ES[en] ?? en) : en, vars),
     }),
-    [locale],
+    [locale, localeMode],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
