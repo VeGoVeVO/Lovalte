@@ -69,6 +69,7 @@ function emailSender(sent: string[] = []): IdentityEmailSender {
     async sendPasswordResetEmail(input) {
       sent.push(input.resetUrl);
     },
+    async sendTestEmailPreset() {},
   };
 }
 

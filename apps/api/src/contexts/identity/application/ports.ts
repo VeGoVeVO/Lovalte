@@ -47,7 +47,10 @@ export interface IdentityEmailSender {
   sendWelcomeEmail(input: { to: string; businessName?: string }): Promise<void>;
   sendInvitationEmail(input: { to: string; role: string; acceptUrl: string }): Promise<void>;
   sendPasswordResetEmail(input: { to: string; resetUrl: string }): Promise<void>;
+  sendTestEmailPreset(input: { to: string; preset: EmailTestPreset }): Promise<void>;
 }
+
+export type EmailTestPreset = "welcome" | "invitation" | "password-reset" | "support";
 
 /**
  * Runs multi-aggregate operations inside a single DB transaction.

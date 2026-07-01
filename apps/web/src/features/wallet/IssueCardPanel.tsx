@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { QRCodeCanvas, QRCodeSVG } from "qrcode.react";
 import { GlassButton, GlassCard } from "../../design-system/halo";
 import { useT } from "../../lib/i18n";
@@ -27,9 +27,13 @@ function download(filename: string, href: string) {
 export function IssueCardPanel({
   templateId,
   cardName,
+  autoCreateQr = false,
+  compact = false,
 }: {
   templateId: string;
   cardName: string;
+  autoCreateQr?: boolean;
+  compact?: boolean;
 }) {
   const { t } = useT();
   const qrSvgRef = useRef<SVGSVGElement | null>(null);
@@ -39,10 +43,11 @@ export function IssueCardPanel({
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [walletBusy, setWalletBusy] = useState(false);
+  const didAutoCreateQr = useRef(false);
   const enrollLink = useEnrollLink();
   const issueDirect = useIssueDirect();
 
-  const makeQr = async () => {
+  const makeQr = useCallback(async () => {
     setError(null);
     setIssued(null);
     try {
@@ -50,7 +55,13 @@ export function IssueCardPanel({
     } catch (e) {
       setError(signingHint((e as { message?: string })?.message, t));
     }
-  };
+  }, [enrollLink, templateId, t]);
+
+  useEffect(() => {
+    if (!autoCreateQr || didAutoCreateQr.current) return;
+    didAutoCreateQr.current = true;
+    void makeQr();
+  }, [autoCreateQr, makeQr]);
 
   const issueNow = async () => {
     setError(null);
@@ -68,7 +79,9 @@ export function IssueCardPanel({
     try {
       await addAppleWalletPass(`/api/v1/passes/${issued.passId}/pkpass`);
     } catch (e) {
-      setError((e as { message?: string })?.message ?? t("Could not open Apple Wallet. Please try again."));
+      setError(
+        (e as { message?: string })?.message ?? t("Could not open Apple Wallet. Please try again."),
+      );
     } finally {
       setWalletBusy(false);
     }
@@ -129,9 +142,9 @@ export function IssueCardPanel({
     win.print();
   };
 
-  return (
-    <GlassCard light className="feature lvt-issue-panel" aria-label={t("Issue {name}", { name: cardName })}>
-      <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+  const content = (
+    <div style={{ display: "flex", flexDirection: "column", gap: compact ? ".8rem" : "1rem" }}>
+      {!compact ? (
         <div style={{ textAlign: "center" }}>
           <h2 className="cardt" style={{ margin: 0, fontSize: "1.2rem" }}>
             {t("Issue {name}", { name: cardName })}
@@ -140,77 +153,113 @@ export function IssueCardPanel({
             {t("Create a customer QR or add a test pass directly on this iPhone.")}
           </p>
         </div>
+      ) : null}
 
-        <div style={{ display: "flex", gap: ".65rem", justifyContent: "center", flexWrap: "wrap" }}>
-          <GlassButton type="button" onClick={makeQr} disabled={enrollLink.isPending}>
-            {enrollLink.isPending ? t("Creating…") : t("Create QR")}
-          </GlassButton>
-          <GlassButton type="button" onClick={issueNow} disabled={issueDirect.isPending}>
-            {issueDirect.isPending ? t("Issuing…") : t("Add test pass")}
-          </GlassButton>
-        </div>
+      <div style={{ display: "flex", gap: ".65rem", justifyContent: "center", flexWrap: "wrap" }}>
+        <GlassButton type="button" onClick={makeQr} disabled={enrollLink.isPending}>
+          {enrollLink.isPending ? t("Creating…") : link ? t("Refresh QR") : t("Create QR")}
+        </GlassButton>
+        <GlassButton type="button" onClick={issueNow} disabled={issueDirect.isPending}>
+          {issueDirect.isPending ? t("Issuing…") : t("Add test pass")}
+        </GlassButton>
+      </div>
 
-        {error ? (
-          <p role="alert" style={{ color: "#c0392b", fontSize: ".875rem", margin: 0, lineHeight: 1.5 }}>
-            {error}
-          </p>
-        ) : null}
+      {error ? (
+        <p
+          role="alert"
+          style={{ color: "#c0392b", fontSize: ".875rem", margin: 0, lineHeight: 1.5 }}
+        >
+          {error}
+        </p>
+      ) : null}
 
-        {link ? (
-          <section aria-label={t("Enrollment QR")} style={{ textAlign: "center" }}>
-            <div
-              className="glass"
-              style={{
-                display: "inline-grid",
-                placeItems: "center",
-                padding: "1rem",
-                borderRadius: "24px",
-                background:
-                  "linear-gradient(135deg, rgba(255,255,255,.78), rgba(255,255,255,.42)), var(--card)",
-              }}
-            >
-              <QRCodeSVG ref={qrSvgRef} value={link.url} size={210} />
-              <QRCodeCanvas ref={qrCanvasRef} value={link.url} size={768} style={{ display: "none" }} />
-            </div>
+      {link ? (
+        <section aria-label={t("Enrollment QR")} style={{ textAlign: "center" }}>
+          <div
+            className="glass"
+            style={{
+              display: "inline-grid",
+              placeItems: "center",
+              padding: compact ? ".7rem" : "1rem",
+              borderRadius: "24px",
+              background:
+                "linear-gradient(135deg, rgba(255,255,255,.78), rgba(255,255,255,.42)), var(--card)",
+            }}
+          >
+            <QRCodeSVG ref={qrSvgRef} value={link.url} size={compact ? 148 : 210} />
+            <QRCodeCanvas
+              ref={qrCanvasRef}
+              value={link.url}
+              size={768}
+              style={{ display: "none" }}
+            />
+          </div>
+          {!compact ? (
             <p className="body" style={{ margin: ".75rem 0 0" }}>
               {t("Customers scan this to get their loyalty card.")}
             </p>
-            <div style={{ display: "flex", gap: ".55rem", flexWrap: "wrap", justifyContent: "center", marginTop: ".8rem" }}>
-              <GlassButton type="button" variant="ghost" onClick={shareLink}>
-                {t("Share")}
-              </GlassButton>
-              <GlassButton type="button" variant="ghost" onClick={copyLink}>
-                {copied ? t("Copied") : t("Copy")}
-              </GlassButton>
-              <GlassButton type="button" variant="ghost" onClick={downloadPng}>
-                PNG
-              </GlassButton>
-              <GlassButton type="button" variant="ghost" onClick={downloadSvg}>
-                SVG
-              </GlassButton>
-              <GlassButton type="button" variant="ghost" onClick={printQr}>
-                {t("Print / PDF")}
-              </GlassButton>
-            </div>
-          </section>
-        ) : null}
-
-        {issued ? (
-          <section aria-label={t("Issued pass")} style={{ textAlign: "center" }}>
-            <p className="body" role="status" style={{ color: "rgb(0,150,70)", margin: "0 0 .8rem" }}>
-              {t("Test pass is ready for Wallet.")}
-            </p>
-            <GlassButton
-              type="button"
-              onClick={addIssuedPass}
-              disabled={walletBusy}
-              aria-label={t("Add to Apple Wallet - downloads the .pkpass file")}
-            >
-              {walletBusy ? t("Opening Wallet…") : t("Add to Apple Wallet")}
+          ) : null}
+          <div
+            style={{
+              display: "flex",
+              gap: ".55rem",
+              flexWrap: "wrap",
+              justifyContent: "center",
+              marginTop: ".8rem",
+            }}
+          >
+            <GlassButton type="button" variant="ghost" onClick={shareLink}>
+              {t("Share")}
             </GlassButton>
-          </section>
-        ) : null}
-      </div>
+            <GlassButton type="button" variant="ghost" onClick={copyLink}>
+              {copied ? t("Copied") : t("Copy")}
+            </GlassButton>
+            <GlassButton type="button" variant="ghost" onClick={downloadPng}>
+              PNG
+            </GlassButton>
+            <GlassButton type="button" variant="ghost" onClick={downloadSvg}>
+              SVG
+            </GlassButton>
+            <GlassButton type="button" variant="ghost" onClick={printQr}>
+              {t("Print / PDF")}
+            </GlassButton>
+          </div>
+        </section>
+      ) : null}
+
+      {issued ? (
+        <section aria-label={t("Issued pass")} style={{ textAlign: "center" }}>
+          <p className="body" role="status" style={{ color: "rgb(0,150,70)", margin: "0 0 .8rem" }}>
+            {t("Test pass is ready for Wallet.")}
+          </p>
+          <GlassButton
+            type="button"
+            onClick={addIssuedPass}
+            disabled={walletBusy}
+            aria-label={t("Add to Apple Wallet - downloads the .pkpass file")}
+          >
+            {walletBusy ? t("Opening Wallet…") : t("Add to Apple Wallet")}
+          </GlassButton>
+        </section>
+      ) : null}
+    </div>
+  );
+
+  if (compact) {
+    return (
+      <section className="lvt-issue-panel" aria-label={t("Issue {name}", { name: cardName })}>
+        {content}
+      </section>
+    );
+  }
+
+  return (
+    <GlassCard
+      light
+      className="feature lvt-issue-panel"
+      aria-label={t("Issue {name}", { name: cardName })}
+    >
+      {content}
     </GlassCard>
   );
 }

@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { AppShell } from "../../lib/AppShell";
 import { GlassCard, GlassButton } from "../../design-system/halo";
 import { useT } from "../../lib/i18n";
@@ -7,36 +7,86 @@ import { DeleteTemplateModal } from "./DeleteTemplateModal";
 import { CardEditor } from "./CardEditor";
 import { GoogleWalletEditor } from "./GoogleWalletEditor";
 import { IssueCardPanel } from "../wallet/IssueCardPanel";
+import { CardCanvas } from "./CardCanvas";
+import { GoogleCardCanvas } from "./GoogleCardCanvas";
+import { docFromTemplate } from "./cardDoc";
 
 type EditTarget = CardTemplateDTO | "new" | null;
 
-/**
- * Shows the full card name on one line, shrinking the font to fit its column.
- * If it can't fit even at the floor size, it wraps — so the whole name is always
- * visible (never truncated). Cards are fixed-width, so a one-shot fit is enough.
- */
-function FitText({ text }: { text: string }) {
-  const ref = useRef<HTMLSpanElement>(null);
-  const MAX = 1.3;
-  const MIN = 0.95;
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    let size = MAX;
-    el.style.whiteSpace = "nowrap";
-    el.style.fontSize = `${size}rem`;
-    let guard = 40;
-    while (el.scrollWidth > el.clientWidth && size > MIN && guard-- > 0) {
-      size -= 0.04;
-      el.style.fontSize = `${size}rem`;
-    }
-    el.style.whiteSpace = el.scrollWidth > el.clientWidth ? "normal" : "nowrap";
-  }, [text]);
-  return (
-    <span ref={ref} style={{ display: "block", fontSize: `${MAX}rem`, lineHeight: 1.15 }}>
-      {text}
-    </span>
-  );
+const builderListCss = `
+.lvt-card-rail {
+  display:flex;
+  gap:1rem;
+  overflow-x:auto;
+  scroll-snap-type:x mandatory;
+  scroll-padding-inline:clamp(.85rem, 4vw, 2rem);
+  padding:.25rem clamp(.85rem, 4vw, 2rem) 1rem;
+  margin-inline:calc(clamp(.85rem, 4vw, 2rem) * -1);
+  -webkit-overflow-scrolling:touch;
+}
+.lvt-card-rail::-webkit-scrollbar { height:0; }
+.lvt-card-slide {
+  flex:0 0 min(88vw, 420px);
+  scroll-snap-align:center;
+  padding:1rem;
+  gap:.9rem;
+  min-height:660px;
+}
+.lvt-card-slide-head { display:flex; align-items:flex-start; justify-content:space-between; gap:.75rem; }
+.lvt-card-slide-title { min-width:0; display:flex; flex-direction:column; gap:.25rem; }
+.lvt-card-slide-title h2 { margin:0; font-size:clamp(1.05rem, 3.5vw, 1.35rem); line-height:1.12; font-weight:650; }
+.lvt-card-slide-title span { color:var(--muted); font-size:.82rem; }
+.lvt-card-stage {
+  min-height:390px;
+  display:grid;
+  place-items:center;
+  border-radius:22px;
+  padding:1rem .4rem;
+  background:
+    radial-gradient(120% 90% at 0% 0%, rgba(169,245,255,.14), transparent 55%),
+    radial-gradient(120% 90% at 100% 100%, rgba(229,216,255,.16), transparent 58%),
+    rgba(255,255,255,.22);
+  overflow:hidden;
+}
+.lvt-card-preview-button {
+  border:0;
+  padding:0;
+  background:transparent;
+  cursor:pointer;
+  display:grid;
+  place-items:center;
+  width:100%;
+  -webkit-tap-highlight-color:transparent;
+}
+.lvt-card-preview-button:focus-visible { outline:3px solid rgba(169,245,255,.55); outline-offset:6px; border-radius:24px; }
+.lvt-card-info { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.55rem; }
+.lvt-card-info-item { padding:.7rem .75rem; border-radius:16px; background:rgba(255,255,255,.36); border:1px solid rgba(255,255,255,.62); }
+.lvt-card-info-item strong { display:block; font-size:.78rem; color:var(--muted); font-weight:600; margin-bottom:.18rem; }
+.lvt-card-info-item span { display:block; font-size:.9rem; color:var(--text); font-weight:650; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.lvt-card-actions { display:flex; gap:.55rem; flex-wrap:wrap; justify-content:space-between; }
+.lvt-card-actions .btn { min-height:38px; padding:.48rem .75rem; font-size:.84rem; }
+.lvt-card-stage .lvt-issue-panel { width:100%; }
+.lvt-card-stage .lvt-issue-panel .btn { min-height:34px; padding:.38rem .58rem; font-size:.78rem; }
+@media (max-width: 520px) {
+  .lvt-card-slide { flex-basis:88vw; min-height:560px; padding:.85rem; }
+  .lvt-card-stage { min-height:360px; }
+  .lvt-card-info-item { padding:.58rem .5rem; }
+  .lvt-card-info-item strong { font-size:.7rem; }
+  .lvt-card-info-item span { font-size:.82rem; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .lvt-card-slide { transition:transform var(--d) var(--ease), box-shadow var(--d) var(--ease); }
+  .lvt-card-preview-button > * { transition:transform var(--d) var(--ease); }
+  .lvt-card-preview-button:hover > * { transform:translateY(-2px); }
+}
+`;
+
+function CardPreview({ card }: { card: CardTemplateDTO }) {
+  const doc = docFromTemplate(card);
+  if (card.walletPlatform === "google") {
+    return <GoogleCardCanvas doc={doc} readOnly width={280} />;
+  }
+  return <CardCanvas doc={doc} readOnly width={280} />;
 }
 
 /**
@@ -48,7 +98,7 @@ export function BuilderPage() {
   const { t } = useT();
   const [editing, setEditing] = useState<EditTarget>(null);
   const [confirmCard, setConfirmCard] = useState<CardTemplateDTO | null>(null);
-  const [issueCard, setIssueCard] = useState<CardTemplateDTO | null>(null);
+  const [issueCardId, setIssueCardId] = useState<string | null>(null);
 
   const templates = useTemplates();
   const deleteMut = useDeleteTemplate();
@@ -85,6 +135,7 @@ export function BuilderPage() {
         </GlassButton>
       }
     >
+      <style>{builderListCss}</style>
       {templates.isLoading && (
         <p className="body" aria-live="polite">
           {t("Loading templates…")}
@@ -104,166 +155,102 @@ export function BuilderPage() {
       )}
 
       {list.length > 0 && (
-        <div
-          className="grid-3"
-          style={{ gridTemplateColumns: "repeat(auto-fit, 260px)", justifyContent: "center" }}
-        >
+        <div className="lvt-card-rail" aria-label={t("Saved cards")}>
           {list.map((card) => (
             <GlassCard
               key={card.id}
-              hover
               light
-              className="feature"
-              role="button"
-              tabIndex={0}
-              style={{ cursor: "pointer" }}
-              aria-label={t("Edit template: {name}", { name: card.name })}
-              onClick={() => setEditing(card)}
-              onKeyDown={(e: React.KeyboardEvent) => {
-                if (e.key === "Enter" || e.key === " ") setEditing(card);
-              }}
+              className="feature lvt-card-slide"
+              aria-label={t("Saved card: {name}", { name: card.name })}
             >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "flex-start",
-                  gap: "0.5rem",
-                }}
-              >
-                <h2 className="cardt" style={{ margin: 0, flex: 1, minWidth: 0 }}>
-                  <FitText text={card.name} />
-                </h2>
-                <button
-                  type="button"
-                  aria-label={t("Delete template: {name}", { name: card.name })}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setConfirmCard(card);
-                  }}
-                  style={{
-                    flexShrink: 0,
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    padding: "0.3rem",
-                    borderRadius: "0.35rem",
-                    color: "var(--muted)",
-                    lineHeight: 0,
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = "#b93333")}
-                  onMouseLeave={(e) => (e.currentTarget.style.color = "var(--muted)")}
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    width="15"
-                    height="15"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.7"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
-                  >
-                    <polyline points="3 6 5 6 21 6" />
-                    <path d="M19 6l-1 14H6L5 6" />
-                    <path d="M10 11v6M14 11v6" />
-                    <path d="M9 6V4h6v2" />
-                  </svg>
-                </button>
-              </div>
-              <div style={{ marginTop: "0.55rem", display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
-                <span
-                  style={{
-                    fontSize: "0.7rem",
-                    fontWeight: 500,
-                    padding: "0.2rem 0.55rem",
-                    borderRadius: 999,
-                    background:
-                      card.status === "published" ? "rgba(0,180,90,.13)" : "rgba(200,160,0,.11)",
-                    border: `1px solid ${card.status === "published" ? "rgba(0,180,90,.3)" : "rgba(200,160,0,.26)"}`,
-                    color: card.status === "published" ? "rgb(0,150,70)" : "rgb(150,110,0)",
-                  }}
-                >
-                  {t(card.status)}
-                </span>
-                <span
-                  style={{
-                    fontSize: "0.7rem",
-                    fontWeight: 500,
-                    padding: "0.2rem 0.55rem",
-                    borderRadius: 999,
-                    background:
-                      card.walletPlatform === "google"
-                        ? "rgba(66,133,244,.12)"
-                        : card.googleOverrides
-                        ? "rgba(66,133,244,.08)"
-                        : "rgba(0,0,0,.07)",
-                    border: `1px solid ${
-                      card.walletPlatform === "google"
-                        ? "rgba(66,133,244,.3)"
-                        : card.googleOverrides
-                        ? "rgba(66,133,244,.22)"
-                        : "rgba(0,0,0,.14)"
-                    }`,
-                    color:
-                      card.walletPlatform === "google"
-                        ? "rgb(30,80,200)"
-                        : card.googleOverrides
-                        ? "rgb(50,90,180)"
-                        : "var(--muted)",
-                  }}
-                >
-                  {card.walletPlatform === "google" ? "Google" : card.googleOverrides ? "Both" : "Apple"}
-                </span>
-              </div>
-              <p className="body" style={{ margin: "0.6rem 0 0", fontSize: "0.82rem" }}>
-                v{card.version} · {new Date(card.updatedAt).toLocaleDateString()}
-              </p>
-              <div style={{ display: "flex", gap: ".5rem", flexWrap: "wrap", marginTop: ".85rem" }}>
+              <div className="lvt-card-slide-head">
+                <div className="lvt-card-slide-title">
+                  <h2>{card.name}</h2>
+                  <span>
+                    {card.walletPlatform === "google"
+                      ? "Google Wallet"
+                      : card.googleOverrides
+                        ? "Apple + Google Wallet"
+                        : "Apple Wallet"}
+                  </span>
+                </div>
                 <button
                   type="button"
                   className="btn"
                   disabled={card.status !== "published"}
-                  aria-label={t("Issue {name}", { name: card.name })}
                   onClick={(e) => {
                     e.stopPropagation();
-                    setIssueCard(card);
+                    setIssueCardId(issueCardId === card.id ? null : card.id);
                   }}
                   style={{
+                    flexShrink: 0,
                     minHeight: 38,
-                    padding: ".45rem .8rem",
-                    fontSize: ".84rem",
+                    padding: ".48rem .85rem",
+                    fontSize: ".86rem",
                   }}
                 >
-                  {t("Issue")}
+                  {issueCardId === card.id ? t("Card") : t("Issue")}
                 </button>
-                {card.status !== "published" ? (
-                  <span className="body" style={{ margin: 0, alignSelf: "center", fontSize: ".76rem" }}>
-                    {t("Publish first")}
-                  </span>
-                ) : null}
+              </div>
+
+              <div className="lvt-card-stage">
+                {issueCardId === card.id ? (
+                  <IssueCardPanel templateId={card.id} cardName={card.name} autoCreateQr compact />
+                ) : (
+                  <button
+                    type="button"
+                    className="lvt-card-preview-button"
+                    onClick={() => setEditing(card)}
+                    aria-label={t("Edit template: {name}", { name: card.name })}
+                  >
+                    <CardPreview card={card} />
+                  </button>
+                )}
+              </div>
+
+              <div className="lvt-card-info">
+                <div className="lvt-card-info-item">
+                  <strong>{t("Status")}</strong>
+                  <span>{t(card.status)}</span>
+                </div>
+                <div className="lvt-card-info-item">
+                  <strong>{t("Issued")}</strong>
+                  <span>{card.issuedCount}</span>
+                </div>
+                <div className="lvt-card-info-item">
+                  <strong>{t("Updated")}</strong>
+                  <span>{new Date(card.updatedAt).toLocaleDateString()}</span>
+                </div>
+              </div>
+
+              <div className="lvt-card-actions">
+                <button
+                  type="button"
+                  className="btn ghost"
+                  onClick={() => setEditing(card)}
+                  aria-label={t("Edit template: {name}", { name: card.name })}
+                >
+                  {t("Edit")}
+                </button>
+                <button
+                  type="button"
+                  className="btn ghost"
+                  onClick={() => setConfirmCard(card)}
+                  aria-label={t("Delete template: {name}", { name: card.name })}
+                >
+                  {t("Delete")}
+                </button>
+                <span
+                  className="body"
+                  style={{ margin: 0, alignSelf: "center", fontSize: ".78rem" }}
+                >
+                  {card.status !== "published" ? t("Publish first") : `v${card.version}`}
+                </span>
               </div>
             </GlassCard>
           ))}
         </div>
       )}
-
-      {issueCard ? (
-        <div style={{ maxWidth: 680, margin: "1.25rem auto 0" }}>
-          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: ".55rem" }}>
-            <button
-              type="button"
-              className="btn ghost"
-              onClick={() => setIssueCard(null)}
-              style={{ padding: ".45rem .7rem", fontSize: ".86rem" }}
-            >
-              {t("Close")}
-            </button>
-          </div>
-          <IssueCardPanel templateId={issueCard.id} cardName={issueCard.name} />
-        </div>
-      ) : null}
 
       {confirmCard && (
         <DeleteTemplateModal

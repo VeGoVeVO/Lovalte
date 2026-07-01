@@ -4,12 +4,14 @@ import type { Deps } from "../../../shared/deps";
 import { parse } from "../../../http/validation";
 import {
   requireAuth,
+  requireAdmin,
   getAuth,
   setSessionCookie,
   clearSessionCookie,
   signSession,
   type AuthContext,
 } from "../../../http/auth";
+import { ForbiddenError } from "../../../kernel";
 import type { SignUpTenantHandler } from "../application/SignUpTenantHandler";
 import type { LoginHandler } from "../application/LoginHandler";
 import type { LoginWithAppleHandler } from "../application/LoginWithAppleHandler";
@@ -94,6 +96,12 @@ const acceptInvitationSchema = z
   .object({
     token: z.string().min(64).max(128),
     password: z.string().min(12).max(128),
+  })
+  .strict();
+
+const emailTestSchema = z
+  .object({
+    preset: z.enum(["welcome", "invitation", "password-reset", "support"]),
   })
   .strict();
 
@@ -301,6 +309,18 @@ export function registerIdentityRoutes(
   app.get("/api/v1/auth/me", { preHandler: requireAuth(secret) }, async (req, reply) => {
     return reply.status(200).send({ data: getAuth(req) });
   });
+
+  app.post(
+    "/api/v1/admin/email-tests",
+    { preHandler: requireAdmin(secret) },
+    async (req, reply) => {
+      const auth = getAuth(req);
+      if (!isAdminEmail(auth.email)) throw new ForbiddenError();
+      const input = parse(emailTestSchema, req.body);
+      await handlers.emailSender.sendTestEmailPreset({ to: auth.email, preset: input.preset });
+      return reply.status(204).send();
+    },
+  );
 
   // DELETE /api/v1/auth/account - permanently delete the tenant account + all its
   // data (Google Play / GDPR "delete account"). Owner only; irreversible.
