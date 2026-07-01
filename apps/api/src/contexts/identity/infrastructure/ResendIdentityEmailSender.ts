@@ -8,6 +8,13 @@ type EmailInput = {
   html: string;
 };
 
+type EmailLayoutInput = {
+  title: string;
+  eyebrow?: string;
+  body: string;
+  showSupportLine?: boolean;
+};
+
 function esc(value: string): string {
   return value
     .replaceAll("&", "&amp;")
@@ -16,15 +23,78 @@ function esc(value: string): string {
     .replaceAll('"', "&quot;");
 }
 
-function layout(title: string, body: string): string {
+function imageUrl(config: AppConfig, path: string): string {
+  return new URL(path, config.APP_BASE_URL).toString();
+}
+
+function supportLine(config: AppConfig): string {
+  return `<p style="color:#7c8492;font-size:13px;line-height:1.6;margin:22px 0 0;">
+Questions? Just reply to this email or contact
+<a href="mailto:${esc(config.SUPPORT_EMAIL)}" style="color:#7f67ff;text-decoration:none;font-weight:700;">${esc(
+    config.SUPPORT_EMAIL,
+  )}</a>.
+</p>`;
+}
+
+function layout(config: AppConfig, input: EmailLayoutInput): string {
+  const markUrl = imageUrl(config, "/lovalte-mark.png");
+  const siteUrl = config.APP_BASE_URL;
+  const eyebrow = input.eyebrow ?? "Lovalte";
   return `<!doctype html>
 <html>
-  <body style="margin:0;background:#f5fbff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#20242a;">
-    <div style="max-width:560px;margin:0 auto;padding:32px 20px;">
-      <div style="border:1px solid rgba(255,255,255,.7);border-radius:28px;background:rgba(255,255,255,.72);box-shadow:0 20px 55px rgba(78,103,130,.16);padding:28px;">
-        <p style="margin:0 0 18px;color:#7d8796;font-size:13px;letter-spacing:.16em;text-transform:uppercase;">Lovalte</p>
-        <h1 style="margin:0 0 16px;font-size:28px;line-height:1.12;">${esc(title)}</h1>
-        ${body}
+  <body style="margin:0;background:#eefaff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#20242a;">
+    <div style="display:none;max-height:0;overflow:hidden;color:transparent;opacity:0;">${esc(input.title)}</div>
+    <div style="max-width:580px;margin:0 auto;padding:28px 16px;">
+      <div style="border:1px solid #e5eaf2;border-radius:24px;background:#ffffff;overflow:hidden;box-shadow:0 24px 70px rgba(72,91,122,.14);">
+        <div style="background:linear-gradient(135deg,#f7fdff 0%,#ffffff 38%,#f8f0ff 100%);border-bottom:1px solid #edf1f7;padding:0;overflow:hidden;">
+          <table cellpadding="0" cellspacing="0" border="0" width="100%" role="presentation">
+            <tr>
+              <td style="padding:22px 24px;vertical-align:middle;">
+                <table cellpadding="0" cellspacing="0" border="0" role="presentation">
+                  <tr>
+                    <td style="vertical-align:middle;padding-right:12px;">
+                      <img src="${esc(markUrl)}" alt="Lovalte" width="42" height="42" style="display:block;border-radius:13px;">
+                    </td>
+                    <td style="vertical-align:middle;">
+                      <div style="font-size:22px;line-height:1;font-weight:800;letter-spacing:-.4px;color:#20242a;">Lovalte</div>
+                      <div style="font-size:11px;line-height:1.5;color:#8290a3;letter-spacing:.14em;text-transform:uppercase;margin-top:5px;">Apple Wallet loyalty</div>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td style="vertical-align:top;text-align:right;width:156px;">
+                <table cellpadding="0" cellspacing="0" border="0" align="right" role="presentation" style="margin-left:auto;">
+                  <tr>
+                    <td width="52" height="36" style="background:#dff9ff;border-left:1px solid rgba(127,151,180,.12);border-bottom:1px solid rgba(127,151,180,.12);"></td>
+                    <td width="52" height="36" style="background:#f2edff;border-left:1px solid rgba(127,151,180,.12);border-bottom:1px solid rgba(127,151,180,.12);"></td>
+                    <td width="52" height="36" style="background:#ffffff;border-left:1px solid rgba(127,151,180,.12);border-bottom:1px solid rgba(127,151,180,.12);"></td>
+                  </tr>
+                  <tr>
+                    <td width="52" height="36" style="background:#ffffff;border-left:1px solid rgba(127,151,180,.12);"></td>
+                    <td width="52" height="36" style="background:#e8f8ff;border-left:1px solid rgba(127,151,180,.12);"></td>
+                    <td width="52" height="36" style="background:#f7eefe;border-left:1px solid rgba(127,151,180,.12);"></td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </div>
+        <div style="padding:32px 28px 26px;background:linear-gradient(180deg,#ffffff 0%,#fbfdff 100%);">
+          <p style="margin:0 0 12px;color:#8b95a5;font-size:12px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;">${esc(
+            eyebrow,
+          )}</p>
+          <h1 style="margin:0 0 16px;font-size:26px;line-height:1.18;font-weight:800;letter-spacing:-.4px;color:#20242a;">${esc(
+            input.title,
+          )}</h1>
+          ${input.body}
+          ${input.showSupportLine === false ? "" : supportLine(config)}
+        </div>
+        <div style="padding:18px 28px 22px;border-top:1px solid #edf1f7;text-align:center;background:#fbfdff;">
+          <p style="margin:0;color:#8b95a5;font-size:11px;line-height:1.7;">
+            Lovalte - Loyalty cards in Apple Wallet<br>
+            <a href="${esc(siteUrl)}" style="color:#7f67ff;text-decoration:none;font-weight:700;">lovalte.com</a>
+          </p>
+        </div>
       </div>
     </div>
   </body>
@@ -32,7 +102,11 @@ function layout(title: string, body: string): string {
 }
 
 function button(label: string, href: string): string {
-  return `<p style="margin:28px 0;"><a href="${esc(href)}" style="display:inline-block;border-radius:999px;background:#20242a;color:#fff;text-decoration:none;font-weight:700;padding:13px 20px;">${esc(label)}</a></p>`;
+  return `<p style="margin:26px 0 6px;"><a href="${esc(href)}" style="display:inline-block;border-radius:999px;background-color:#7f67ff;background:linear-gradient(135deg,#7f67ff 0%,#5fc8ff 100%);color:#ffffff;text-decoration:none;font-weight:800;font-size:15px;padding:14px 24px;box-shadow:0 12px 28px rgba(127,103,255,.25);">${esc(label)}</a></p>`;
+}
+
+function paragraph(value: string): string {
+  return `<p style="color:#3b4048;font-size:15px;line-height:1.72;margin:0 0 10px;">${value}</p>`;
 }
 
 export class ResendIdentityEmailSender implements IdentityEmailSender {
@@ -44,15 +118,17 @@ export class ResendIdentityEmailSender implements IdentityEmailSender {
       to: input.to,
       subject: "Welcome to Lovalte",
       text: `Welcome to Lovalte. Your loyalty workspace for ${name} is ready.`,
-      html: layout(
-        "Welcome to Lovalte",
-        `<p style="font-size:16px;line-height:1.6;margin:0;">Your loyalty workspace for <strong>${esc(
-          name,
-        )}</strong> is ready. You can design cards, issue passes, and track visits from your dashboard.</p>${button(
-          "Open Lovalte",
-          this.config.APP_BASE_URL,
-        )}`,
-      ),
+      html: layout(this.config, {
+        eyebrow: "Workspace ready",
+        title: "Welcome to Lovalte",
+        body: `${paragraph(
+          `Your loyalty workspace for <strong>${esc(
+            name,
+          )}</strong> is ready. You can design beautiful Apple Wallet cards, issue passes, and track repeat visits from your dashboard.`,
+        )}${paragraph(
+          "Start with one card, share one QR, and let customers add your loyalty program straight to Wallet.",
+        )}${button("Open Lovalte", this.config.APP_BASE_URL)}`,
+      }),
     });
   }
 
@@ -61,15 +137,15 @@ export class ResendIdentityEmailSender implements IdentityEmailSender {
       to: input.to,
       subject: "You're invited to Lovalte",
       text: `You've been invited as ${input.role}. Accept the invitation: ${input.acceptUrl}`,
-      html: layout(
-        "You're invited to Lovalte",
-        `<p style="font-size:16px;line-height:1.6;margin:0;">You've been invited as <strong>${esc(
-          input.role,
-        )}</strong>. Create your password to join the workspace.</p>${button(
-          "Accept invitation",
-          input.acceptUrl,
-        )}`,
-      ),
+      html: layout(this.config, {
+        eyebrow: "Team invitation",
+        title: "You're invited to Lovalte",
+        body: `${paragraph(
+          `You've been invited as <strong>${esc(
+            input.role,
+          )}</strong>. Create your password to join the workspace and help manage loyalty cards.`,
+        )}${button("Accept invitation", input.acceptUrl)}`,
+      }),
     });
   }
 
@@ -78,13 +154,13 @@ export class ResendIdentityEmailSender implements IdentityEmailSender {
       to: input.to,
       subject: "Reset your Lovalte password",
       text: `Reset your Lovalte password: ${input.resetUrl}`,
-      html: layout(
-        "Reset your password",
-        `<p style="font-size:16px;line-height:1.6;margin:0;">Use this secure link to choose a new password. It expires in one hour.</p>${button(
-          "Reset password",
-          input.resetUrl,
-        )}<p style="font-size:14px;line-height:1.6;color:#6f7a89;margin:0;">If you did not request this, you can ignore this email.</p>`,
-      ),
+      html: layout(this.config, {
+        eyebrow: "Account security",
+        title: "Reset your password",
+        body: `${paragraph(
+          "Use this secure link to choose a new password. It expires in one hour.",
+        )}${button("Reset password", input.resetUrl)}<p style="font-size:13px;line-height:1.65;color:#7c8492;margin:18px 0 0;">If you did not request this, you can safely ignore this email.</p>`,
+      }),
     });
   }
 
@@ -93,7 +169,12 @@ export class ResendIdentityEmailSender implements IdentityEmailSender {
       to: this.config.SUPPORT_EMAIL,
       subject: input.subject,
       text: input.text,
-      html: layout(input.subject, input.html),
+      html: layout(this.config, {
+        eyebrow: "Support",
+        title: input.subject,
+        body: input.html,
+        showSupportLine: false,
+      }),
     });
   }
 
