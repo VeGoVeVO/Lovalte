@@ -72,22 +72,49 @@ const shellCss = `
 @media (max-width: 767px) {
   .lvt-topnav { display: none !important; }
   .lvt-mobilehead { display: flex; align-items:center; justify-content:space-between; gap:.75rem;
-    position: sticky; top: 0; z-index: 40; padding: calc(.7rem + env(safe-area-inset-top)) 1rem .7rem;
-    background: linear-gradient(180deg, rgba(255,255,255,.60), rgba(255,255,255,.40)), rgba(255,255,255,.26);
-    -webkit-backdrop-filter: blur(22px) saturate(180%); backdrop-filter: blur(22px) saturate(180%);
-    border-bottom:1px solid rgba(255,255,255,.5); box-shadow: 0 1px 0 rgba(255,255,255,.5) inset; }
+    position: sticky; top: calc(.45rem + env(safe-area-inset-top)); z-index: 40;
+    margin: .45rem .6rem 0; padding: .6rem .7rem .6rem 1rem; border-radius: var(--r-pill);
+    background:
+      linear-gradient(135deg, rgba(255,255,255,.30), rgba(247,250,253,.14)),
+      radial-gradient(135% 135% at 0% 0%, rgba(200,238,255,.12), transparent 58%),
+      var(--card);
+    -webkit-backdrop-filter: blur(var(--blur)) saturate(var(--sat));
+    backdrop-filter: blur(var(--blur)) saturate(var(--sat));
+    border:1px solid var(--border); box-shadow: var(--shadow-soft); }
+  .lvt-mobilehead::before { content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
+    background:linear-gradient(180deg, rgba(255,255,255,.55), rgba(255,255,255,0) 36%); opacity:.75; }
+  .lvt-mobilehead::after { content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
+    background:
+      radial-gradient(110% 80% at 0% 0%, rgba(200,238,255,.16), transparent 42%),
+      radial-gradient(110% 80% at 100% 0%, rgba(229,216,255,.14), transparent 44%),
+      radial-gradient(130% 90% at 100% 100%, rgba(255,221,244,.10), transparent 48%);
+    opacity:.6; }
+  .lvt-mobilehead > * { position:relative; z-index:1; }
   .lvt-mobilehead .brand { min-width: 0; }
   .lvt-mobilehead .brand span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .lvt-main { padding-top: 1.25rem !important; padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important; min-width: 0; }
-  .lvt-tabbar { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
-    padding-bottom: env(safe-area-inset-bottom);
-    background: linear-gradient(180deg, rgba(255,255,255,.48), rgba(255,255,255,.66)), rgba(255,255,255,.26);
-    -webkit-backdrop-filter: blur(24px) saturate(185%); backdrop-filter: blur(24px) saturate(185%);
-    border-top: 1px solid rgba(255,255,255,.5); box-shadow: 0 -1px 0 rgba(255,255,255,.5) inset, 0 -8px 24px -16px rgba(46,62,92,.22); }
+  .lvt-main { padding-top: 1.5rem !important; padding-bottom: calc(82px + env(safe-area-inset-bottom)) !important; min-width: 0; }
+  .lvt-main.lvt-no-tabs { padding-bottom: calc(1.25rem + env(safe-area-inset-bottom)) !important; }
+  .lvt-tabbar { display: flex; position: fixed; left: .6rem; right: .6rem; bottom: calc(.5rem + env(safe-area-inset-bottom)); z-index: 50;
+    padding: .18rem .25rem; border-radius: var(--r-pill);
+    background:
+      linear-gradient(135deg, rgba(255,255,255,.30), rgba(247,250,253,.14)),
+      radial-gradient(135% 135% at 0% 0%, rgba(200,238,255,.12), transparent 58%),
+      var(--card);
+    -webkit-backdrop-filter: blur(var(--blur)) saturate(var(--sat));
+    backdrop-filter: blur(var(--blur)) saturate(var(--sat));
+    border: 1px solid var(--border); box-shadow: var(--shadow-soft); overflow:hidden; }
+  .lvt-tabbar::before { content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
+    background:linear-gradient(180deg, rgba(255,255,255,.55), rgba(255,255,255,0) 42%); opacity:.75; }
+  .lvt-tabbar::after { content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
+    background:
+      radial-gradient(110% 80% at 0% 0%, rgba(200,238,255,.16), transparent 42%),
+      radial-gradient(110% 80% at 100% 0%, rgba(229,216,255,.14), transparent 44%),
+      radial-gradient(130% 90% at 100% 100%, rgba(255,221,244,.10), transparent 48%);
+    opacity:.6; }
   .lvt-tab { flex:1; min-height:54px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
     color: var(--muted,#6F7684); text-decoration:none; font-size:.62rem; font-weight:500; padding:.45rem 0 .3rem;
-    -webkit-tap-highlight-color: transparent; }
-  .lvt-tab.active { color:#3a86ff; }
+    border-radius: calc(var(--r-pill) - .25rem); -webkit-tap-highlight-color: transparent; position:relative; z-index:1; }
+  .lvt-tab.active { color:#3a86ff; background:rgba(255,255,255,.36); box-shadow:0 8px 20px -14px rgba(46,62,92,.35); }
   .lvt-tab svg { width:23px; height:23px; }
   /* Keyboard up: a fixed bottom bar pins just above the keyboard and covers the
      focused field. Native apps hide the tab bar while typing — do the same, and
@@ -126,6 +153,7 @@ export function AppShell({
   const { data: session } = useSession();
   const [moreOpen, setMoreOpen] = useState(false);
   const moreTriggerRef = useRef<HTMLButtonElement>(null);
+  const showMobileTabs = Boolean(session);
 
   // The platform super-admin gets an extra cross-tenant "Admin" entry.
   const ADMIN_LINK = { to: "/admin", label: "Admin" };
@@ -183,7 +211,7 @@ export function AppShell({
             style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: ".5rem" }}
           >
             <img
-              src="/lovalte-mark.png"
+              src="/icons/icon-512.png"
               alt=""
               aria-hidden="true"
               width={26}
@@ -265,7 +293,7 @@ export function AppShell({
         </header>
 
         <main
-          className="container lvt-rise lvt-main"
+          className={`container lvt-rise lvt-main${showMobileTabs ? "" : " lvt-no-tabs"}`}
           style={{ paddingTop: "1.25rem", paddingBottom: "5rem" }}
         >
           <div className={narrow ? "lvt-narrow" : undefined}>
@@ -288,29 +316,31 @@ export function AppShell({
         </main>
 
         {/* Mobile bottom tab bar */}
-        <nav className="lvt-tabbar" aria-label="Primary">
-          {TABS.map((tab) => (
-            <Link
-              key={tab.to}
-              to={tab.to}
-              className={`lvt-tab${active(tab.to) ? " active" : ""}`}
-              aria-current={active(tab.to) ? "page" : undefined}
-            >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
+        {showMobileTabs && (
+          <nav className="lvt-tabbar" aria-label="Primary">
+            {TABS.map((tab) => (
+              <Link
+                key={tab.to}
+                to={tab.to}
+                className={`lvt-tab${active(tab.to) ? " active" : ""}`}
+                aria-current={active(tab.to) ? "page" : undefined}
               >
-                {ICONS[tab.icon]}
-              </svg>
-              {t(tab.label)}
-            </Link>
-          ))}
-        </nav>
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  {ICONS[tab.icon]}
+                </svg>
+                {t(tab.label)}
+              </Link>
+            ))}
+          </nav>
+        )}
       </div>
     </div>
   );

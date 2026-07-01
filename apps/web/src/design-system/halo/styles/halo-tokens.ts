@@ -215,7 +215,7 @@ export const css = `
 .halo .brand{ display:flex; align-items:center; gap:.6rem; font-weight:600;
   letter-spacing:-.02em; font-size:1.05rem; }
 .halo .brand .dot{ width:30px; height:30px; flex:0 0 auto; border-radius:9px;
-  background:url('/lovalte-mark.png') center/contain no-repeat;
+  background:url('/icons/icon-512.png') center/contain no-repeat;
   filter:drop-shadow(0 4px 10px -4px rgba(46,62,92,.4)); }
 .halo .navlinks{ display:flex; align-items:center; gap:.4rem; }
 .halo .navlinks a{ color:var(--muted); text-decoration:none; font-size:.95rem; font-weight:450;
