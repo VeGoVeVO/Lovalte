@@ -1,9 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import QrScanner from "qr-scanner";
-// Let Vite emit + fingerprint the decoder worker and hand us its URL.
-import QrScannerWorkerPath from "qr-scanner/qr-scanner-worker.min.js?url";
-
-QrScanner.WORKER_PATH = QrScannerWorkerPath;
 
 export type ScannerStatus = "idle" | "requesting" | "scanning" | "denied" | "unsupported";
 
