@@ -19,6 +19,7 @@ interface MetricsChartProps {
   metricLabel: string;
   isLoading: boolean;
   isError: boolean;
+  compact?: boolean;
 }
 
 function fmtDay(day: string): string {
@@ -49,12 +50,20 @@ const centeredBox: React.CSSProperties = {
   justifyContent: "center",
 };
 
-export function MetricsChart({ data, metricLabel, isLoading, isError }: MetricsChartProps) {
+export function MetricsChart({
+  data,
+  metricLabel,
+  isLoading,
+  isError,
+  compact = false,
+}: MetricsChartProps) {
   const { t } = useT();
+  const height = compact ? 210 : CHART_HEIGHT;
+  const boxStyle = compact ? { ...centeredBox, height } : centeredBox;
 
   if (isLoading) {
     return (
-      <div style={centeredBox} aria-busy="true" aria-label={t("Loading chart data")}>
+      <div style={boxStyle} aria-busy="true" aria-label={t("Loading chart data")}>
         <span className="body">{t("Loading…")}</span>
       </div>
     );
@@ -62,7 +71,7 @@ export function MetricsChart({ data, metricLabel, isLoading, isError }: MetricsC
 
   if (isError) {
     return (
-      <div role="alert" style={centeredBox}>
+      <div role="alert" style={boxStyle}>
         <span className="body">{t("Failed to load chart data. Please try again.")}</span>
       </div>
     );
@@ -71,7 +80,7 @@ export function MetricsChart({ data, metricLabel, isLoading, isError }: MetricsC
   if (data.length === 0) {
     return (
       <div
-        style={centeredBox}
+        style={boxStyle}
         aria-label={t("No {metric} data for this period", { metric: metricLabel })}
       >
         <span className="body">{t("No data for this period.")}</span>
@@ -82,8 +91,11 @@ export function MetricsChart({ data, metricLabel, isLoading, isError }: MetricsC
   const chartData = data.map((p) => ({ day: fmtDay(p.day), count: p.count }));
 
   return (
-    <div aria-label={t("{metric} timeseries line chart", { metric: metricLabel })}>
-      <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
+    <div
+      aria-label={t("{metric} timeseries line chart", { metric: metricLabel })}
+      style={{ flex: 1, minHeight: 0 }}
+    >
+      <ResponsiveContainer width="100%" height={height}>
         <LineChart data={chartData} margin={{ top: 4, right: 12, bottom: 4, left: 0 }}>
           <CartesianGrid strokeDasharray="3 4" stroke="rgba(111,118,132,.14)" vertical={false} />
           <XAxis

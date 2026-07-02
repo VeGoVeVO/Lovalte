@@ -29,7 +29,7 @@ const CSS = `
   animation: lvtModalFade .18s ease-out both;
 }
 .lvt-modal-panel {
-  position: relative; overflow: hidden;
+  position: relative; overflow: hidden; isolation: isolate;
   /* Local token vars: the modal portals to <body>, outside .halo, so children
      that read these vars (and the scoped .btn/.input below) theme themselves. */
   --text:#20242A; --muted:#5b6170; --border:rgba(28,36,56,.12);
@@ -38,6 +38,8 @@ const CSS = `
   display: flex; flex-direction: column;
   padding: clamp(1.3rem, 4vw, 1.8rem);
   border-radius: 22px;
+  clip-path: inset(0 round 22px);
+  background-clip: padding-box;
   background: linear-gradient(180deg, rgba(255,255,255,.86), rgba(255,255,255,.72));
   -webkit-backdrop-filter: blur(30px) saturate(185%);
   backdrop-filter: blur(30px) saturate(185%);
@@ -46,7 +48,7 @@ const CSS = `
   animation: lvtModalRise .26s cubic-bezier(.22,.61,.36,1) both;
 }
 .lvt-modal-panel::before, .lvt-modal-panel::after {
-  content: ""; position: absolute; border-radius: 50%; filter: blur(48px); pointer-events: none; z-index: 0;
+  content: ""; position: absolute; border-radius: 50%; filter: blur(48px); pointer-events: none; z-index: -1;
 }
 .lvt-modal-panel::before { top: -40%; left: -25%; width: 70%; height: 70%; background: #A9F5FF; opacity: .34; }
 .lvt-modal-panel::after  { bottom: -45%; right: -25%; width: 75%; height: 75%; background: #FFDDF4; opacity: .42; }

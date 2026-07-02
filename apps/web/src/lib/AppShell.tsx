@@ -138,14 +138,17 @@ const shellCss = `
   .lvt-tab-indicator { position:absolute; z-index:1; left:.36rem; top:.28rem; width:calc((100% - .72rem) / 5); height:48px;
     border-radius:18px;
     background:
-      linear-gradient(135deg, rgba(255,255,255,.72), rgba(255,255,255,.34)),
-      radial-gradient(120% 135% at 12% 0%, rgba(169,245,255,.40), transparent 58%),
-      radial-gradient(125% 120% at 100% 100%, rgba(255,221,244,.34), transparent 58%),
+      linear-gradient(145deg, rgba(255,255,255,.92), rgba(255,255,255,.42)),
+      radial-gradient(120% 135% at 12% 0%, rgba(169,245,255,.48), transparent 58%),
+      radial-gradient(125% 120% at 100% 100%, rgba(255,221,244,.42), transparent 58%),
       radial-gradient(120% 90% at 70% 0%, rgba(200,255,232,.24), transparent 54%);
-    border:1px solid rgba(255,255,255,.74);
+    border:1px solid rgba(255,255,255,.9);
     box-shadow:
-      0 1px 0 rgba(255,255,255,.88) inset,
-      0 12px 24px -20px rgba(68,96,128,.56);
+      0 1px 0 rgba(255,255,255,.96) inset,
+      0 -1px 0 rgba(42,62,88,.08) inset,
+      0 10px 18px -14px rgba(255,255,255,.95),
+      0 18px 34px -20px rgba(46,62,92,.68),
+      0 6px 14px -12px rgba(49,95,118,.55);
     -webkit-backdrop-filter:blur(18px) saturate(170%);
     backdrop-filter:blur(18px) saturate(170%);
     transform:translateX(calc(var(--active-index, 0) * 100%));

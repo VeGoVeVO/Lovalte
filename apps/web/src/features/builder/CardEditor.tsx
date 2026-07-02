@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { DynamicIcon } from "lucide-react/dynamic";
-import { Modal, GlassButton, ColorPicker } from "../../design-system/halo";
+import { GlassButton, ColorPicker } from "../../design-system/halo";
 import { useT } from "../../lib/i18n";
 import {
   useCreateTemplate,
@@ -69,10 +69,15 @@ const G_SLOT_META: Record<
   Exclude<GSlotKind, null>,
   { icon: string; title: string; sub: string; accent: string }
 > = {
-  logo:        { icon: "image",   title: "Google logo",   sub: "Brand mark & card title",   accent: "#4285F4" },
-  colors:      { icon: "palette", title: "Background",    sub: "Google card colour",         accent: "#8B7BD8" },
-  hero:        { icon: "image",   title: "Hero image",    sub: "Banner image at card top",   accent: "#34B98A" },
-  textModules: { icon: "list",    title: "Text fields",   sub: "Rows shown on Google card",  accent: "#6E86C8" },
+  logo: { icon: "image", title: "Google logo", sub: "Brand mark & card title", accent: "#4285F4" },
+  colors: { icon: "palette", title: "Background", sub: "Google card colour", accent: "#8B7BD8" },
+  hero: { icon: "image", title: "Hero image", sub: "Banner image at card top", accent: "#34B98A" },
+  textModules: {
+    icon: "list",
+    title: "Text fields",
+    sub: "Rows shown on Google card",
+    accent: "#6E86C8",
+  },
 };
 
 /** A tiny branded square used as the auto Apple icon when no logo was uploaded. */
@@ -150,6 +155,78 @@ const editorCss = `
   display:grid; place-items:center; box-shadow:0 1px 0 rgba(255,255,255,.85) inset; }
 .lvt-be-eyebrow{ font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin:0 0 6px; display:block; }
 .lvt-be-row{ display:flex; align-items:center; gap:10px; }
+.lvt-be-wizard {
+  min-height:min(680px, calc(100dvh - 7rem));
+  display:grid;
+  place-items:center;
+  overflow:hidden;
+}
+.lvt-be-wizard-panel {
+  width:min(100%, 920px);
+  display:grid;
+  gap:1rem;
+}
+.lvt-be-wizard-hero {
+  text-align:center;
+  padding:1rem;
+}
+.lvt-be-wizard-hero h2 {
+  margin:0;
+  font-size:clamp(1.65rem, 1.2rem + 2.4vw, 3rem);
+  line-height:.98;
+  letter-spacing:-.04em;
+}
+.lvt-be-wizard-hero p {
+  max-width:34rem;
+  margin:.75rem auto 0;
+}
+.lvt-be-type-grid {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:.85rem;
+}
+.lvt-be-type-card {
+  min-height:11rem;
+  padding:1rem;
+  border-radius:28px;
+  border:1px solid rgba(255,255,255,.68);
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.62), rgba(255,255,255,.30)),
+    radial-gradient(130% 110% at 0% 0%, rgba(169,245,255,.24), transparent 60%),
+    radial-gradient(120% 120% at 100% 100%, rgba(255,221,244,.20), transparent 62%);
+  color:var(--text);
+  cursor:pointer;
+  text-align:left;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  gap:.8rem;
+  box-shadow:var(--shadow-soft);
+}
+.lvt-be-type-card strong { display:block; font-size:1.05rem; margin-bottom:.25rem; }
+.lvt-be-type-card span.body { display:block; margin:0; font-size:.84rem; }
+.lvt-be-type-icon {
+  width:3rem;
+  height:3rem;
+  display:grid;
+  place-items:center;
+  border-radius:18px;
+  background:rgba(255,255,255,.46);
+  border:1px solid rgba(255,255,255,.64);
+  font-size:1.55rem;
+}
+.lvt-be-wizard-actions { display:flex; justify-content:center; }
+@media(max-width:760px){
+  .lvt-be-wizard { min-height:calc(100dvh - 8rem); place-items:start center; }
+  .lvt-be-type-grid { grid-template-columns:1fr; }
+  .lvt-be-type-card { min-height:8.5rem; }
+}
+@media (prefers-reduced-motion:no-preference){
+  .lvt-be-wizard-panel { animation:lvtWizardIn .42s var(--ease) both; }
+  .lvt-be-type-card { transition:transform var(--d) var(--ease), box-shadow var(--d) var(--ease), border-color var(--d) var(--ease); }
+  .lvt-be-type-card:hover { transform:translateY(-4px); box-shadow:var(--shadow-lift); border-color:rgba(169,245,255,.78); }
+}
+@keyframes lvtWizardIn { from { opacity:0; transform:translateY(16px) scale(.985); filter:blur(5px); } to { opacity:1; transform:none; filter:none; } }
 @media (prefers-reduced-motion:reduce){ .lvt-be-slide, .lvt-be-tool, .lvt-be-publish, .lvt-ed, .lvt-be-tab{ transition:none; } }
 `;
 
@@ -361,44 +438,47 @@ export function CardEditor({ initial, onClose }: Props) {
   // ── Type step ──────────────────────────────────────────────────────────────
   if (step === "type") {
     return (
-      <Modal onClose={onClose} labelledBy="be-type-title">
-        <h2 id="be-type-title" className="cardt lvt-modal-title">
-          <span className="lvt-modal-mark brand" aria-hidden="true">
-            <DynamicIcon name={"sparkles" as never} size={18} />
-          </span>
-          {t("What kind of card?")}
-        </h2>
-        <p className="body" style={{ margin: 0, color: "var(--muted)" }}>
-          {t("This sets how rewards work and which templates you'll see.")}
-        </p>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          {LOYALTY_KEYS.map((ty) => (
-            <button
-              key={ty}
-              type="button"
-              className="btn ghost"
-              onClick={() => {
-                setType(ty);
-                setStep("templates");
-              }}
-              style={{
-                textAlign: "left",
-                padding: "1rem",
-                display: "flex",
-                flexDirection: "column",
-                gap: 2,
-                alignItems: "flex-start",
-              }}
-            >
-              <span style={{ fontSize: 22 }}>{TYPE_META[ty].icon}</span>
-              <strong>{t(TYPE_META[ty].name)}</strong>
-              <span className="body" style={{ fontSize: ".8rem", color: "var(--muted)" }}>
-                {t(TYPE_META[ty].blurb)}
-              </span>
-            </button>
-          ))}
+      <div className="lvt-be-wizard">
+        <style>{editorCss}</style>
+        <div className="lvt-be-wizard-panel">
+          <div className="lvt-be-wizard-hero">
+            <h2 id="be-type-title" className="cardt">
+              {t("Build your next card")}
+            </h2>
+            <p className="body">
+              {t("Pick the reward style first. Then choose a template and tune every detail.")}
+            </p>
+          </div>
+          <div className="lvt-be-type-grid" aria-labelledby="be-type-title">
+            {LOYALTY_KEYS.map((ty) => (
+              <button
+                key={ty}
+                type="button"
+                className="lvt-be-type-card"
+                onClick={() => {
+                  setType(ty);
+                  setStep("templates");
+                }}
+              >
+                <span className="lvt-be-type-icon" aria-hidden="true">
+                  {TYPE_META[ty].icon}
+                </span>
+                <span>
+                  <strong>{t(TYPE_META[ty].name)}</strong>
+                  <span className="body" style={{ color: "var(--muted)" }}>
+                    {t(TYPE_META[ty].blurb)}
+                  </span>
+                </span>
+              </button>
+            ))}
+          </div>
+          <div className="lvt-be-wizard-actions">
+            <GlassButton type="button" variant="ghost" onClick={onClose}>
+              {t("Cancel")}
+            </GlassButton>
+          </div>
         </div>
-      </Modal>
+      </div>
     );
   }
 
@@ -522,7 +602,10 @@ export function CardEditor({ initial, onClose }: Props) {
           type="button"
           className="lvt-be-tab"
           aria-pressed={platform === "apple"}
-          onClick={() => { setPlatform("apple"); closePop(); }}
+          onClick={() => {
+            setPlatform("apple");
+            closePop();
+          }}
         >
           {t("Apple Wallet")}
         </button>
@@ -530,7 +613,10 @@ export function CardEditor({ initial, onClose }: Props) {
           type="button"
           className="lvt-be-tab"
           aria-pressed={platform === "google"}
-          onClick={() => { setPlatform("google"); closePop(); }}
+          onClick={() => {
+            setPlatform("google");
+            closePop();
+          }}
         >
           {t("Google Wallet")}
         </button>
@@ -541,7 +627,10 @@ export function CardEditor({ initial, onClose }: Props) {
           <CardCanvas
             doc={doc}
             selected={sel}
-            onSelect={(s, el) => { setGSel(null); select(s, el); }}
+            onSelect={(s, el) => {
+              setGSel(null);
+              select(s, el);
+            }}
             dispatch={dispatch}
             width={340}
             onAddLogo={addLogo}
@@ -552,7 +641,11 @@ export function CardEditor({ initial, onClose }: Props) {
           <GoogleCardCanvas
             doc={doc}
             selected={gSel}
-            onSelect={(s, el) => { setSel(null); setGSel(s); setAnchor(el ?? null); }}
+            onSelect={(s, el) => {
+              setSel(null);
+              setGSel(s);
+              setAnchor(el ?? null);
+            }}
             dispatch={dispatch}
             width={340}
           />
@@ -578,18 +671,15 @@ export function CardEditor({ initial, onClose }: Props) {
         anchor={anchor}
         open={(!!sel || !!gSel) && !iconPicker}
         onClose={closePop}
-        title={
-          sel ? t(SLOT_META[sel].title) :
-          gSel ? t(G_SLOT_META[gSel].title) : ""
-        }
-        subtitle={
-          sel ? t(SLOT_META[sel].sub) :
-          gSel ? t(G_SLOT_META[gSel].sub) : undefined
-        }
+        title={sel ? t(SLOT_META[sel].title) : gSel ? t(G_SLOT_META[gSel].title) : ""}
+        subtitle={sel ? t(SLOT_META[sel].sub) : gSel ? t(G_SLOT_META[gSel].sub) : undefined}
         accent={sel ? SLOT_META[sel].accent : gSel ? G_SLOT_META[gSel].accent : undefined}
         icon={
-          sel ? <DynamicIcon name={SLOT_META[sel].icon as never} size={17} /> :
-          gSel ? <DynamicIcon name={G_SLOT_META[gSel].icon as never} size={17} /> : undefined
+          sel ? (
+            <DynamicIcon name={SLOT_META[sel].icon as never} size={17} />
+          ) : gSel ? (
+            <DynamicIcon name={G_SLOT_META[gSel].icon as never} size={17} />
+          ) : undefined
         }
       >
         {sel && (
@@ -601,9 +691,7 @@ export function CardEditor({ initial, onClose }: Props) {
             onAddLogo={addLogo}
           />
         )}
-        {gSel && !sel && (
-          <GoogleComponentEditor doc={doc} sel={gSel} dispatch={dispatch} />
-        )}
+        {gSel && !sel && <GoogleComponentEditor doc={doc} sel={gSel} dispatch={dispatch} />}
       </CardPopover>
 
       {iconPicker && (

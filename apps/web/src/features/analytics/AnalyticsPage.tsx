@@ -23,19 +23,6 @@ type TimeseriesDTO = {
   series: TimeseriesPoint[];
 };
 
-/* ─── staff types (sidebar read-only list) ───────────────────────── */
-
-type UserRole = "owner" | "manager" | "staff";
-type UserStatus = "active" | "invited" | "suspended";
-
-interface UserDTO {
-  userId: string;
-  email: string;
-  role: UserRole;
-  status: UserStatus;
-  createdAt: string;
-}
-
 /* ─── constants ──────────────────────────────────────────────────── */
 
 const METRICS = [
@@ -57,12 +44,6 @@ const KPIS: Array<{ key: keyof Overview; label: string }> = [
   { key: "pointsLiability", label: "Points Liability" },
 ];
 
-const ROLE_BG: Record<UserRole, string> = {
-  owner: "rgba(200,255,216,.35)",
-  manager: "rgba(229,216,255,.35)",
-  staff: "rgba(200,238,255,.28)",
-};
-
 /* ─── helpers ────────────────────────────────────────────────────── */
 
 function isoDate(d: Date): string {
@@ -78,214 +59,59 @@ function daysAgo(n: number): Date {
 /* ─── styles ─────────────────────────────────────────────────────── */
 
 const layoutCss = `
-.lvt-analytics-wrap {
-  display: flex;
-  gap: 1.5rem;
-  align-items: flex-start;
-  width: 100%;
-}
 .lvt-analytics-main {
-  flex: 1;
-  min-width: 0;
+  min-width:0;
+  height:min(680px, calc(100dvh - 9.5rem));
+  min-height:520px;
+  display:grid;
+  grid-template-rows:auto minmax(0,1fr);
+  gap:1rem;
+  overflow:hidden;
 }
-.lvt-staff-sidebar {
-  flex-shrink: 0;
-  width: 0;
-  overflow: hidden;
-  transition: width 360ms cubic-bezier(.22,1,.36,1);
-}
-.lvt-staff-sidebar.open {
-  width: 284px;
-}
-/* Keep inner content mounted — rely on parent width for hide/show so close is smooth.
-   Opacity fades in on open (delayed 60ms to follow width) and out on close. */
-.lvt-staff-inner {
-  width: 284px;
-  opacity: 0;
-  transform: translateX(12px);
-  transition: opacity 260ms cubic-bezier(.22,1,.36,1) 0ms,
-              transform 260ms cubic-bezier(.22,1,.36,1) 0ms;
-}
-.lvt-staff-sidebar.open .lvt-staff-inner {
-  opacity: 1;
-  transform: translateX(0);
-  transition: opacity 300ms cubic-bezier(.22,1,.36,1) 60ms,
-              transform 300ms cubic-bezier(.22,1,.36,1) 60ms;
+.lvt-analytics-main .feature { min-height:0; overflow:hidden; }
+.lvt-chart-controls { display:flex; flex-wrap:wrap; gap:.75rem; align-items:center; justify-content:space-between; margin-bottom:.9rem; }
+.lvt-chart-buttons { display:flex; gap:.35rem; flex-wrap:wrap; }
+.lvt-chart-buttons .btn { padding:.34rem .64rem; font-size:.8rem; min-height:34px; }
+.lvt-analytics-chart { display:flex; flex-direction:column; min-height:0; }
+.lvt-analytics-chart .recharts-responsive-container { min-height:0; }
+@media (max-width: 1180px) {
+  .lvt-analytics-main { height:auto; min-height:0; overflow:visible; }
 }
 @media (max-width: 900px) {
   .lvt-kpi-grid { grid-template-columns: repeat(2,1fr) !important; }
 }
 @media (max-width: 560px) {
-  .lvt-kpi-grid { grid-template-columns: repeat(2,minmax(0,1fr)) !important; gap:.7rem !important; margin-bottom:1.35rem !important; }
-  .lvt-kpi-grid .meta { min-width:0; padding:.92rem .9rem; border-radius:18px; }
-  .lvt-kpi-grid .meta .n { font-size:1.42rem; line-height:1.05; }
-  .lvt-kpi-grid .meta .l { font-size:.74rem; line-height:1.25; margin-top:.32rem; }
-}
-@media (max-width: 767px) {
-  .lvt-analytics-wrap { flex-direction: column; }
-  .lvt-staff-sidebar.open { width: 100%; }
-  .lvt-staff-inner { width: 100%; }
+  .lvt-pageview:has(.lvt-analytics-main) {
+    height:calc(100dvh - 58px - 1rem - 58px - env(safe-area-inset-bottom, 0px) - .85rem - env(safe-area-inset-top, 0px));
+    min-height:0;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+  }
+  .lvt-analytics-main {
+    flex:1 1 auto;
+    height:auto;
+    min-height:0;
+    grid-template-rows:auto minmax(0,1fr);
+    gap:.64rem;
+    overflow:hidden;
+  }
+  .lvt-analytics-main section { min-height:0; }
+  .lvt-analytics-main .eyebrow { margin-bottom:.58rem !important; }
+  .lvt-kpi-grid { grid-template-columns: repeat(2,minmax(0,1fr)) !important; gap:.7rem !important; margin-bottom:0 !important; }
+  .lvt-kpi-grid .meta { min-width:0; padding:.66rem .72rem; border-radius:16px; }
+  .lvt-kpi-grid .meta .n { font-size:1.24rem; line-height:1.02; }
+  .lvt-kpi-grid .meta .l { font-size:.68rem; line-height:1.15; margin-top:.22rem; }
+  .lvt-analytics-chart { padding:.72rem !important; border-radius:18px; }
+  .lvt-chart-controls { gap:.42rem; margin-bottom:.44rem; }
+  .lvt-chart-controls .cardt { font-size:.92rem; line-height:1.1; }
+  .lvt-chart-buttons { gap:.24rem; }
+  .lvt-chart-buttons .btn { min-height:28px; padding:.24rem .45rem; font-size:.69rem; border-radius:11px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .lvt-staff-sidebar, .lvt-staff-inner {
-    transition: none !important;
-    animation: none !important;
-  }
+  .lvt-analytics-main * { animation:none !important; transition:none !important; }
 }
 `;
-
-/* ─── staff sidebar ──────────────────────────────────────────────── */
-
-function StaffSidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { t } = useT();
-  const {
-    data: users,
-    isLoading,
-    isError,
-  } = useQuery({
-    queryKey: ["staff-users"],
-    queryFn: () => api.get<UserDTO[]>("/api/v1/users"),
-    enabled: open, // only fetch once sidebar is opened
-    staleTime: 60_000,
-  });
-
-  return (
-    <aside
-      id="staff-sidebar"
-      className={`lvt-staff-sidebar${open ? " open" : ""}`}
-      aria-label={t("Team")}
-      aria-hidden={!open}
-    >
-      {/* Always mounted — parent width transition handles show/hide smoothly */}
-      <div className="lvt-staff-inner">
-        <GlassCard light className="feature" style={{ padding: "1.25rem 1.1rem" }}>
-          {/* header */}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "1rem",
-            }}
-          >
-            <h2 className="cardt" style={{ fontSize: "1rem" }}>
-              {t("Team")}
-            </h2>
-            <button
-              type="button"
-              className="btn ghost"
-              onClick={onClose}
-              aria-label={t("Close team panel")}
-              style={{ padding: "0.3rem 0.55rem", fontSize: "0.82rem", lineHeight: 1 }}
-            >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 14 14"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                aria-hidden="true"
-              >
-                <path d="M1 1l12 12M13 1L1 13" />
-              </svg>
-            </button>
-          </div>
-
-          {/* list */}
-          {isLoading ? (
-            <p className="body" aria-busy="true" style={{ fontSize: "0.85rem", margin: 0 }}>
-              {t("Loading…")}
-            </p>
-          ) : isError ? (
-            <p className="body" role="alert" style={{ fontSize: "0.82rem", margin: 0 }}>
-              {t("Could not load team.")}
-            </p>
-          ) : !users?.length ? (
-            <p className="body" style={{ fontSize: "0.85rem", margin: 0 }}>
-              {t("No team members yet.")}
-            </p>
-          ) : (
-            <ul
-              role="list"
-              aria-label={t("Team members")}
-              style={{
-                listStyle: "none",
-                margin: 0,
-                padding: 0,
-                display: "flex",
-                flexDirection: "column",
-                gap: "0.45rem",
-              }}
-            >
-              {users.map((user) => (
-                <li key={user.userId}>
-                  <div
-                    className="glass"
-                    style={{
-                      padding: "0.7rem 0.9rem",
-                      borderRadius: "14px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontWeight: 500,
-                        fontSize: "0.86rem",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {user.email}
-                    </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: "0.35rem",
-                        marginTop: "0.3rem",
-                        alignItems: "center",
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: "0.66rem",
-                          fontWeight: 600,
-                          padding: "0.15rem 0.5rem",
-                          borderRadius: "var(--r-pill)",
-                          background: ROLE_BG[user.role] ?? "rgba(0,0,0,.06)",
-                          color: "var(--text)",
-                          textTransform: "capitalize",
-                          letterSpacing: "0.01em",
-                        }}
-                      >
-                        {user.role}
-                      </span>
-                      {user.status !== "active" && (
-                        <span
-                          style={{
-                            fontSize: "0.63rem",
-                            color: "var(--muted)",
-                            padding: "0.1rem 0.45rem",
-                            borderRadius: "var(--r-pill)",
-                            background: "rgba(0,0,0,.05)",
-                            textTransform: "capitalize",
-                          }}
-                        >
-                          {user.status}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </GlassCard>
-      </div>
-    </aside>
-  );
-}
 
 /* ─── page ───────────────────────────────────────────────────────── */
 
@@ -293,7 +119,6 @@ export function AnalyticsPage() {
   const { t } = useT();
   const [metric, setMetric] = useState<MetricValue>("scan");
   const [days, setDays] = useState<number>(30);
-  const [staffOpen, setStaffOpen] = useState(false);
 
   const from = isoDate(daysAgo(days));
   const to = isoDate(new Date());
@@ -315,188 +140,144 @@ export function AnalyticsPage() {
   const metricLabel = METRICS.find((m) => m.value === metric)?.label ?? metric;
 
   return (
-    <AppShell
-      title={t("Analytics")}
-      titleAction={
-        <button
-          type="button"
-          className="btn"
-          style={staffOpen ? { background: "rgba(200,238,255,.38)" } : undefined}
-          onClick={() => setStaffOpen((o) => !o)}
-          aria-expanded={staffOpen}
-          aria-controls="staff-sidebar"
-        >
-          <svg
-            width="15"
-            height="15"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <circle cx="9" cy="8" r="3" />
-            <path d="M3.5 19a5.5 5.5 0 0 1 11 0M16 6.5a3 3 0 0 1 0 5.8M20.5 19a5 5 0 0 0-3-4.5" />
-          </svg>
-          {t("Team")}
-        </button>
-      }
-    >
+    <AppShell title={t("Analytics")}>
       <style>{layoutCss}</style>
 
-      {/* main layout: analytics content + staff sidebar */}
-      <div className="lvt-analytics-wrap">
-        <div className="lvt-analytics-main">
-          {/* ── KPI cards ──────────────────────────────────────── */}
-          <section aria-labelledby="analytics-kpi-heading">
-            <h2 id="analytics-kpi-heading" className="eyebrow" style={{ marginBottom: "1rem" }}>
-              {t("Overview")}
+      <div className="lvt-analytics-main">
+        {/* ── KPI cards ──────────────────────────────────────── */}
+        <section aria-labelledby="analytics-kpi-heading">
+          <h2 id="analytics-kpi-heading" className="eyebrow" style={{ marginBottom: "1rem" }}>
+            {t("Overview")}
+          </h2>
+
+          {overview.isError && (
+            <GlassCard role="alert" style={{ padding: "0.85rem 1.1rem", marginBottom: "1.5rem" }}>
+              <p className="body" style={{ margin: 0 }}>
+                {t("Unable to load overview data - please refresh or sign in.")}
+              </p>
+            </GlassCard>
+          )}
+
+          <ul
+            role="list"
+            className="lvt-kpi-grid"
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(4,1fr)",
+              gap: "1rem",
+              listStyle: "none",
+              padding: 0,
+              margin: "0",
+            }}
+            aria-label={t("Key performance indicators")}
+          >
+            {KPIS.map((kpi) => {
+              const value = overview.data?.[kpi.key];
+              const displayValue = overview.isLoading
+                ? "-"
+                : overview.isError
+                  ? "-"
+                  : (value ?? 0).toLocaleString();
+
+              return (
+                <li key={kpi.key}>
+                  <GlassCard hover light className="meta">
+                    <div
+                      className="n"
+                      aria-label={`${t(kpi.label)}: ${overview.isLoading ? t("loading") : displayValue}`}
+                      aria-busy={overview.isLoading}
+                    >
+                      {displayValue}
+                    </div>
+                    <div className="l">{t(kpi.label)}</div>
+                  </GlassCard>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+
+        {/* ── Timeseries chart ───────────────────────────────── */}
+        <GlassCard className="feature lvt-analytics-chart">
+          <div className="lvt-chart-controls">
+            <h2 className="cardt" id="chart-heading">
+              {t("{label} over time", { label: t(metricLabel) })}
             </h2>
 
-            {overview.isError && (
-              <GlassCard role="alert" style={{ padding: "0.85rem 1.1rem", marginBottom: "1.5rem" }}>
-                <p className="body" style={{ margin: 0 }}>
-                  {t("Unable to load overview data - please refresh or sign in.")}
-                </p>
-              </GlassCard>
-            )}
-
-            <ul
-              role="list"
-              className="lvt-kpi-grid"
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(4,1fr)",
-                gap: "1.5rem",
-                listStyle: "none",
-                padding: 0,
-                margin: "0 0 2.5rem",
-              }}
-              aria-label={t("Key performance indicators")}
-            >
-              {KPIS.map((kpi) => {
-                const value = overview.data?.[kpi.key];
-                const displayValue = overview.isLoading
-                  ? "-"
-                  : overview.isError
-                    ? "-"
-                    : (value ?? 0).toLocaleString();
-
-                return (
-                  <li key={kpi.key}>
-                    <GlassCard hover light className="meta">
-                      <div
-                        className="n"
-                        aria-label={`${t(kpi.label)}: ${overview.isLoading ? t("loading") : displayValue}`}
-                        aria-busy={overview.isLoading}
-                      >
-                        {displayValue}
-                      </div>
-                      <div className="l">{t(kpi.label)}</div>
-                    </GlassCard>
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
-
-          {/* ── Timeseries chart ───────────────────────────────── */}
-          <GlassCard className="feature">
             <div
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: "1.25rem",
-                alignItems: "center",
-                justifyContent: "space-between",
-                marginBottom: "1.75rem",
-              }}
+              style={{ display: "flex", flexWrap: "wrap", gap: ".55rem", alignItems: "flex-start" }}
             >
-              <h2 className="cardt" id="chart-heading">
-                {t("{label} over time", { label: t(metricLabel) })}
-              </h2>
-
-              <div
-                style={{ display: "flex", flexWrap: "wrap", gap: "1rem", alignItems: "flex-start" }}
-              >
-                {/* Metric selector */}
-                <div role="group" aria-labelledby="metric-group-label">
-                  <span
-                    id="metric-group-label"
-                    style={{
-                      position: "absolute",
-                      width: 1,
-                      height: 1,
-                      overflow: "hidden",
-                      clip: "rect(0,0,0,0)",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {t("Metric")}
-                  </span>
-                  <div style={{ display: "flex", gap: ".4rem", flexWrap: "wrap" }}>
-                    {METRICS.map((m) => (
-                      <button
-                        key={m.value}
-                        className={`btn${metric === m.value ? "" : " ghost"}`}
-                        style={{ padding: ".4rem .8rem", fontSize: ".85rem" }}
-                        onClick={() => setMetric(m.value)}
-                        aria-pressed={metric === m.value}
-                        type="button"
-                      >
-                        {t(m.label)}
-                      </button>
-                    ))}
-                  </div>
+              {/* Metric selector */}
+              <div role="group" aria-labelledby="metric-group-label">
+                <span
+                  id="metric-group-label"
+                  style={{
+                    position: "absolute",
+                    width: 1,
+                    height: 1,
+                    overflow: "hidden",
+                    clip: "rect(0,0,0,0)",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {t("Metric")}
+                </span>
+                <div className="lvt-chart-buttons">
+                  {METRICS.map((m) => (
+                    <button
+                      key={m.value}
+                      className={`btn${metric === m.value ? "" : " ghost"}`}
+                      onClick={() => setMetric(m.value)}
+                      aria-pressed={metric === m.value}
+                      type="button"
+                    >
+                      {t(m.label)}
+                    </button>
+                  ))}
                 </div>
+              </div>
 
-                {/* Date range selector */}
-                <div role="group" aria-labelledby="range-group-label">
-                  <span
-                    id="range-group-label"
-                    style={{
-                      position: "absolute",
-                      width: 1,
-                      height: 1,
-                      overflow: "hidden",
-                      clip: "rect(0,0,0,0)",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {t("Range")}
-                  </span>
-                  <div style={{ display: "flex", gap: ".4rem" }}>
-                    {DAY_OPTIONS.map((d) => (
-                      <button
-                        key={d}
-                        className={`btn${days === d ? "" : " ghost"}`}
-                        style={{ padding: ".4rem .7rem", fontSize: ".85rem" }}
-                        onClick={() => setDays(d)}
-                        aria-pressed={days === d}
-                        aria-label={t("Last {n} days", { n: d })}
-                        type="button"
-                      >
-                        {d}d
-                      </button>
-                    ))}
-                  </div>
+              {/* Date range selector */}
+              <div role="group" aria-labelledby="range-group-label">
+                <span
+                  id="range-group-label"
+                  style={{
+                    position: "absolute",
+                    width: 1,
+                    height: 1,
+                    overflow: "hidden",
+                    clip: "rect(0,0,0,0)",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {t("Range")}
+                </span>
+                <div className="lvt-chart-buttons">
+                  {DAY_OPTIONS.map((d) => (
+                    <button
+                      key={d}
+                      className={`btn${days === d ? "" : " ghost"}`}
+                      onClick={() => setDays(d)}
+                      aria-pressed={days === d}
+                      aria-label={t("Last {n} days", { n: d })}
+                      type="button"
+                    >
+                      {d}d
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>
+          </div>
 
-            <MetricsChart
-              data={timeseries.data?.series ?? []}
-              metricLabel={t(metricLabel)}
-              isLoading={timeseries.isLoading}
-              isError={timeseries.isError}
-            />
-          </GlassCard>
-        </div>
-
-        {/* ── staff sidebar ──────────────────────────────────── */}
-        <StaffSidebar open={staffOpen} onClose={() => setStaffOpen(false)} />
+          <MetricsChart
+            data={timeseries.data?.series ?? []}
+            metricLabel={t(metricLabel)}
+            isLoading={timeseries.isLoading}
+            isError={timeseries.isError}
+            compact
+          />
+        </GlassCard>
       </div>
     </AppShell>
   );

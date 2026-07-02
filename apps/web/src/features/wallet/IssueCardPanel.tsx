@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { DynamicIcon } from "lucide-react/dynamic";
 import { QRCodeCanvas, QRCodeSVG } from "qrcode.react";
 import { GlassButton, GlassCard } from "../../design-system/halo";
 import { useT } from "../../lib/i18n";
@@ -40,9 +41,9 @@ export function IssueCardPanel({
   const qrCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const [link, setLink] = useState<EnrollLinkDto | null>(null);
   const [issued, setIssued] = useState<IssuePassDto | null>(null);
-  const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [walletBusy, setWalletBusy] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const didAutoCreateQr = useRef(false);
   const enrollLink = useEnrollLink();
   const issueDirect = useIssueDirect();
@@ -87,29 +88,10 @@ export function IssueCardPanel({
     }
   };
 
-  const copyLink = async () => {
-    if (!link) return;
-    await navigator.clipboard.writeText(link.url);
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1800);
-  };
-
-  const shareLink = async () => {
-    if (!link) return;
-    if (navigator.share) {
-      await navigator.share({
-        title: cardName,
-        text: t("Scan this QR to add the loyalty card to Wallet."),
-        url: link.url,
-      });
-      return;
-    }
-    await copyLink();
-  };
-
   const downloadPng = () => {
     const canvas = qrCanvasRef.current;
     if (!canvas) return;
+    setShareOpen(false);
     download(`${cardName || "lovalte"}-qr.png`, canvas.toDataURL("image/png"));
   };
 
@@ -118,11 +100,13 @@ export function IssueCardPanel({
     if (!svg) return;
     const source = new XMLSerializer().serializeToString(svg);
     const blob = new Blob([source], { type: "image/svg+xml;charset=utf-8" });
+    setShareOpen(false);
     download(`${cardName || "lovalte"}-qr.svg`, URL.createObjectURL(blob));
   };
 
   const printQr = () => {
     if (!link) return;
+    setShareOpen(false);
     const win = window.open("", "_blank", "noopener,noreferrer");
     if (!win) return;
     win.document.write(`
@@ -156,9 +140,11 @@ export function IssueCardPanel({
       ) : null}
 
       <div style={{ display: "flex", gap: ".65rem", justifyContent: "center", flexWrap: "wrap" }}>
-        <GlassButton type="button" onClick={makeQr} disabled={enrollLink.isPending}>
-          {enrollLink.isPending ? t("Creating…") : link ? t("Refresh QR") : t("Create QR")}
-        </GlassButton>
+        {!autoCreateQr || !link ? (
+          <GlassButton type="button" onClick={makeQr} disabled={enrollLink.isPending}>
+            {enrollLink.isPending ? t("Creating…") : link ? t("Refresh QR") : t("Create QR")}
+          </GlassButton>
+        ) : null}
         <GlassButton type="button" onClick={issueNow} disabled={issueDirect.isPending}>
           {issueDirect.isPending ? t("Issuing…") : t("Add test pass")}
         </GlassButton>
@@ -180,8 +166,8 @@ export function IssueCardPanel({
             style={{
               display: "inline-grid",
               placeItems: "center",
-              padding: compact ? ".7rem" : "1rem",
-              borderRadius: "24px",
+              padding: compact ? ".55rem" : "1rem",
+              borderRadius: compact ? "20px" : "24px",
               background:
                 "linear-gradient(135deg, rgba(255,255,255,.78), rgba(255,255,255,.42)), var(--card)",
             }}
@@ -202,27 +188,55 @@ export function IssueCardPanel({
           <div
             style={{
               display: "flex",
-              gap: ".55rem",
-              flexWrap: "wrap",
               justifyContent: "center",
               marginTop: ".8rem",
+              position: "relative",
             }}
           >
-            <GlassButton type="button" variant="ghost" onClick={shareLink}>
+            <GlassButton
+              type="button"
+              variant="ghost"
+              onClick={() => setShareOpen((open) => !open)}
+              aria-expanded={shareOpen}
+              aria-haspopup="menu"
+            >
+              <DynamicIcon name={"share" as never} size={16} aria-hidden="true" />
               {t("Share")}
             </GlassButton>
-            <GlassButton type="button" variant="ghost" onClick={copyLink}>
-              {copied ? t("Copied") : t("Copy")}
-            </GlassButton>
-            <GlassButton type="button" variant="ghost" onClick={downloadPng}>
-              PNG
-            </GlassButton>
-            <GlassButton type="button" variant="ghost" onClick={downloadSvg}>
-              SVG
-            </GlassButton>
-            <GlassButton type="button" variant="ghost" onClick={printQr}>
-              {t("Print / PDF")}
-            </GlassButton>
+            {shareOpen ? (
+              <div
+                role="menu"
+                className="glass"
+                style={{
+                  position: "absolute",
+                  zIndex: 3,
+                  top: "calc(100% + .45rem)",
+                  minWidth: "10rem",
+                  padding: ".4rem",
+                  borderRadius: "18px",
+                  display: "grid",
+                  gap: ".25rem",
+                  boxShadow: "var(--shadow-lift)",
+                }}
+              >
+                {[
+                  { label: "PNG", action: downloadPng },
+                  { label: "SVG", action: downloadSvg },
+                  { label: "PDF", action: printQr },
+                ].map((item) => (
+                  <button
+                    key={item.label}
+                    type="button"
+                    role="menuitem"
+                    className="btn ghost"
+                    onClick={item.action}
+                    style={{ justifyContent: "flex-start", minHeight: 34 }}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            ) : null}
           </div>
         </section>
       ) : null}

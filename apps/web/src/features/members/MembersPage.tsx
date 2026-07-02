@@ -23,18 +23,6 @@ type CardLite = {
   rewardRule: { cardType?: "points" | "stamps" | "cashback"; rewardThreshold?: number };
 };
 
-const TH: React.CSSProperties = {
-  padding: "0.75rem 1.25rem",
-  textAlign: "left",
-  fontSize: "0.72rem",
-  fontWeight: 600,
-  letterSpacing: "0.06em",
-  textTransform: "uppercase",
-  color: "var(--muted)",
-  whiteSpace: "nowrap",
-};
-const TD: React.CSSProperties = { padding: "0.9rem 1.25rem", verticalAlign: "middle" };
-
 /** Format a member's balance in the card's own terms — matches the pass. */
 function progress(card: CardLite, balance: number): string {
   const type = card.rewardRule.cardType ?? "points";
@@ -49,6 +37,19 @@ const PROGRESS_LABEL: Record<string, string> = {
   cashback: "Balance",
   points: "Points",
 };
+
+function memberTitle(member: Member, fallback: string): string {
+  return member.displayName?.trim() || member.email?.trim() || fallback;
+}
+
+function memberInitial(member: Member): string {
+  const title = memberTitle(member, "Member").trim();
+  return title ? (title[0]?.toUpperCase() ?? "M") : "M";
+}
+
+function joinedDate(member: Member): string {
+  return member.enrolledAt ? new Date(member.enrolledAt).toLocaleDateString() : "-";
+}
 
 // ── Card picker ────────────────────────────────────────────────────────────────
 function CardPicker({ onPick }: { onPick: (card: CardLite) => void }) {
@@ -168,52 +169,107 @@ function MembersForCard({
         </GlassCard>
       ) : (
         <GlassCard style={{ padding: 0, overflow: "hidden" }}>
-          <div style={{ overflowX: "auto" }}>
-            <table
-              aria-label={t("Members of {name}", { name: card.name })}
-              style={{ width: "100%", borderCollapse: "collapse", minWidth: "28rem" }}
-            >
-              <thead>
-                <tr style={{ borderBottom: "1px solid var(--border)" }}>
-                  <th scope="col" style={{ ...TH, textAlign: "right" }}>
-                    {t(PROGRESS_LABEL[card.rewardRule.cardType ?? "points"] ?? "Points")}
-                  </th>
-                  <th scope="col" style={TH}>
-                    {t("Joined")}
-                  </th>
-                  <th scope="col" style={{ ...TH, width: "3.5rem" }} aria-label={t("Actions")} />
-                </tr>
-              </thead>
-              <tbody>
-                {members.map((m) => (
-                  <tr key={m.id} style={{ borderBottom: "1px solid var(--border)" }}>
-                    <td
-                      style={{
-                        ...TD,
-                        textAlign: "right",
-                        fontWeight: 600,
-                        fontVariantNumeric: "tabular-nums",
-                      }}
-                    >
+          <div
+            aria-label={t("Members of {name}", { name: card.name })}
+            style={{
+              display: "grid",
+              gap: "0.85rem",
+              gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 16rem), 1fr))",
+              padding: "1rem",
+            }}
+          >
+            {members.map((m) => (
+              <button
+                key={m.id}
+                type="button"
+                className="glass glass-hover"
+                onClick={() => onSelect(m.id)}
+                aria-label={t("View member details")}
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "auto 1fr auto",
+                  alignItems: "center",
+                  gap: "0.8rem",
+                  minWidth: 0,
+                  width: "100%",
+                  padding: "0.95rem",
+                  borderRadius: "calc(var(--r-card) - 0.4rem)",
+                  color: "var(--text)",
+                  cursor: "pointer",
+                  font: "inherit",
+                  textAlign: "left",
+                }}
+              >
+                <span
+                  aria-hidden="true"
+                  style={{
+                    display: "grid",
+                    placeItems: "center",
+                    width: "2.7rem",
+                    height: "2.7rem",
+                    borderRadius: "999px",
+                    background:
+                      "linear-gradient(135deg, rgba(221,246,255,0.9), rgba(246,230,255,0.88))",
+                    border: "1px solid rgba(255,255,255,0.75)",
+                    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.85)",
+                    color: "var(--text)",
+                    fontWeight: 700,
+                  }}
+                >
+                  {memberInitial(m)}
+                </span>
+
+                <span style={{ minWidth: 0 }}>
+                  <span
+                    style={{
+                      display: "block",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      fontWeight: 650,
+                    }}
+                  >
+                    {memberTitle(m, t("Member"))}
+                  </span>
+                  <span
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      flexWrap: "wrap",
+                      gap: "0.55rem",
+                      minWidth: 0,
+                      marginTop: "0.3rem",
+                      color: "var(--muted)",
+                      fontSize: "0.82rem",
+                    }}
+                  >
+                    <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
                       {progress(card, m.balance)}
-                    </td>
-                    <td style={{ ...TD, color: "var(--muted)", fontSize: "0.9rem" }}>
-                      {m.enrolledAt ? new Date(m.enrolledAt).toLocaleDateString() : "—"}
-                    </td>
-                    <td style={{ ...TD, textAlign: "center" }}>
-                      <button
-                        className="btn ghost"
-                        aria-label={t("View member details")}
-                        onClick={() => onSelect(m.id)}
-                        style={{ padding: "0.4rem 0.55rem", lineHeight: 1, display: "inline-flex" }}
-                      >
-                        <Icon.Arrow aria-hidden="true" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </span>
+                    <span aria-hidden="true">·</span>
+                    <span>
+                      {t("Joined")} {joinedDate(m)}
+                    </span>
+                  </span>
+                </span>
+
+                <span
+                  aria-hidden="true"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: "2.15rem",
+                    height: "2.15rem",
+                    borderRadius: "999px",
+                    background: "rgba(255,255,255,0.48)",
+                    color: "var(--muted)",
+                  }}
+                >
+                  <Icon.Arrow aria-hidden="true" />
+                </span>
+              </button>
+            ))}
           </div>
           <div
             style={{
