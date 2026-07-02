@@ -56,6 +56,20 @@ const publicEnrollBodySchema = z.object({ token: z.string().min(8).max(2048) }).
 const downloadQuerySchema = z.object({ t: z.string().min(8).max(2048) });
 
 /**
+ * Which wallet a scanning device natively supports, from its User-Agent.
+ * "apple" = iPhone/iPod/iPad (Camera app scans open Safari with these UAs);
+ * "google" = Android; "web" = everything else (desktop, bots, iPads in
+ * desktop-mode masquerading as Macintosh) and gets the enroll page fallback.
+ * Pure - unit-tested in __tests__/handlers.test.ts.
+ */
+export function detectWalletPlatform(userAgent: string | undefined): "apple" | "google" | "web" {
+  if (!userAgent) return "web";
+  if (/iPhone|iPod|iPad/i.test(userAgent)) return "apple";
+  if (/Android/i.test(userAgent)) return "google";
+  return "web";
+}
+
+/**
  * Registers pass-issuance routes under /api/v1/passes.
  *
  * Routes:
@@ -150,6 +164,54 @@ export function registerPassRoutes(app: FastifyInstance, deps: Deps, handlers: H
     const r = await handlers.publicEnroll.execute({ token: body.token });
     if (!r.ok) throw r.error;
     return reply.status(201).send({ data: r.value });
+  });
+
+  /**
+   * GET /api/v1/public/enroll?t=<enrollToken> - PUBLIC: the one printed QR.
+   * Branches on the scanner's platform so each phone gets its NATIVE add flow
+   * with zero web-page hop:
+   *   iPhone/iPad  -> enroll + stream the .pkpass (Safari shows the Add Pass sheet)
+   *   Android      -> enroll + 302 to the pay.google.com save URL (native add screen)
+   *   anything else-> 302 to the enroll web page (both buttons; also the fallback
+   *                   when Google Wallet isn't configured)
+   * The enroll token rides in the query (the server must see it to act), unlike
+   * the page URL's fragment - it's a mint-only capability, acceptable in logs.
+   */
+  app.get("/api/v1/public/enroll", async (req, reply) => {
+    const query = parse(downloadQuerySchema, req.query);
+    const platform = detectWalletPlatform(req.headers["user-agent"]);
+    const pageUrl = `${deps.config.APP_BASE_URL}/enroll#${query.t}`;
+
+    if (platform === "web") return reply.redirect(pageUrl, 302);
+    // Android with Google Wallet unconfigured -> page (before issuing anything,
+    // so the fallback never strands an orphan pass).
+    if (platform === "google" && !deps.services.googleWalletSaveUrl) {
+      return reply.redirect(pageUrl, 302);
+    }
+
+    const enrolled = await handlers.publicEnroll.execute({ token: query.t });
+    if (!enrolled.ok) throw enrolled.error;
+    const { passId, downloadToken } = enrolled.value;
+    // tenantId comes from the signed download token we just minted, never the client.
+    const claims = verifyToken(deps.config.QR_TOKEN_SECRET, downloadToken, "download");
+    if (!claims?.tenantId) throw new Error("download token minted without tenantId");
+
+    if (platform === "google") {
+      const saveUrl = await deps.services.googleWalletSaveUrl?.(passId, claims.tenantId);
+      return reply.redirect(saveUrl ?? pageUrl, 302);
+    }
+
+    // Apple: serve the freshly issued pass directly - Safari hands bytes with
+    // this content type straight to Wallet's full-screen Add Pass sheet.
+    const r = await handlers.getPassPkpass.execute({ passId, tenantId: claims.tenantId });
+    if (!r.ok) throw r.error;
+    if (r.value.status !== 200) return reply.redirect(pageUrl, 302);
+    return reply
+      .status(200)
+      .header("Content-Type", "application/vnd.apple.pkpass")
+      .header("Content-Disposition", 'attachment; filename="lovalte.pkpass"')
+      .header("Last-Modified", r.value.lastModified)
+      .send(r.value.buffer);
   });
 
   // GET /api/v1/public/passes/:passId/pkpass?t=<downloadToken> - PUBLIC token-gated download

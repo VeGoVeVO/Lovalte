@@ -317,3 +317,47 @@ describe("UpdatePassFieldsHandler", () => {
     expect(bus.publish).not.toHaveBeenCalled();
   });
 });
+
+// ── CreateEnrollLinkHandler + platform branching ────────────────────────────
+
+import { CreateEnrollLinkHandler } from "../CreateEnrollLinkHandler";
+import { detectWalletPlatform } from "../../presentation/routes";
+import type { AppConfig } from "../../../../config/env";
+
+describe("CreateEnrollLinkHandler", () => {
+  const config = {
+    APP_BASE_URL: "https://lovalte.com",
+    QR_TOKEN_SECRET: "test-secret-16chars",
+  } as AppConfig;
+
+  it("mints a QR URL pointing at the platform-branching public enroll endpoint", async () => {
+    const handler = new CreateEnrollLinkHandler(makeTemplateRepo(), config, makeClock());
+    const r = await handler.execute({ templateId: PASS_TYPE_ID, tenantId: TENANT_ID });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.value.url).toBe(
+      `https://lovalte.com/api/v1/public/enroll?t=${encodeURIComponent(r.value.token)}`,
+    );
+  });
+
+  it("fails when the template does not exist", async () => {
+    const handler = new CreateEnrollLinkHandler(makeTemplateRepo(null), config, makeClock());
+    const r = await handler.execute({ templateId: PASS_TYPE_ID, tenantId: TENANT_ID });
+    expect(r.ok).toBe(false);
+  });
+});
+
+describe("detectWalletPlatform", () => {
+  it.each([
+    ["Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X) AppleWebKit/605.1.15", "apple"],
+    ["Mozilla/5.0 (iPad; CPU OS 17_5 like Mac OS X) AppleWebKit/605.1.15", "apple"],
+    ["Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 Chrome/126", "google"],
+    // iPadOS desktop-mode masquerades as Macintosh -> web fallback page
+    ["Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15", "web"],
+    ["Mozilla/5.0 (Windows NT 10.0; Win64; x64)", "web"],
+    ["curl/8.5.0", "web"],
+    [undefined, "web"],
+  ] as const)("%s -> %s", (ua, expected) => {
+    expect(detectWalletPlatform(ua as string | undefined)).toBe(expected);
+  });
+});

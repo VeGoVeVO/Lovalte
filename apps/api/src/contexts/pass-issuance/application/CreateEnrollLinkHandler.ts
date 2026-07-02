@@ -35,6 +35,12 @@ export class CreateEnrollLinkHandler {
       { typ: "enroll", templateId: input.templateId, tenantId: input.tenantId },
       Math.floor(this.clock.now().getTime() / 1000),
     );
-    return ok({ url: `${this.config.APP_BASE_URL}/enroll#${token}`, token });
+    // The QR points at the platform-branching API endpoint (native add flow on
+    // phones, web page fallback elsewhere). Old printed QRs that carry the
+    // /enroll#<token> page URL keep working - the page still enrolls itself.
+    return ok({
+      url: `${this.config.APP_BASE_URL}/api/v1/public/enroll?t=${encodeURIComponent(token)}`,
+      token,
+    });
   }
 }

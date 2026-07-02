@@ -41,5 +41,18 @@ export async function registerGoogleWallet(app: FastifyInstance, deps: Deps): Pr
     });
   });
 
+  // Cross-context capability: pass-issuance's platform-branching enroll
+  // endpoint 302s Android scanners straight to this save URL. Never throws -
+  // the caller falls back to the enroll web page on null.
+  deps.services.googleWalletSaveUrl = async (passId, tenantId) => {
+    try {
+      const r = await getSaveUrl.execute({ passId, tenantId });
+      return r.ok ? r.value.saveUrl : null;
+    } catch (e) {
+      app.log.error({ err: e, passId }, "googleWalletSaveUrl capability failed");
+      return null;
+    }
+  };
+
   registerGoogleWalletRoutes(app, deps, { getSaveUrl });
 }

@@ -17,6 +17,13 @@ export interface WalletServices {
    * 503ing forever.
    */
   ensurePkpassCached?: (serialNumber: string) => Promise<Buffer | null>;
+  /**
+   * Registered by google-wallet (only when that module is configured). Returns
+   * the pay.google.com save URL for a pass, or null on any failure. Lets the
+   * platform-branching enroll endpoint 302 Android scanners straight to the
+   * native Google Wallet add screen.
+   */
+  googleWalletSaveUrl?: (passId: string, tenantId: string) => Promise<string | null>;
 }
 
 /** Cross-cutting infrastructure handed to every context module at composition. */
