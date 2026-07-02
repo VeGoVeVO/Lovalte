@@ -20,6 +20,30 @@ export interface IPassLookup {
   existsForTenant(passId: string, tenantId: string): Promise<boolean>;
 }
 
+export interface ScanPreview {
+  readonly passId: string;
+  readonly cardName: string;
+  readonly cardType: string;
+  readonly member: {
+    readonly id: string;
+    readonly displayName: string | null;
+    readonly email: string | null;
+    readonly balance: number;
+    readonly tier: string;
+    readonly status: string;
+    readonly enrolledAt: string;
+  };
+}
+
+/**
+ * Read model for the staff scan confirmation screen. This is deliberately
+ * narrower than the full Membership API so staff can verify the captured card
+ * without being granted broad member-list access.
+ */
+export interface IScanPreviewLookup {
+  findPreview(passId: string, tenantId: string): Promise<ScanPreview | null>;
+}
+
 /**
  * Minimal cache port over Redis.
  * Abstracts ioredis so the application layer stays infrastructure-free.

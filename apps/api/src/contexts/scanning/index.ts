@@ -1,6 +1,8 @@
 import type { ContextModule } from "../../http/app";
+import { GetScanPreviewHandler } from "./application/GetScanPreviewHandler";
 import { RedeemScanHandler } from "./application/RedeemScanHandler";
 import { SqlPassLookup } from "./infrastructure/SqlPassLookup";
+import { SqlScanPreviewLookup } from "./infrastructure/SqlScanPreviewLookup";
 import { RedisCacheStore } from "./infrastructure/RedisCacheStore";
 import { RedemptionEventRepository } from "./infrastructure/RedemptionEventRepository";
 import { registerScanningRoutes } from "./presentation/routes";
@@ -20,13 +22,15 @@ import { registerScanningRoutes } from "./presentation/routes";
  */
 export const registerScanning: ContextModule = async (app, deps) => {
   const passLookup = new SqlPassLookup(deps.pool);
+  const previewLookup = new SqlScanPreviewLookup(deps.pool);
   const cache = new RedisCacheStore(deps.redis);
   const repo = new RedemptionEventRepository(deps.pool);
   const handler = new RedeemScanHandler(repo, passLookup, cache, deps.bus, deps.clock);
+  const previewHandler = new GetScanPreviewHandler(previewLookup);
 
   deps.bus.subscribe("TenantDeleted", async (event) => {
     await repo.purgeByTenant(String(event.payload.tenantId));
   });
 
-  registerScanningRoutes(app, deps, handler);
+  registerScanningRoutes(app, deps, handler, previewHandler);
 };

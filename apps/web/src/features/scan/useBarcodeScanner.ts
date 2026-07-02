@@ -11,6 +11,7 @@ export interface UseBarcodeScanner {
   capturedImage: string | null;
   startCamera: () => Promise<void>;
   clearToken: () => void;
+  stopCamera: () => void;
 }
 
 /** Crop the detected QR (its corner points + padding) into a square thumbnail. */
@@ -118,6 +119,8 @@ export function useBarcodeScanner(): UseBarcodeScanner {
               detectedTokenRef.current = res.data;
               setCapturedImage(cropQr(canvas, res.cornerPoints));
               setDetectedToken(res.data);
+              stop();
+              return;
             }
           } catch {
             /* no QR in this frame - keep scanning */
@@ -139,5 +142,13 @@ export function useBarcodeScanner(): UseBarcodeScanner {
     setCapturedImage(null);
   }, []);
 
-  return { videoRef, status, detectedToken, capturedImage, startCamera, clearToken };
+  return {
+    videoRef,
+    status,
+    detectedToken,
+    capturedImage,
+    startCamera,
+    clearToken,
+    stopCamera: stop,
+  };
 }

@@ -4,11 +4,16 @@ import type { Deps } from "../../../shared/deps";
 import { requireAuth, getAuth } from "../../../http/auth";
 import { parse } from "../../../http/validation";
 import type { RedeemScanHandler } from "../application/RedeemScanHandler";
+import type { GetScanPreviewHandler } from "../application/GetScanPreviewHandler";
 
 const redeemBodySchema = z.object({
   qrToken: z.string().min(10).max(2048),
   action: z.enum(["award", "redeem"]),
   amount: z.number().int().positive(),
+});
+
+const previewParamsSchema = z.object({
+  passId: z.string().min(8).max(64),
 });
 
 /**
@@ -27,7 +32,26 @@ export function registerScanningRoutes(
   app: FastifyInstance,
   deps: Deps,
   handler: RedeemScanHandler,
+  previewHandler: GetScanPreviewHandler,
 ): void {
+  app.get(
+    "/api/v1/scan/preview/:passId",
+    {
+      preHandler: requireAuth(deps.config.SESSION_SECRET, ["owner", "manager", "staff"]),
+    },
+    async (req, reply) => {
+      const auth = getAuth(req);
+      const { passId } = parse(previewParamsSchema, req.params);
+      const result = await previewHandler.execute({ passId, tenantId: auth.tenantId });
+
+      if (!result.ok) {
+        throw result.error;
+      }
+
+      return reply.status(200).send({ data: result.value });
+    },
+  );
+
   app.post(
     "/api/v1/scan/redeem",
     {
