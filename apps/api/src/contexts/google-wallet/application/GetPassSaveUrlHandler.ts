@@ -44,7 +44,10 @@ export class GetPassSaveUrlHandler {
     if (!objectId) {
       objectId = `${this.issuerId}.pass_${pass.passId}`;
       const hexBg = HexColor.fromRgbString(pass.backgroundColorRgb).value;
-      const primary = pass.fieldValues[0];
+      // Prefer the loyalty counter (key "points") for the single textModule -
+      // it's what the Apple pass shows too. Fall back to the first field for
+      // templates that don't define one (fieldValues[0] was the old blanket rule).
+      const primary = pass.fieldValues.find((f) => f.key === "points") ?? pass.fieldValues[0];
 
       await this.gwClient.ensureClass(classId);
       await this.gwClient.createObject(objectId, classId, {

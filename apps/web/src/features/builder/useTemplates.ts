@@ -14,6 +14,14 @@ export interface FieldDef {
   changeMessage?: string;
 }
 
+/** Builder round-trip state for a crop-sourced image (original ref + pan/zoom). */
+export interface CropSource {
+  ref: string;
+  tx: number;
+  ty: number;
+  scale: number;
+}
+
 export interface CardTemplateDTO {
   id: string;
   name: string;
@@ -37,6 +45,8 @@ export interface CardTemplateDTO {
     stampIcon?: string;
     stampedRef?: string;
     unstampedRef?: string;
+    heroSource?: CropSource;
+    logoSource?: CropSource;
   };
   rewardRule: {
     pointsPerVisit: number;
@@ -75,6 +85,9 @@ export interface TemplateInput {
   tierRules: { label: string; minPoints: number }[];
   walletPlatform?: "apple" | "google";
   googleOverrides?: GoogleOverrides;
+  /** Original art + crop transform for re-editing (assets carry the baked refs). */
+  heroSource?: CropSource;
+  logoSource?: CropSource;
 }
 
 // ── Query key ─────────────────────────────────────────────────────────────────
@@ -108,7 +121,11 @@ export function useUpdateTemplate() {
 
 export function usePublishTemplate() {
   const qc = useQueryClient();
-  return useMutation<{ id: string; version: number; status: string }, ApiError, string>({
+  return useMutation<
+    { id: string; version: number; status: string; warnings?: string[] },
+    ApiError,
+    string
+  >({
     mutationFn: (id) => api.post(`/api/v1/card-templates/${id}/publish`),
     onSuccess: () => qc.invalidateQueries({ queryKey: QK }),
   });

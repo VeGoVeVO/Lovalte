@@ -22,6 +22,7 @@ async function main(): Promise<void> {
     bus: new InMemoryEventBus(),
     clock: systemClock,
     config,
+    services: {},
   };
 
   const app = await buildApp(deps, contextModules);

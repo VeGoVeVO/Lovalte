@@ -29,7 +29,7 @@ export function fileToDataUrl(file: File): Promise<string> {
 /** Client-side guard mirroring the server's domain validation (fast UX feedback). */
 export function validateImageFile(file: File): string | null {
   if (!ALLOWED_UPLOAD_TYPES.includes(file.type)) {
-    return "Use a PNG, JPEG, WebP, GIF, or SVG image.";
+    return "Use a PNG, JPEG, WebP, GIF, or SVG image (converted to PNG automatically).";
   }
   if (file.size > MAX_IMAGE_BYTES) {
     return "Image must be 2 MB or smaller.";

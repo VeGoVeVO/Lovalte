@@ -1,4 +1,5 @@
 import type { CardTemplate } from "../domain/CardTemplate";
+import type { CropSource } from "../domain/BrandConfig";
 import type { LoyaltyType } from "../domain/RewardRule";
 import type { AssetRef } from "./ICardTemplateRepository";
 
@@ -49,6 +50,9 @@ export interface CreateCardTemplateInput {
   tierRules: TierRuleInput[];
   walletPlatform?: 'apple' | 'google';
   googleOverrides?: GoogleOverrides;
+  /** Builder round-trip state: original image + crop transform (frontend re-editing only). */
+  heroSource?: CropSource;
+  logoSource?: CropSource;
 }
 
 export interface UpdateCardTemplateInput extends CreateCardTemplateInput {
@@ -72,6 +76,8 @@ export interface BrandDTO {
   stampIcon?: string;
   stampedRef?: string;
   unstampedRef?: string;
+  heroSource?: CropSource;
+  logoSource?: CropSource;
 }
 
 export interface CardTemplateDTO {
@@ -115,6 +121,8 @@ export interface PublishResultDTO {
   id: string;
   version: number;
   status: string;
+  /** Non-fatal publish-preflight notices (e.g. no logo/strip uploaded). */
+  warnings: string[];
 }
 
 export function toCardTemplateDTO(t: CardTemplate, issuedCount = 0): CardTemplateDTO {
@@ -143,6 +151,8 @@ export function toCardTemplateDTO(t: CardTemplate, issuedCount = 0): CardTemplat
       stampIcon: b.stampIcon,
       stampedRef: b.stampedRef,
       unstampedRef: b.unstampedRef,
+      heroSource: b.heroSource,
+      logoSource: b.logoSource,
     },
     rewardRule: {
       pointsPerVisit: t.rewardRule.pointsPerVisit,

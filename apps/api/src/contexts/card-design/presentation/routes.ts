@@ -20,7 +20,21 @@ const fieldDefSchema = z.object({
   label: z.string().min(1).max(100),
   valueTemplate: z.string().min(1),
   numberStyle: z.string().optional(),
-  changeMessage: z.string().optional(),
+  // Apple substitutes %@ with the field's new value in the lockscreen banner;
+  // a changeMessage without it is invalid per the PassKit format reference.
+  changeMessage: z
+    .string()
+    .max(200)
+    .refine((s) => s.includes("%@"), 'changeMessage must contain "%@" (replaced with the new value)')
+    .optional(),
+});
+
+// Builder round-trip state for a crop-sourced image (see BrandConfig.CropSource).
+const cropSourceSchema = z.object({
+  ref: z.string().min(1).max(2048),
+  tx: z.number(),
+  ty: z.number(),
+  scale: z.number(),
 });
 
 const templateBodySchema = z
@@ -45,6 +59,10 @@ const templateBodySchema = z
     // One pre-rendered strip per stamps-earned count (index 0..goal). Cap at 31
     // (max goal 30 + the empty frame) to bound payload size.
     stampStripRefs: z.array(z.string().max(256)).max(31).optional(),
+    // Builder round-trip only: original image + crop transform for re-editing.
+    // Not consumed by publish validation or pass-issuance.
+    heroSource: cropSourceSchema.optional(),
+    logoSource: cropSourceSchema.optional(),
     tierRules: z
       .array(z.object({ label: z.string().min(1), minPoints: z.number().int().min(0) }))
       .default([]),
@@ -149,6 +167,8 @@ export function registerCardDesignRoutes(
       stampedRef: body.stampedRef,
       unstampedRef: body.unstampedRef,
       stampStripRefs: body.stampStripRefs,
+      heroSource: body.heroSource,
+      logoSource: body.logoSource,
       tierRules: body.tierRules ?? [],
       googleOverrides: body.googleOverrides,
     });
@@ -200,6 +220,8 @@ export function registerCardDesignRoutes(
       stampedRef: body.stampedRef,
       unstampedRef: body.unstampedRef,
       stampStripRefs: body.stampStripRefs,
+      heroSource: body.heroSource,
+      logoSource: body.logoSource,
       tierRules: body.tierRules ?? [],
       googleOverrides: body.googleOverrides,
     });

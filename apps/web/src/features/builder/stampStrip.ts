@@ -18,6 +18,15 @@ export const STRIP_H = 432;
 /** Preview band aspect (height = width * this) — matches the generated strip. */
 export const STRIP_RATIO = STRIP_H / STRIP_W;
 /**
+ * Apple storeCard strip WITH primary fields = the SHORTER 375×123 pt band
+ * (@3x 1125×369): Wallet overlays the primary label/value on the strip and
+ * reserves the difference for it. Points/cashback cards (whose loyalty counter
+ * is a primaryField) must bake and preview at this aspect, or Wallet
+ * aspect-fills and side-crops on-device — the mirror image of the 432 note above.
+ */
+export const STRIP_H_PRIMARY = 369;
+export const STRIP_RATIO_PRIMARY = STRIP_H_PRIMARY / STRIP_W;
+/**
  * Small side margin for the stamp grid. The count ("X / N") now lives in a field
  * BELOW the strip (not overlaid on the left), so the grid spans the full strip.
  * Shared by the renderer and the preview so they line up.
@@ -47,6 +56,39 @@ function loadImage(src: string): Promise<HTMLImageElement> {
     img.onerror = () => reject(new Error(`Could not load image: ${src}`));
     img.src = src;
   });
+}
+
+/**
+ * Bake the preview's pan/zoom into real pixels. Replicates ImgSlot's CSS
+ * exactly — object-fit: cover into the W×H box FIRST, then
+ * translate(tx*18%, ty*18%) scale(scale) about the box centre, cropped by the
+ * box — so the uploaded strip/logo equals what the merchant saw. Returns a PNG
+ * data URL; throws if the image can't load (caller falls back to the original).
+ */
+export async function bakeCropToPng(
+  src: string,
+  w: number,
+  h: number,
+  t: { tx: number; ty: number; scale: number },
+): Promise<string> {
+  const img = await loadImage(src);
+  // Stage 1: cover-fit into the box (what object-fit renders inside the element).
+  const covered = document.createElement("canvas");
+  covered.width = w;
+  covered.height = h;
+  const cctx = covered.getContext("2d");
+  if (!cctx) throw new Error("canvas 2d unavailable");
+  drawCover(cctx, img, w, h);
+  // Stage 2: CSS transform of the element box — translate then scale, origin centre.
+  const out = document.createElement("canvas");
+  out.width = w;
+  out.height = h;
+  const octx = out.getContext("2d");
+  if (!octx) throw new Error("canvas 2d unavailable");
+  octx.translate(w / 2 + t.tx * 0.18 * w, h / 2 + t.ty * 0.18 * h);
+  octx.scale(t.scale, t.scale);
+  octx.drawImage(covered, -w / 2, -h / 2);
+  return out.toDataURL("image/png");
 }
 
 export interface StampStripInput {

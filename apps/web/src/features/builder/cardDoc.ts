@@ -431,6 +431,15 @@ export function docToInput(doc: CardDoc): TemplateInput {
     unstampedRef: doc.unstampedRef || undefined,
     tierRules: [],
     googleOverrides: doc.googleOverrides,
+    // Builder round-trip: ORIGINAL art + crop transform, so re-editing starts
+    // from the un-baked photo. The registered logo/strip assets are the baked
+    // renditions (see CardEditor.save).
+    heroSource: doc.hero
+      ? { ref: doc.hero.src, tx: doc.hero.tx, ty: doc.hero.ty, scale: doc.hero.scale }
+      : undefined,
+    logoSource: doc.logo
+      ? { ref: doc.logo.src, tx: doc.logo.tx, ty: doc.logo.ty, scale: doc.logo.scale }
+      : undefined,
   };
 }
 
@@ -446,8 +455,14 @@ export function docFromTemplate(tmpl: CardTemplateDTO): CardDoc {
       fg: rgbToHex(b.foregroundColor),
       label: rgbToHex(b.labelColor),
     },
-    logo: ref(b.logoRef),
-    hero: ref(b.stripRef),
+    // Prefer the round-tripped original + transform; fall back to the (baked)
+    // registered refs for templates saved before crop baking existed.
+    logo: b.logoSource
+      ? { src: b.logoSource.ref, tx: b.logoSource.tx, ty: b.logoSource.ty, scale: b.logoSource.scale }
+      : ref(b.logoRef),
+    hero: b.heroSource
+      ? { src: b.heroSource.ref, tx: b.heroSource.tx, ty: b.heroSource.ty, scale: b.heroSource.scale }
+      : ref(b.stripRef),
     iconRef: b.iconRef ?? "",
     // The loyalty field (key "points") may sit in primary (points/cashback) or
     // secondary (stamps). Read its label as primaryLabel and keep it OUT of the

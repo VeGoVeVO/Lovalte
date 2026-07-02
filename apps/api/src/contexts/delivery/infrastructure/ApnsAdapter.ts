@@ -1,10 +1,12 @@
 import http2 from "node:http2";
 import fs from "node:fs";
 import crypto from "node:crypto";
-import type { IPushNotificationPort } from "../domain/ports";
+import type { AppConfig } from "../../../config/env";
+import type { IPushNotificationPort, PushResult } from "../domain/ports";
 
 const APNS_HOST = "https://api.push.apple.com";
 const JWT_TTL_MS = 50 * 60 * 1_000; // 50 minutes
+const PUSH_EXPIRATION_MS = 30 * 24 * 60 * 60 * 1_000; // 30 days
 
 interface JwtCache {
   token: string;
@@ -18,13 +20,11 @@ function log(obj: Record<string, unknown>): void {
 /**
  * APNs HTTP/2 push-notification adapter (ES256 JWT auth).
  *
- * Reads from process.env (NOT config/env.ts):
- *   APNS_KEY_PATH  - path to the .p8 private key file
- *   APNS_KEY_ID    - 10-character key ID shown in Apple Developer portal
- *   APNS_TEAM_ID   - 10-character Team ID shown in Apple Developer portal
- *
- * Falls back to a no-op log when any of those env vars is absent so that
- * non-production environments continue to work without credentials.
+ * Reads APNs credentials from AppConfig (constructor-injected) instead of
+ * process.env directly, keeping all env access at the composition boundary.
+ * Falls back to a no-op log when any credential is absent so that
+ * non-production environments continue to work without them (env.ts requires
+ * them in production, so this path is dev/test only).
  *
  * JWT is cached for 50 minutes (Apple allows up to 60 min).
  * The HTTP/2 session is reused across calls for performance.
@@ -33,16 +33,14 @@ export class ApnsAdapter implements IPushNotificationPort {
   private jwtCache: JwtCache | null = null;
   private session: http2.ClientHttp2Session | null = null;
 
+  constructor(private readonly config: AppConfig) {}
+
   // -------------------------------------------------------------------------
   // Internal helpers
   // -------------------------------------------------------------------------
 
   private configured(): boolean {
-    return !!(
-      process.env["APNS_KEY_PATH"] &&
-      process.env["APNS_KEY_ID"] &&
-      process.env["APNS_TEAM_ID"]
-    );
+    return !!(this.config.APNS_KEY_PATH && this.config.APNS_KEY_ID && this.config.APNS_TEAM_ID);
   }
 
   private buildJwt(): string {
@@ -51,9 +49,9 @@ export class ApnsAdapter implements IPushNotificationPort {
       return this.jwtCache.token;
     }
 
-    const keyPath = process.env["APNS_KEY_PATH"]!;
-    const keyId = process.env["APNS_KEY_ID"]!;
-    const teamId = process.env["APNS_TEAM_ID"]!;
+    const keyPath = this.config.APNS_KEY_PATH!;
+    const keyId = this.config.APNS_KEY_ID!;
+    const teamId = this.config.APNS_TEAM_ID!;
 
     const pem = fs.readFileSync(keyPath, "utf8");
     const iat = Math.floor(now / 1_000);
@@ -89,23 +87,31 @@ export class ApnsAdapter implements IPushNotificationPort {
 
   /**
    * Send one push to a single device token.
-   * Always resolves - errors are logged but never propagated so that a bad
-   * token doesn't block the remaining batch.
+   * Always resolves - the caller inspects `ok`/`status`/`reason` instead of a
+   * thrown error, so a bad token doesn't block the remaining batch.
    */
   private sendOne(
     sess: http2.ClientHttp2Session,
     jwt: string,
     pushToken: string,
     passTypeIdentifier: string,
-  ): Promise<void> {
-    return new Promise<void>((resolve) => {
+  ): Promise<PushResult> {
+    return new Promise<PushResult>((resolve) => {
+      const expiration = String(Math.floor((Date.now() + PUSH_EXPIRATION_MS) / 1_000));
+      // Wallet pass-topic pushes are their own APNs category: topic = the pass
+      // type id (not an app bundle), payload = empty {} per the WalletPasses
+      // web-service doc. "alert" + priority 10 is the production-proven combo
+      // for pass topics; do NOT "fix" this to "background" - background pushes
+      // require content-available:1 (which pass pushes can't carry) and get
+      // power-throttled, which is exactly the delayed/dropped-update bug this
+      // replaced. Locked by the header test in __tests__/ApnsAdapter.test.ts.
       const req = sess.request({
         ":method": "POST",
         ":path": `/3/device/${pushToken}`,
         "apns-topic": passTypeIdentifier,
-        "apns-push-type": "background",
-        "apns-priority": "5",
-        "apns-expiration": "0",
+        "apns-push-type": "alert",
+        "apns-priority": "10",
+        "apns-expiration": expiration,
         authorization: `bearer ${jwt}`,
         "content-type": "application/json",
       });
@@ -126,15 +132,24 @@ export class ApnsAdapter implements IPushNotificationPort {
       });
 
       req.on("end", () => {
-        if (status === undefined || status < 200 || status >= 300) {
-          log({ source: "ApnsAdapter", event: "apns_error", pushToken, status, body });
+        const ok = status !== undefined && status >= 200 && status < 300;
+        let reason: string | undefined;
+        if (!ok && body) {
+          try {
+            reason = (JSON.parse(body) as { reason?: string }).reason;
+          } catch {
+            // Non-JSON body - leave reason undefined.
+          }
         }
-        resolve();
+        if (!ok) {
+          log({ source: "ApnsAdapter", event: "apns_error", pushToken, status, reason, body });
+        }
+        resolve({ pushToken, ok, status, reason });
       });
 
-      req.on("error", (err: unknown) => {
-        log({ source: "ApnsAdapter", event: "apns_request_error", pushToken, error: String(err) });
-        resolve();
+      req.on("error", (error: unknown) => {
+        log({ source: "ApnsAdapter", event: "apns_request_error", pushToken, error: String(error) });
+        resolve({ pushToken, ok: false, reason: String(error) });
       });
     });
   }
@@ -143,8 +158,8 @@ export class ApnsAdapter implements IPushNotificationPort {
   // IPushNotificationPort
   // -------------------------------------------------------------------------
 
-  async notify(pushTokens: string[], passTypeIdentifier: string): Promise<void> {
-    if (pushTokens.length === 0) return;
+  async notify(pushTokens: string[], passTypeIdentifier: string): Promise<PushResult[]> {
+    if (pushTokens.length === 0) return [];
 
     if (!this.configured()) {
       log({
@@ -153,13 +168,13 @@ export class ApnsAdapter implements IPushNotificationPort {
         passTypeIdentifier,
         tokenCount: pushTokens.length,
       });
-      return;
+      return pushTokens.map((pushToken) => ({ pushToken, ok: true }));
     }
 
     const jwt = this.buildJwt();
     const sess = this.getSession();
 
-    await Promise.all(
+    return Promise.all(
       pushTokens.map((token) => this.sendOne(sess, jwt, token, passTypeIdentifier)),
     );
   }

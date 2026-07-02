@@ -9,6 +9,19 @@ export interface FieldDefinition {
   readonly changeMessage?: string;
 }
 
+/**
+ * Builder round-trip state for a crop-sourced image: the ORIGINAL uploaded
+ * image ref plus the crop transform applied to bake it into the real
+ * logo/strip asset. Pure persistence so the builder can re-open the original
+ * image for re-editing; not validated, not read by publish or pass-issuance.
+ */
+export interface CropSource {
+  readonly ref: string;
+  readonly tx: number;
+  readonly ty: number;
+  readonly scale: number;
+}
+
 export interface BrandConfigParams {
   organizationName: string;
   logoText?: string;
@@ -36,6 +49,10 @@ export interface BrandConfigParams {
    * stamp widget) with zero server-side image dependency.
    */
   stampStripRefs?: string[];
+  /** Builder round-trip state for the strip/hero image (see CropSource). */
+  heroSource?: CropSource;
+  /** Builder round-trip state for the logo image (see CropSource). */
+  logoSource?: CropSource;
 }
 
 /**
@@ -61,6 +78,8 @@ export class BrandConfig {
   readonly stampedRef: string | undefined;
   readonly unstampedRef: string | undefined;
   readonly stampStripRefs: ReadonlyArray<string> | undefined;
+  readonly heroSource: CropSource | undefined;
+  readonly logoSource: CropSource | undefined;
 
   constructor(p: BrandConfigParams) {
     const name = (p.organizationName ?? "").trim();
@@ -87,6 +106,8 @@ export class BrandConfig {
     this.stampedRef = p.stampedRef;
     this.unstampedRef = p.unstampedRef;
     this.stampStripRefs = p.stampStripRefs ? Object.freeze([...p.stampStripRefs]) : undefined;
+    this.heroSource = p.heroSource;
+    this.logoSource = p.logoSource;
   }
 
   /**
@@ -138,6 +159,8 @@ export class BrandConfig {
       stampedRef: this.stampedRef,
       unstampedRef: this.unstampedRef,
       stampStripRefs: this.stampStripRefs ? [...this.stampStripRefs] : undefined,
+      heroSource: this.heroSource,
+      logoSource: this.logoSource,
     };
   }
 
@@ -160,6 +183,8 @@ export class BrandConfig {
       stampedRef: this.stampedRef ?? null,
       unstampedRef: this.unstampedRef ?? null,
       stampStripRefs: this.stampStripRefs ? [...this.stampStripRefs] : null,
+      heroSource: this.heroSource ?? null,
+      logoSource: this.logoSource ?? null,
     };
   }
 }

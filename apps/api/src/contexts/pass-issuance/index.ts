@@ -2,7 +2,6 @@ import type { ContextModule } from "../../http/app";
 import type { PassTemplateDto, FieldDefinition } from "./domain/ports";
 import { IssuePassHandler } from "./application/IssuePassHandler";
 import { GetPassPkpassHandler } from "./application/GetPassPkpassHandler";
-import { GenerateQrTokenHandler } from "./application/GenerateQrTokenHandler";
 import { UpdatePassFieldsHandler, applyEarnedPoints } from "./application/UpdatePassFieldsHandler";
 import { SqlPassRepository } from "./infrastructure/SqlPassRepository";
 import { SqlPassTemplateRepository } from "./infrastructure/SqlPassTemplateRepository";
@@ -31,6 +30,68 @@ function stampStripEntries(refs: unknown): Record<string, string> {
   return out;
 }
 
+/**
+ * Maps a published card-design brand's field arrays into Apple pass field
+ * snapshots. PassDocumentBuilder drops any field whose region is undefined,
+ * which is why the points field used to be missing from issued passes
+ * (brand.*Fields carry no region on their own). Pure - exported for unit
+ * testing without a DB.
+ */
+export function mapBrandFieldDefinitions(
+  brand: Record<string, unknown>,
+  loyaltyType: "points" | "stamps" | "cashback",
+  loyaltyGoal: number,
+): FieldDefinition[] {
+  const mapRegion = (arr: unknown, region: FieldDefinition["region"]): FieldDefinition[] =>
+    (Array.isArray(arr) ? arr : []).map((f) => {
+      const o = f as {
+        key: string;
+        label: string;
+        valueTemplate?: string;
+        changeMessage?: string;
+      };
+      // Carry the merchant's typed value so header/secondary/back fields render
+      // their VALUE on the pass (not just the label). Carry changeMessage too so
+      // merchant-authored lockscreen update banners survive the snapshot. Apple
+      // requires the %@ escape in changeMessage; rows persisted before the API
+      // enforced that are normalised by appending it rather than dropped.
+      const changeMessage = o.changeMessage
+        ? o.changeMessage.includes("%@")
+          ? o.changeMessage
+          : `${o.changeMessage} %@`
+        : undefined;
+      return {
+        key: o.key,
+        label: o.label,
+        region,
+        value: o.valueTemplate,
+        ...(changeMessage ? { changeMessage } : {}),
+      };
+    });
+  // The loyalty counter (key "points") is formatted "X / N" by PassDocumentBuilder
+  // wherever it sits: primary (points/cashback) or secondary (stamps — the count
+  // shows below the strip). Tag it by KEY so the formatting follows the field.
+  // Default its changeMessage so the lockscreen banner fires even when the
+  // merchant never typed one for the counter field.
+  const tagLoyalty = (d: FieldDefinition): FieldDefinition => {
+    if (d.key !== "points") return d;
+    return {
+      ...d,
+      loyaltyType,
+      loyaltyGoal,
+      changeMessage: d.changeMessage ?? `${d.label}: %@`,
+    };
+  };
+
+  return [
+    ...mapRegion(brand.headerFields, "header"),
+    ...mapRegion(brand.primaryFields, "primary").map(tagLoyalty),
+    ...mapRegion(brand.secondaryFields, "secondary").map(tagLoyalty),
+    ...mapRegion(brand.auxiliaryFields, "auxiliary"),
+    ...mapRegion(brand.backFields, "back"),
+  ];
+}
+
 const DEPRECATION_VALUES = [
   { key: "estado", label: "Estado", value: "Tarjeta archivada" },
   {
@@ -46,8 +107,8 @@ const DEPRECATION_VALUES = [
  *
  * Responsibilities:
  *  - Issue signed Apple Wallet passes (.pkpass) for members.
- *  - Cache and serve pkpass buffers.
- *  - Generate QR tokens for scanning (single-use nonces stored in Redis).
+ *  - Cache and serve pkpass buffers; self-heal a cache miss for other contexts.
+ *  - Mint self-service enrollment + download links (HMAC tokens, no Redis nonce).
  *  - React to cross-context events: CardTemplatePublished, PointsEarned.
  */
 export const registerPassIssuance: ContextModule = async (app, deps) => {
@@ -67,7 +128,6 @@ export const registerPassIssuance: ContextModule = async (app, deps) => {
     deps.bus,
   );
   const getPassPkpass = new GetPassPkpassHandler(passRepo, templateRepo, signer, bufferCache);
-  const generateQrToken = new GenerateQrTokenHandler(passRepo, deps.redis, deps.config);
   const updatePassFields = new UpdatePassFieldsHandler(passRepo, deps.bus, deps.clock);
   const createEnrollLink = new CreateEnrollLinkHandler(templateRepo, deps.config, deps.clock);
   const publicEnroll = new PublicEnrollHandler(issuePass, deps.config, deps.clock);
@@ -106,22 +166,6 @@ export const registerPassIssuance: ContextModule = async (app, deps) => {
       (rewardRule.cardType as "points" | "stamps" | "cashback" | undefined) ?? "points";
     const loyaltyGoal = Number(rewardRule.rewardThreshold) || 10;
 
-    // Snapshot each brand field WITH its Apple pass region. PassDocumentBuilder
-    // drops any field whose region is undefined, which is why the points field
-    // was missing from issued passes (brand.*Fields carry no region).
-    const mapRegion = (arr: unknown, region: FieldDefinition["region"]): FieldDefinition[] =>
-      (Array.isArray(arr) ? arr : []).map((f) => {
-        const o = f as { key: string; label: string; valueTemplate?: string };
-        // Carry the merchant's typed value so header/secondary/back fields render
-        // their VALUE on the pass (not just the label).
-        return { key: o.key, label: o.label, region, value: o.valueTemplate };
-      });
-    // The loyalty counter (key "points") is formatted "X / N" by PassDocumentBuilder
-    // wherever it sits: primary (points/cashback) or secondary (stamps — the count
-    // shows below the strip). Tag it by KEY so the formatting follows the field.
-    const tagLoyalty = (d: FieldDefinition): FieldDefinition =>
-      d.key === "points" ? { ...d, loyaltyType, loyaltyGoal } : d;
-
     const dto: PassTemplateDto = {
       id: templateId,
       tenantId,
@@ -137,12 +181,7 @@ export const registerPassIssuance: ContextModule = async (app, deps) => {
       // trailing slash yields ".../wallet//v1/..." (double slash) which 404s and
       // breaks device registration -> no APNs push -> the card never updates.
       webServiceUrl: deps.config.WALLET_WEB_SERVICE_URL.replace(/\/+$/, ""),
-      fieldDefinitions: [
-        ...mapRegion(brand.headerFields, "header"),
-        ...mapRegion(brand.primaryFields, "primary").map(tagLoyalty),
-        ...mapRegion(brand.secondaryFields, "secondary").map(tagLoyalty),
-        ...mapRegion(brand.auxiliaryFields, "auxiliary"),
-      ],
+      fieldDefinitions: mapBrandFieldDefinitions(brand, loyaltyType, loyaltyGoal),
       imageAssetRefs: {
         icon: (brand.iconRef as string) ?? "",
         logo: (brand.logoRef as string) ?? "",
@@ -296,11 +335,34 @@ export const registerPassIssuance: ContextModule = async (app, deps) => {
     await passRepo.purgeByTenant(String((event.payload as Record<string, unknown>).tenantId));
   });
 
+  // ── Cross-context self-heal capability ──────────────────────────────────
+  // Registered for Delivery: on a pkpass cache miss it can call this instead of
+  // 503ing forever. Only the serial is known there (it's what the device sends),
+  // so this resolves id + tenant with a direct cross-context read (mirrors the
+  // CardTemplatePublished lookup above) before re-signing through the handler.
+  deps.services.ensurePkpassCached = async (serialNumber) => {
+    try {
+      const row = await deps.pool.query<{ id: string; tenant_id: string }>(
+        `SELECT id, tenant_id FROM passes WHERE serial_number = $1 LIMIT 1`,
+        [serialNumber],
+      );
+      const match = row.rows[0];
+      if (!match) return null;
+      // Never pass ifModifiedSince here: this path exists precisely because the
+      // cache is empty, so a 304 short-circuit would return no buffer to cache.
+      const signed = await getPassPkpass.execute({ passId: match.id, tenantId: match.tenant_id });
+      if (!signed.ok || signed.value.status !== 200) return null;
+      return signed.value.buffer;
+    } catch (e) {
+      app.log.error({ err: e, serialNumber }, "ensurePkpassCached failed");
+      return null;
+    }
+  };
+
   // ── Routes ───────────────────────────────────────────────────────────────
   registerPassRoutes(app, deps, {
     issuePass,
     getPassPkpass,
-    generateQrToken,
     updatePassFields,
     createEnrollLink,
     publicEnroll,

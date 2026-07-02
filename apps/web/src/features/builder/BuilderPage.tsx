@@ -6,11 +6,11 @@ import { useT } from "../../lib/i18n";
 import { useTemplates, useDeleteTemplate, type CardTemplateDTO } from "./useTemplates";
 import { DeleteTemplateModal } from "./DeleteTemplateModal";
 import { CardEditor } from "./CardEditor";
-import { GoogleWalletEditor } from "./GoogleWalletEditor";
 import { IssueCardPanel } from "../wallet/IssueCardPanel";
 import { CardCanvas } from "./CardCanvas";
 import { GoogleCardCanvas } from "./GoogleCardCanvas";
 import { docFromTemplate } from "./cardDoc";
+import { DeliveryStatusPanel } from "./DeliveryStatusPanel";
 
 type EditTarget = CardTemplateDTO | "new" | null;
 
@@ -60,7 +60,7 @@ const builderListCss = `
   max-height:100%;
   min-height:0;
   display:grid;
-  grid-template-rows:auto minmax(0, 1fr) auto;
+  grid-template-rows:auto minmax(0, 1fr) auto auto;
   overflow:hidden;
 }
 .lvt-card-slide-head { display:flex; align-items:center; justify-content:space-between; gap:.55rem; min-height:2.3rem; }
@@ -154,6 +154,24 @@ const builderListCss = `
 .lvt-card-info-item { min-width:0; padding:.12rem .18rem 0; }
 .lvt-card-info-item strong { display:block; font-size:.62rem; line-height:1.05; color:var(--muted); font-weight:700; margin-bottom:.12rem; }
 .lvt-card-info-item span { display:block; font-size:.75rem; line-height:1.08; color:var(--text); font-weight:750; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.lvt-delivery-status { display:flex; flex-direction:column; gap:.14rem; padding:.32rem .18rem 0; flex-shrink:0; }
+.lvt-delivery-status-line { font-size:.72rem; line-height:1.15; color:var(--text); font-weight:650; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.lvt-delivery-status-sub { font-size:.64rem; line-height:1.1; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.lvt-delivery-status-skel {
+  display:block;
+  width:min(220px, 70%);
+  height:.6rem;
+  border-radius:999px;
+  background:linear-gradient(90deg, rgba(0,0,0,.06), rgba(0,0,0,.12), rgba(0,0,0,.06));
+  background-size:200% 100%;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .lvt-delivery-status-skel { animation:lvt-delivery-shimmer 1.4s ease-in-out infinite; }
+}
+@keyframes lvt-delivery-shimmer {
+  0% { background-position:200% 0; }
+  100% { background-position:-200% 0; }
+}
 .lvt-card-stage .lvt-issue-panel { width:100%; max-width:300px; }
 .lvt-card-stage .lvt-issue-panel .btn { min-height:34px; padding:.38rem .58rem; font-size:.78rem; }
 .lvt-add-card {
@@ -256,13 +274,6 @@ export function BuilderPage() {
     );
   }
   if (editing && typeof editing !== "string") {
-    if (editing.walletPlatform === "google") {
-      return (
-        <AppShell>
-          <GoogleWalletEditor initial={editing} onClose={() => setEditing(null)} />
-        </AppShell>
-      );
-    }
     return (
       <AppShell>
         <CardEditor initial={editing} onClose={() => setEditing(null)} />
@@ -399,6 +410,8 @@ export function BuilderPage() {
                     <span>{new Date(card.updatedAt).toLocaleDateString()}</span>
                   </div>
                 </div>
+
+                {card.status === "published" && <DeliveryStatusPanel templateId={card.id} />}
               </GlassCard>
             ))}
           </div>

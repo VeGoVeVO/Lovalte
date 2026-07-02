@@ -11,6 +11,10 @@ import { createHmac, timingSafeEqual } from "node:crypto";
  */
 export type TokenType = "enroll" | "download";
 
+/** Download links are handed to a customer right after enrollment - 30 days
+ *  covers "I'll add it to Wallet later" without leaving the link valid forever. */
+export const DOWNLOAD_TOKEN_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+
 export interface TokenClaims {
   typ: TokenType;
   [k: string]: string;
@@ -23,10 +27,18 @@ export function signToken(secret: string, claims: TokenClaims, nowSeconds: numbe
   return `${body}.${sig}`;
 }
 
+/**
+ * Verifies a token's signature and type. `maxAgeMs`, when given, additionally
+ * rejects a token whose `iat` is older than that window - use it for download
+ * tokens (short-lived, tied to a single checkout). Enroll QR tokens are printed
+ * collateral (posters, table tents) and must keep working indefinitely, so their
+ * call sites omit `maxAgeMs`.
+ */
 export function verifyToken(
   secret: string,
   token: string,
   expectedType: TokenType,
+  maxAgeMs?: number,
 ): Record<string, string> | null {
   const dot = token.indexOf(".");
   if (dot <= 0) return null;
@@ -44,6 +56,10 @@ export function verifyToken(
       string
     >;
     if (claims.typ !== expectedType) return null;
+    if (maxAgeMs !== undefined) {
+      const iat = Number(claims.iat);
+      if (!Number.isFinite(iat) || Date.now() - iat * 1000 > maxAgeMs) return null;
+    }
     return claims;
   } catch {
     return null;

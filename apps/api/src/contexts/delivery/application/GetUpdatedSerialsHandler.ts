@@ -13,32 +13,36 @@ export interface GetUpdatedSerialsQuery {
 
 export interface UpdatedSerialsDTO {
   serialNumbers: string[];
-  /** Epoch string (seconds). Device echoes this as `passesUpdatedSince` on the next poll. */
+  /** Millisecond epoch string. Device echoes this as `passesUpdatedSince` on the next poll. */
   lastUpdated: string;
 }
 
+/** A value below this is treated as legacy seconds (pre-millisecond-precision tags) and upscaled. */
+const LEGACY_SECONDS_CEILING = 1e12;
+
 /**
  * Apple PassKit web-service endpoint 9.2 (no auth required per spec).
- * Returns the serial numbers of passes updated after the supplied epoch tag.
+ * Returns the serial numbers of passes updated after the supplied tag.
+ * The tag is a millisecond epoch (accepts legacy second-precision tags for
+ * backward compatibility with devices that cached an older tag format).
  * Returns null (→ 204 No Content) when nothing has changed.
  */
 export class GetUpdatedSerialsHandler {
   constructor(private readonly registrations: IRegistrationRepository) {}
 
   async execute(q: GetUpdatedSerialsQuery): Promise<Result<UpdatedSerialsDTO | null, never>> {
-    let since: Date | undefined;
+    let sinceMs: number | undefined;
     if (q.passesUpdatedSince) {
-      const epoch = Number(q.passesUpdatedSince);
-      since = Number.isFinite(epoch) ? new Date(epoch * 1000) : new Date(q.passesUpdatedSince);
-      if (Number.isNaN(since.getTime())) {
-        since = undefined;
+      const n = Number(q.passesUpdatedSince);
+      if (Number.isFinite(n)) {
+        sinceMs = n < LEGACY_SECONDS_CEILING ? n * 1000 : n;
       }
     }
 
     const rows = await this.registrations.findUpdatedSince(
       q.deviceLibraryIdentifier,
       q.passTypeIdentifier,
-      since,
+      sinceMs,
     );
 
     if (rows.length === 0) return ok(null);
@@ -47,7 +51,9 @@ export class GetUpdatedSerialsHandler {
       (max, r) => (r.updatedAt > max ? r.updatedAt : max),
       rows[0].updatedAt,
     );
-    const lastUpdated = String(Math.floor(maxUpdatedAt.getTime() / 1000));
+    // Millisecond precision + the repository's strict `>` comparison guarantee
+    // an unchanged pass is never returned again for this exact tag.
+    const lastUpdated = String(maxUpdatedAt.getTime());
 
     return ok({
       serialNumbers: rows.map((r) => r.serialNumber),

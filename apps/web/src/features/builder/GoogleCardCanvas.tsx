@@ -115,11 +115,14 @@ const FONT = "Google Sans, Roboto, -apple-system, system-ui, sans-serif";
  * against the live Wallet render + Google's generic-pass docs:
  *   1. logo (circular) + cardTitle (small)   ← brand label, top row
  *   2. header                                 ← large bold pass title
- *   3. barcode (QR_CODE)                      ← large, centered
- *   4. heroImage                              ← full-width block, BOTTOM (1032×812, ~1.27:1)
- * textModulesData are NOT shown on the front (Details view only, unless a
- * cardTemplateOverride is set — which our backend does not), so they are omitted
- * here to match what users actually see. Natural width 340, scaled to `width`.
+ *   3. textModules (label/value rows)         ← editable rows, below the header
+ *   4. barcode (QR_CODE)                      ← large, centered
+ *   5. heroImage                              ← full-width block, BOTTOM (1032×812, ~1.27:1)
+ * textModulesData render in the Details view on-device (not the front), but we
+ * surface them here as an editable row list so merchants have somewhere to tune
+ * them — ponytail: front-preview fidelity ceiling, upgrade path is a toggle once
+ * cardTemplateOverride front-row placement is supported. Natural width 340,
+ * scaled to `width`.
  */
 export function GoogleCardCanvas({
   doc,
@@ -298,6 +301,38 @@ export function GoogleCardCanvas({
           </span>
         )}
       </div>
+
+      {/* ── Text modules: editable label/value rows, below the header ────────── */}
+      {(editable || g.textModules.length > 0) && (
+        <Region
+          kind="textModules"
+          label={t("Text fields")}
+          style={{ display: "flex", flexDirection: "column", gap: 8, padding: "0 14px 16px" }}
+        >
+          {g.textModules.length > 0 ? (
+            g.textModules.map((m) => (
+              <div key={m.id} style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                <span
+                  style={{
+                    fontSize: 9.5,
+                    fontWeight: 600,
+                    opacity: 0.65,
+                    letterSpacing: "0.06em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  {m.header}
+                </span>
+                <span style={{ fontSize: 12.5, fontWeight: 600, lineHeight: 1.25 }}>{m.body}</span>
+              </div>
+            ))
+          ) : (
+            <span style={{ fontSize: 10, opacity: 0.55, letterSpacing: "0.04em" }}>
+              {t("Text fields")}
+            </span>
+          )}
+        </Region>
+      )}
 
       {/* ── Barcode: large centered QR (the passId) ─────────────────────────── */}
       <div style={{ display: "flex", justifyContent: "center", padding: "12px 0 24px" }}>

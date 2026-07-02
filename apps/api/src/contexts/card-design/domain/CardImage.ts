@@ -64,6 +64,27 @@ function magicMatches(contentType: string, b: Buffer): boolean {
   }
 }
 
+/**
+ * Validate an untrusted upload BEFORE normalization: MIME allowlist, size cap,
+ * and magic-byte match against the ORIGINAL declared content type. `create`
+ * calls this too, so both the pre-normalization input gate (StoreImageHandler)
+ * and the post-normalization stored artifact share one invariant.
+ */
+export function assertAllowedImageInput(contentType: string, bytes: Buffer): void {
+  if (!(ALLOWED_IMAGE_TYPES as readonly string[]).includes(contentType)) {
+    throw new DomainError(`Unsupported image type: ${contentType}`, "VALIDATION");
+  }
+  if (!Buffer.isBuffer(bytes) || bytes.length === 0) {
+    throw new DomainError("Image is empty", "VALIDATION");
+  }
+  if (bytes.length > MAX_IMAGE_BYTES) {
+    throw new DomainError(`Image exceeds ${MAX_IMAGE_BYTES} bytes`, "VALIDATION");
+  }
+  if (!magicMatches(contentType, bytes)) {
+    throw new DomainError("Image content does not match its declared type", "VALIDATION");
+  }
+}
+
 export interface CardImageProps {
   tenantId: string;
   kind: ImageKind;
@@ -98,18 +119,7 @@ export class CardImage extends Entity<CardImageId> {
   ): CardImage {
     if (!tenantId) throw new DomainError("tenantId is required", "VALIDATION");
     if (!KINDS.has(kind)) throw new DomainError(`Unsupported image kind: ${kind}`, "VALIDATION");
-    if (!(ALLOWED_IMAGE_TYPES as readonly string[]).includes(contentType)) {
-      throw new DomainError(`Unsupported image type: ${contentType}`, "VALIDATION");
-    }
-    if (!Buffer.isBuffer(bytes) || bytes.length === 0) {
-      throw new DomainError("Image is empty", "VALIDATION");
-    }
-    if (bytes.length > MAX_IMAGE_BYTES) {
-      throw new DomainError(`Image exceeds ${MAX_IMAGE_BYTES} bytes`, "VALIDATION");
-    }
-    if (!magicMatches(contentType, bytes)) {
-      throw new DomainError("Image content does not match its declared type", "VALIDATION");
-    }
+    assertAllowedImageInput(contentType, bytes);
     return new CardImage(CardImageId.generate(), {
       tenantId,
       kind,

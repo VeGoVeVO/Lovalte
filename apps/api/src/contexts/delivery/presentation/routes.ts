@@ -1,15 +1,18 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import type { Deps } from "../../../shared/deps";
+import { requireAuth, getAuth } from "../../../http/auth";
 import { parse } from "../../../http/validation";
 import type { RegisterDeviceHandler } from "../application/RegisterDeviceHandler";
 import type { UnregisterDeviceHandler } from "../application/UnregisterDeviceHandler";
 import type { GetUpdatedSerialsHandler } from "../application/GetUpdatedSerialsHandler";
 import type { GetLatestPassHandler } from "../application/GetLatestPassHandler";
 import type { LogDeviceDiagnosticsHandler } from "../application/LogDeviceDiagnosticsHandler";
+import type { GetDeliveryStatusHandler } from "../application/GetDeliveryStatusHandler";
 
 const registerBodySchema = z.object({ pushToken: z.string().min(1) });
 const logBodySchema = z.object({ logs: z.array(z.string()) });
+const templateIdParamSchema = z.object({ templateId: z.string().uuid() });
 
 export interface DeliveryHandlers {
   registerDevice: RegisterDeviceHandler;
@@ -17,6 +20,7 @@ export interface DeliveryHandlers {
   getUpdatedSerials: GetUpdatedSerialsHandler;
   getLatestPass: GetLatestPassHandler;
   logDiagnostics: LogDeviceDiagnosticsHandler;
+  getDeliveryStatus: GetDeliveryStatusHandler;
 }
 
 /** Extract the raw token from `Authorization: ApplePass <token>`. */
@@ -29,9 +33,11 @@ function extractApplePassToken(header: string | undefined): string | null {
 /** Register all 5 Apple PassKit web-service routes under /wallet/v1. */
 export function registerDeliveryRoutes(
   app: FastifyInstance,
-  _deps: Deps,
+  deps: Deps,
   handlers: DeliveryHandlers,
 ): void {
+  const ownerManager = requireAuth(deps.config.SESSION_SECRET, ["owner", "manager"]);
+
   // 9.1  POST /wallet/v1/devices/:deviceLibraryIdentifier/registrations/:passTypeId/:serial
   app.post<{
     Params: {
@@ -138,4 +144,21 @@ export function registerDeliveryRoutes(
     await handlers.logDiagnostics.execute({ logs: body.logs });
     return reply.status(200).send();
   });
+
+  /**
+   * GET /api/v1/card-templates/:templateId/delivery-status - merchant-facing
+   * verification that Apple Wallet delivery is actually working for a
+   * template. Same tenant-session auth guard as card-design's routes.
+   */
+  app.get(
+    "/api/v1/card-templates/:templateId/delivery-status",
+    { preHandler: ownerManager },
+    async (req, reply) => {
+      const auth = getAuth(req);
+      const { templateId } = parse(templateIdParamSchema, req.params);
+      const r = await handlers.getDeliveryStatus.execute({ templateId, tenantId: auth.tenantId });
+      if (!r.ok) throw r.error;
+      return reply.status(200).send(r.value);
+    },
+  );
 }

@@ -19,7 +19,10 @@ export class SyncWalletPassHandler {
     const pass = await this.passRepo.findPassWithTemplate(cmd.passId, cmd.tenantId);
     if (!pass?.googleWalletObjectId) return;
 
-    const primary = pass.fieldValues[0];
+    // Prefer the loyalty counter (key "points") for the single textModule -
+    // it's what the Apple pass shows too. Fall back to the first field for
+    // templates that don't define one (fieldValues[0] was the old blanket rule).
+    const primary = pass.fieldValues.find((f) => f.key === "points") ?? pass.fieldValues[0];
     // Re-push the logo/hero too: createObject only runs on the FIRST save, so a
     // logo/hero swap on re-publish would otherwise never reach an existing object.
     await this.gwClient.patchObject(pass.googleWalletObjectId, {

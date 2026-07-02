@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { IssuePassHandler } from "../IssuePassHandler";
-import { GenerateQrTokenHandler } from "../GenerateQrTokenHandler";
 import { UpdatePassFieldsHandler } from "../UpdatePassFieldsHandler";
 import { Pass } from "../../domain/Pass";
 import { SerialNumber } from "../../domain/SerialNumber";
@@ -14,7 +13,6 @@ import type {
   PassTemplateDto,
 } from "../../domain/ports";
 import type { DomainEventBus, DomainEvent, Clock } from "../../../../kernel";
-import type { AppConfig } from "../../../../config/env";
 
 // ── Shared constants ────────────────────────────────────────────────────────
 
@@ -22,8 +20,6 @@ const TENANT_ID = "tenant-1";
 const MEMBER_ID = "member-1";
 const PASS_TYPE_ID = "template-1";
 const FIXED_NOW = new Date("2026-06-27T12:00:00.000Z");
-
-const FAKE_CONFIG = { QR_TOKEN_SECRET: "super-secret-at-least-16" } as AppConfig;
 
 const TEMPLATE: PassTemplateDto = {
   id: PASS_TYPE_ID,
@@ -85,10 +81,6 @@ function makeCache(): IPassBufferCache {
     get: vi.fn().mockResolvedValue(null),
     put: vi.fn().mockResolvedValue(undefined),
   };
-}
-
-function makeRedis() {
-  return { set: vi.fn().mockResolvedValue("OK") };
 }
 
 function makeBus(): DomainEventBus & { captured: DomainEvent[] } {
@@ -252,53 +244,6 @@ describe("IssuePassHandler", () => {
 
     // Pass must NOT be persisted if signing fails
     expect(passes.save).not.toHaveBeenCalled();
-  });
-});
-
-// ── GenerateQrTokenHandler ──────────────────────────────────────────────────
-
-describe("GenerateQrTokenHandler", () => {
-  it("returns a compact HMAC token and stores nonce in Redis", async () => {
-    const pass = makePass();
-    const redis = makeRedis();
-    const repo = makePassRepo({ findById: vi.fn().mockResolvedValue(pass) });
-
-    const h = new GenerateQrTokenHandler(repo, redis as never, FAKE_CONFIG);
-    const result = await h.execute({ passId: pass.id.value, tenantId: TENANT_ID });
-
-    expect(result.ok).toBe(true);
-    if (!result.ok) return;
-    // Token has the form base64url.base64url
-    expect(result.value.token).toMatch(/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/);
-    expect(result.value.expiresAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
-    expect(redis.set).toHaveBeenCalledOnce();
-    const [key] = (redis.set as ReturnType<typeof vi.fn>).mock.calls[0] as string[];
-    expect(key).toMatch(/^qr:nonce:/);
-  });
-
-  it("respects custom ttlSeconds in Redis EX argument", async () => {
-    const pass = makePass();
-    const redis = makeRedis();
-    const repo = makePassRepo({ findById: vi.fn().mockResolvedValue(pass) });
-
-    const h = new GenerateQrTokenHandler(repo, redis as never, FAKE_CONFIG);
-    await h.execute({ passId: pass.id.value, tenantId: TENANT_ID, ttlSeconds: 60 });
-
-    const call = (redis.set as ReturnType<typeof vi.fn>).mock.calls[0] as unknown[];
-    expect(call[3]).toBe(60); // EX value
-  });
-
-  it("returns NotFoundError when pass does not exist", async () => {
-    const redis = makeRedis();
-    const repo = makePassRepo({ findById: vi.fn().mockResolvedValue(null) });
-
-    const h = new GenerateQrTokenHandler(repo, redis as never, FAKE_CONFIG);
-    const result = await h.execute({ passId: "no-such-pass", tenantId: TENANT_ID });
-
-    expect(result.ok).toBe(false);
-    if (result.ok) return;
-    expect(result.error).toBeInstanceOf(NotFoundError);
-    expect(redis.set).not.toHaveBeenCalled();
   });
 });
 

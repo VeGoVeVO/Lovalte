@@ -1,6 +1,6 @@
 import type { Pool, PoolClient } from "pg";
 import { withTransaction } from "../../../db/pool";
-import { BrandConfig, type FieldDefinition } from "../domain/BrandConfig";
+import { BrandConfig, type FieldDefinition, type CropSource } from "../domain/BrandConfig";
 import { CardTemplate, CardTemplateId, type CardTemplateProps } from "../domain/CardTemplate";
 import { RgbColor } from "../domain/RgbColor";
 import { RewardRule, type LoyaltyType } from "../domain/RewardRule";
@@ -170,6 +170,8 @@ export class CardTemplateRepository implements ICardTemplateRepository {
       stampedRef: (b.stampedRef as string | null) ?? undefined,
       unstampedRef: (b.unstampedRef as string | null) ?? undefined,
       stampStripRefs: Array.isArray(b.stampStripRefs) ? (b.stampStripRefs as string[]) : undefined,
+      heroSource: (b.heroSource as CropSource | null) ?? undefined,
+      logoSource: (b.logoSource as CropSource | null) ?? undefined,
     });
 
     const rule = new RewardRule(

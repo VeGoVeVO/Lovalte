@@ -41,9 +41,17 @@ export class GetPassPkpassHandler {
     const pass = await this.passes.findById(cmd.passId, cmd.tenantId);
     if (!pass) return err(new NotFoundError("Pass not found"));
 
-    // Conditional GET: return 304 if not modified
-    if (cmd.ifModifiedSince && pass.lastUpdated <= cmd.ifModifiedSince) {
-      return ok({ status: 304 });
+    // Conditional GET: return 304 if not modified. If-Modified-Since has SECOND
+    // precision (it's an HTTP-date), while lastUpdated is millisecond-precise, so
+    // compare with both sides floored to whole seconds - otherwise a device
+    // echoing our own Last-Modified back would never satisfy `<=` and would poll
+    // forever without ever getting a 304.
+    if (cmd.ifModifiedSince) {
+      const flooredUpdated = Math.floor(pass.lastUpdated.getTime() / 1000);
+      const flooredSince = Math.floor(cmd.ifModifiedSince.getTime() / 1000);
+      if (flooredUpdated <= flooredSince) {
+        return ok({ status: 304 });
+      }
     }
 
     const lastModified = pass.lastUpdated.toUTCString();

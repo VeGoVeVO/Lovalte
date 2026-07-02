@@ -8,7 +8,7 @@ import { useT } from "../../lib/i18n";
 import type { CardDoc, Slot, FieldList } from "./cardDoc";
 import type { PopAnchor } from "./CardPopover";
 import { hexToRgb } from "./cardDoc";
-import { stampLayout, STRIP_RATIO, GRID_LEFT } from "./stampStrip";
+import { stampLayout, STRIP_RATIO, STRIP_RATIO_PRIMARY, GRID_LEFT } from "./stampStrip";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif";
 
@@ -643,45 +643,53 @@ export function CardCanvas({
           </Region>
         </div>
       ) : (
-        <ImgSlot
-          slot="hero"
-          src={doc.hero?.src ?? null}
-          tx={doc.hero?.tx ?? 0}
-          ty={doc.hero?.ty ?? 0}
-          scale={doc.hero?.scale ?? 1}
-          art="linear-gradient(120deg,#2a2d3a,#11131b)"
-          height={width * 0.42}
-          active={selected === "hero"}
-          label={t("Hero photo")}
-          editable={editable}
-          onSelect={(el) => onSelect("hero", el)}
-          dispatch={dispatch}
-        />
-      )}
-
-      {/* Primary value (non-stamps) */}
-      {doc.type !== "stamps" && (
-        <div style={{ margin: "10px 16px 0" }}>
-          <Editable
-            value={doc.primaryLabel}
-            ph="POINTS"
-            ariaLabel={t("Label")}
-            onInput={(v) => dispatch("text.primaryLabel", { value: v })}
-            {...colorProps("label")}
-            maxLen={16}
-            style={{ ...labelStyle, display: "block" }}
+        /* Wallet draws primaryFields ON the strip (storeCard), and a strip with
+           a primary field is the shorter 123 pt band — mirror both exactly so
+           the preview equals the installed pass, photo/text clashes included. */
+        <div style={{ position: "relative" }}>
+          <ImgSlot
+            slot="hero"
+            src={doc.hero?.src ?? null}
+            tx={doc.hero?.tx ?? 0}
+            ty={doc.hero?.ty ?? 0}
+            scale={doc.hero?.scale ?? 1}
+            art="linear-gradient(120deg,#2a2d3a,#11131b)"
+            height={width * STRIP_RATIO_PRIMARY}
+            active={selected === "hero"}
+            label={t("Hero photo")}
+            editable={editable}
+            onSelect={(el) => onSelect("hero", el)}
+            dispatch={dispatch}
           />
           <div
             style={{
-              fontSize: 30,
-              fontWeight: 800,
-              lineHeight: 1,
-              marginTop: 3,
-              letterSpacing: "-0.02em",
-              fontVariantNumeric: "tabular-nums",
+              position: "absolute",
+              left: 16,
+              bottom: 8,
+              pointerEvents: "none", // let drags fall through to the ImgSlot
             }}
           >
-            {sampleValue(doc)}
+            <Editable
+              value={doc.primaryLabel}
+              ph="POINTS"
+              ariaLabel={t("Label")}
+              onInput={(v) => dispatch("text.primaryLabel", { value: v })}
+              {...colorProps("label")}
+              maxLen={16}
+              style={{ ...labelStyle, display: "block", pointerEvents: "auto" }}
+            />
+            <div
+              style={{
+                fontSize: 28,
+                fontWeight: 800,
+                lineHeight: 1,
+                marginTop: 2,
+                letterSpacing: "-0.02em",
+                fontVariantNumeric: "tabular-nums",
+              }}
+            >
+              {sampleValue(doc)}
+            </div>
           </div>
         </div>
       )}

@@ -56,7 +56,7 @@ suite("account deletion erases all tenant data", () => {
     const config = loadConfig();
     pool = new Pool({ connectionString: config.DATABASE_URL });
     redis = new Redis(config.REDIS_URL, { maxRetriesPerRequest: null });
-    const deps: Deps = { pool, redis, bus: new InMemoryEventBus(), clock: systemClock, config };
+    const deps: Deps = { pool, redis, bus: new InMemoryEventBus(), clock: systemClock, config, services: {} };
     app = await buildApp(deps, contextModules);
   });
 

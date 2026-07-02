@@ -29,6 +29,8 @@ export class PublicEnrollHandler {
   ) {}
 
   async execute(input: PublicEnrollInput): Promise<Result<PublicEnrollDto>> {
+    // No maxAgeMs: enroll QR tokens go on printed collateral (posters, table
+    // tents) and must keep scanning for as long as that collateral is up.
     const claims = verifyToken(this.config.QR_TOKEN_SECRET, input.token, "enroll");
     if (!claims || !claims.templateId || !claims.tenantId) {
       return err(new UnauthorizedError("Invalid or expired enrollment link"));

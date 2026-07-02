@@ -31,8 +31,15 @@ import { CardPopover, type PopAnchor } from "./CardPopover";
 import { AssetField } from "./AssetField";
 import { IconPicker } from "./IconPicker";
 import { useUploadImage, fileToDataUrl, validateImageFile } from "./useImages";
-import { renderStampFrames } from "./stampStrip";
+import {
+  renderStampFrames,
+  bakeCropToPng,
+  STRIP_W,
+  STRIP_H,
+  STRIP_H_PRIMARY,
+} from "./stampStrip";
 import { svgToPngDataUrl } from "./lucideRaster";
+import { apiAssetUrl } from "../../lib/api";
 
 type Step = "type" | "templates" | "editor";
 
@@ -345,7 +352,24 @@ export function CardEditor({ initial, onClose }: Props) {
    * out of the filled, earned disc) colours; uploaded art overrides it.
    * ponytail: regenerates every frame on publish (goal ≤ 12 → ≤ 13 small PNGs).
    */
-  const buildStampFrames = async (): Promise<string[] | undefined> => {
+  /**
+   * Bake the hero's pan/zoom into a strip-sized PNG so the registered strip
+   * equals the preview. Stamps use the taller no-primary band (375x144 pt),
+   * points/cashback the shorter with-primary one (375x123 pt) - Wallet picks
+   * the band by primaryFields presence. null = no hero or bake failed
+   * (cross-origin taint); callers fall back to the original ref.
+   */
+  const bakeHeroDataUrl = async (): Promise<string | null> => {
+    if (!doc?.hero?.src) return null;
+    const h = doc.type === "stamps" ? STRIP_H : STRIP_H_PRIMARY;
+    try {
+      return await bakeCropToPng(apiAssetUrl(doc.hero.src), STRIP_W, h, doc.hero);
+    } catch {
+      return null;
+    }
+  };
+
+  const buildStampFrames = async (bakedHero: string | null): Promise<string[] | undefined> => {
     if (!doc || doc.type !== "stamps") return undefined;
     const svg = stampIconRef.current?.querySelector("svg");
     const [stampIconFgPng, stampIconBgPng] = svg
@@ -358,7 +382,8 @@ export function CardEditor({ initial, onClose }: Props) {
       goal: doc.stampsGoal,
       bg: doc.theme.bg,
       fg: doc.theme.fg,
-      bgRef: doc.hero?.src || null,
+      // The baked hero carries the merchant's pan/zoom; fall back to the raw art.
+      bgRef: bakedHero ?? (doc.hero?.src ? apiAssetUrl(doc.hero.src) : null),
       stampIconFgPng,
       stampIconBgPng,
       stampedRef: doc.stampedRef || null,
@@ -371,7 +396,10 @@ export function CardEditor({ initial, onClose }: Props) {
     );
   };
 
-  const save = async (stampStripRefs?: string[]): Promise<string | null> => {
+  const save = async (
+    stampStripRefs?: string[],
+    prebakedHero?: string | null,
+  ): Promise<string | null> => {
     if (!doc) return null;
     setStatus(null);
     try {
@@ -393,10 +421,40 @@ export function CardEditor({ initial, onClose }: Props) {
         });
         iconRef = res.url;
       }
+      // Register BAKED art so the installed pass equals the preview: the hero at
+      // the exact strip band Wallet will render, the logo as the square crop the
+      // preview shows. Originals + transforms round-trip via heroSource/logoSource
+      // in the template input, so re-editing starts from the un-baked photo.
+      // ponytail: every save uploads fresh baked rows (no sha dedupe) - bounded by
+      // manual save frequency; upgrade path = content-hash reuse in StoreImage.
+      let stripRef = doc.hero?.src ?? "";
+      const bakedHero = prebakedHero !== undefined ? prebakedHero : await bakeHeroDataUrl();
+      if (bakedHero) {
+        try {
+          const r = await uploadImg.mutateAsync({
+            kind: "strip",
+            source: "upload",
+            dataUrl: bakedHero,
+          });
+          stripRef = r.url;
+        } catch {
+          /* keep the original ref - server still width-normalises it */
+        }
+      }
+      let logoRef = doc.logo?.src ?? "";
+      if (doc.logo?.src) {
+        try {
+          const dataUrl = await bakeCropToPng(apiAssetUrl(doc.logo.src), 300, 300, doc.logo);
+          const r = await uploadImg.mutateAsync({ kind: "logo", source: "upload", dataUrl });
+          logoRef = r.url;
+        } catch {
+          /* keep the original ref */
+        }
+      }
       const assets = [
         { kind: "icon" as const, ref: iconRef },
-        { kind: "logo" as const, ref: doc.logo?.src ?? "" },
-        { kind: "strip" as const, ref: doc.hero?.src ?? "" },
+        { kind: "logo" as const, ref: logoRef },
+        { kind: "strip" as const, ref: stripRef },
       ].filter((a) => a.ref);
       // Google's logo/hero are NOT registered as Apple assets — doing so overwrote
       // brand.logoRef/stripRef (last write wins). They reach Google via the template's
@@ -417,11 +475,18 @@ export function CardEditor({ initial, onClose }: Props) {
   };
   const publish = async () => {
     try {
-      const frames = await buildStampFrames();
-      const id = await save(frames);
+      const bakedHero = await bakeHeroDataUrl();
+      const frames = await buildStampFrames(bakedHero);
+      const id = await save(frames, bakedHero);
       if (!id) return;
-      await publishMut.mutateAsync(id);
-      setStatus(isPublished ? t("Updated — holders will get the new card.") : t("Published."));
+      const res = await publishMut.mutateAsync(id);
+      const done = isPublished ? t("Updated — holders will get the new card.") : t("Published.");
+      if (res.warnings && res.warnings.length > 0) {
+        // Keep the editor open so the merchant actually sees what's missing.
+        setStatus(`${done} ⚠ ${res.warnings.join(" · ")}`);
+        return;
+      }
+      setStatus(done);
       onClose();
     } catch (e) {
       setStatus((e as { message?: string })?.message ?? t("Publish failed."));

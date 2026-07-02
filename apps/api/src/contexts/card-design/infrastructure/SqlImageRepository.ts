@@ -1,3 +1,4 @@
+import { access, constants as fsConstants } from "node:fs/promises";
 import type { Pool, PoolClient } from "pg";
 import { withTransaction } from "../../../db/pool";
 import {
@@ -9,6 +10,8 @@ import {
   type ImageSource,
 } from "../domain/CardImage";
 import type { IImageRepository, StoredImage } from "../application/IImageRepository";
+
+const IMAGE_REF_RE = /\/api\/v1\/images\/([0-9a-fA-F-]{36})/;
 
 export class SqlImageRepository implements IImageRepository {
   constructor(private readonly pool: Pool) {}
@@ -57,5 +60,23 @@ export class SqlImageRepository implements IImageRepository {
       image: CardImage.reconstitute(CardImageId.of(row.id as string), props),
       bytes: row.bytes as Buffer, // pg returns BYTEA as Buffer
     };
+  }
+
+  async exists(ref: string, tenantId: string): Promise<boolean> {
+    const m = IMAGE_REF_RE.exec(ref);
+    if (m) {
+      const res = await this.pool.query<{ ok: number }>(
+        `SELECT 1 AS ok FROM card_images WHERE id = $1 AND tenant_id = $2`,
+        [m[1], tenantId],
+      );
+      return res.rows.length > 0;
+    }
+    // Legacy pre-upload-pipeline ref: a filesystem path (e.g. an S3-synced local copy).
+    try {
+      await access(ref, fsConstants.R_OK);
+      return true;
+    } catch {
+      return false;
+    }
   }
 }

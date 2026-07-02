@@ -5,16 +5,14 @@ import { requireAuth, getAuth } from "../../../http/auth";
 import { parse } from "../../../http/validation";
 import type { IssuePassHandler } from "../application/IssuePassHandler";
 import type { GetPassPkpassHandler } from "../application/GetPassPkpassHandler";
-import type { GenerateQrTokenHandler } from "../application/GenerateQrTokenHandler";
 import type { UpdatePassFieldsHandler } from "../application/UpdatePassFieldsHandler";
 import type { CreateEnrollLinkHandler } from "../application/CreateEnrollLinkHandler";
 import type { PublicEnrollHandler } from "../application/PublicEnrollHandler";
-import { verifyToken } from "../application/enrollTokens";
+import { verifyToken, DOWNLOAD_TOKEN_MAX_AGE_MS } from "../application/enrollTokens";
 
 interface Handlers {
   issuePass: IssuePassHandler;
   getPassPkpass: GetPassPkpassHandler;
-  generateQrToken: GenerateQrTokenHandler;
   updatePassFields: UpdatePassFieldsHandler;
   createEnrollLink: CreateEnrollLinkHandler;
   publicEnroll: PublicEnrollHandler;
@@ -53,7 +51,6 @@ const updateFieldsBodySchema = z
   .strict();
 
 const passIdParamsSchema = z.object({ passId: z.string().uuid() });
-const qrTokenBodySchema = z.object({ ttlSeconds: z.number().int().min(60).max(3600).optional() });
 const enrollLinkBodySchema = z.object({ templateId: z.string().uuid() }).strict();
 const publicEnrollBodySchema = z.object({ token: z.string().min(8).max(2048) }).strict();
 const downloadQuerySchema = z.object({ t: z.string().min(8).max(2048) });
@@ -64,7 +61,6 @@ const downloadQuerySchema = z.object({ t: z.string().min(8).max(2048) });
  * Routes:
  *   POST   /api/v1/passes                      - Issue a new pass (idempotent)
  *   GET    /api/v1/passes/:passId/pkpass        - Download signed .pkpass
- *   POST   /api/v1/passes/:passId/qr-token      - Mint a short-lived QR token
  *   PATCH  /api/v1/passes/:passId/fields        - Manually update field values
  */
 export function registerPassRoutes(app: FastifyInstance, deps: Deps, handlers: Handlers): void {
@@ -114,24 +110,6 @@ export function registerPassRoutes(app: FastifyInstance, deps: Deps, handlers: H
       .send(r.value.buffer);
   });
 
-  // POST /api/v1/passes/:passId/qr-token - mint QR token
-  app.post(
-    "/api/v1/passes/:passId/qr-token",
-    { preHandler: authPreHandler },
-    async (req, reply) => {
-      const auth = getAuth(req);
-      const params = parse(passIdParamsSchema, req.params);
-      const body = parse(qrTokenBodySchema, req.body ?? {});
-      const r = await handlers.generateQrToken.execute({
-        passId: params.passId,
-        tenantId: auth.tenantId,
-        ttlSeconds: body.ttlSeconds,
-      });
-      if (!r.ok) throw r.error;
-      return reply.status(200).send({ data: r.value });
-    },
-  );
-
   // PATCH /api/v1/passes/:passId/fields - manual field update (owner/manager)
   app.patch(
     "/api/v1/passes/:passId/fields",
@@ -178,7 +156,12 @@ export function registerPassRoutes(app: FastifyInstance, deps: Deps, handlers: H
   app.get("/api/v1/public/passes/:passId/pkpass", async (req, reply) => {
     const params = parse(passIdParamsSchema, req.params);
     const query = parse(downloadQuerySchema, req.query);
-    const claims = verifyToken(deps.config.QR_TOKEN_SECRET, query.t, "download");
+    const claims = verifyToken(
+      deps.config.QR_TOKEN_SECRET,
+      query.t,
+      "download",
+      DOWNLOAD_TOKEN_MAX_AGE_MS,
+    );
     if (!claims || claims.passId !== params.passId || !claims.tenantId) {
       return reply
         .status(401)

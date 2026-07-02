@@ -1,6 +1,7 @@
 import type { ContextModule } from "../../http/app";
 import { CardTemplateRepository } from "./infrastructure/CardTemplateRepository";
 import { SqlImageRepository } from "./infrastructure/SqlImageRepository";
+import { SharpImageNormalizer } from "./infrastructure/SharpImageNormalizer";
 import { CreateCardTemplateHandler } from "./application/CreateCardTemplateHandler";
 import { UpdateCardTemplateHandler } from "./application/UpdateCardTemplateHandler";
 import { PublishCardTemplateHandler } from "./application/PublishCardTemplateHandler";
@@ -27,15 +28,16 @@ import { registerCardDesignRoutes } from "./presentation/routes";
 export const registerCardDesign: ContextModule = async (app, deps) => {
   const repo = new CardTemplateRepository(deps.pool);
   const imageRepo = new SqlImageRepository(deps.pool);
+  const imageNormalizer = new SharpImageNormalizer();
 
   const handlers = {
     create: new CreateCardTemplateHandler(repo, deps.bus),
     update: new UpdateCardTemplateHandler(repo, deps.bus),
-    publish: new PublishCardTemplateHandler(repo, deps.bus),
+    publish: new PublishCardTemplateHandler(repo, deps.bus, imageRepo),
     get: new GetCardTemplateHandler(repo),
     list: new ListCardTemplatesHandler(repo),
     registerAsset: new RegisterAssetRefHandler(repo),
-    storeImage: new StoreImageHandler(imageRepo),
+    storeImage: new StoreImageHandler(imageRepo, imageNormalizer),
     getImage: new GetImageHandler(imageRepo),
     deleteTemplate: new DeleteCardTemplateHandler(repo, deps.bus),
   };

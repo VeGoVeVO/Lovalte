@@ -4,7 +4,7 @@ import type { Deps } from "../../../shared/deps";
 import { requireAuth, getAuth } from "../../../http/auth";
 import { parse } from "../../../http/validation";
 import type { GetPassSaveUrlHandler } from "../application/GetPassSaveUrlHandler";
-import { verifyToken } from "../../pass-issuance/application/enrollTokens";
+import { verifyToken, DOWNLOAD_TOKEN_MAX_AGE_MS } from "../../pass-issuance/application/enrollTokens";
 
 const passIdParams = z.object({ passId: z.string().uuid() }).strict();
 const downloadQuerySchema = z.object({ t: z.string().min(8).max(2048) });
@@ -32,7 +32,7 @@ export function registerGoogleWalletRoutes(
   app.get("/api/v1/public/passes/:passId/google-wallet-url", async (req, reply) => {
     const { passId } = parse(passIdParams, req.params);
     const query = parse(downloadQuerySchema, req.query);
-    const claims = verifyToken(deps.config.QR_TOKEN_SECRET, query.t, "download");
+    const claims = verifyToken(deps.config.QR_TOKEN_SECRET, query.t, "download", DOWNLOAD_TOKEN_MAX_AGE_MS);
     if (!claims || claims.passId !== passId || !claims.tenantId) {
       return reply
         .status(401)

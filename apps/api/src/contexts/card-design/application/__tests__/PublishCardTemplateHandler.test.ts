@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { PublishCardTemplateHandler } from "../PublishCardTemplateHandler";
 import type { ICardTemplateRepository } from "../ICardTemplateRepository";
+import type { IImageRepository, StoredImage } from "../IImageRepository";
 import type { DomainEventBus, DomainEvent } from "../../../../kernel";
 import { NotFoundError, DomainError } from "../../../../kernel";
 import { CardTemplate, CardTemplateId } from "../../domain/CardTemplate";
@@ -154,6 +155,19 @@ function makeRepo(template: CardTemplate | null): ICardTemplateRepository {
   };
 }
 
+/** Fake image repo for publish preflight. `unresolved` lists refs that fail `exists()`. */
+function makeImageRepo(unresolved: string[] = []): IImageRepository {
+  return {
+    async save() {},
+    async load(): Promise<StoredImage | null> {
+      return null;
+    },
+    async exists(ref: string): Promise<boolean> {
+      return !unresolved.includes(ref);
+    },
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -161,7 +175,11 @@ function makeRepo(template: CardTemplate | null): ICardTemplateRepository {
 describe("PublishCardTemplateHandler", () => {
   it("happy path: publishes draft, increments version to 1, emits CardTemplatePublished", async () => {
     const bus = makeBus();
-    const handler = new PublishCardTemplateHandler(makeRepo(makePublishableTemplate()), bus);
+    const handler = new PublishCardTemplateHandler(
+      makeRepo(makePublishableTemplate()),
+      bus,
+      makeImageRepo(),
+    );
 
     const result = await handler.execute({ templateId: TEMPLATE_ID, tenantId: TENANT_ID });
 
@@ -170,6 +188,11 @@ describe("PublishCardTemplateHandler", () => {
     expect(result.value.status).toBe("published");
     expect(result.value.version).toBe(1);
     expect(result.value.id).toBe(TEMPLATE_ID);
+    // No logo/stripRef on this fixture - both surface as warnings, not failures.
+    expect(result.value.warnings).toEqual([
+      "No logo uploaded - the pass front will show only text",
+      "No strip image uploaded - the pass front will show only text",
+    ]);
 
     const event = bus.published.find((e) => e.name === "CardTemplatePublished");
     expect(event).toBeDefined();
@@ -179,7 +202,7 @@ describe("PublishCardTemplateHandler", () => {
 
   it("returns NotFoundError when the template does not exist", async () => {
     const bus = makeBus();
-    const handler = new PublishCardTemplateHandler(makeRepo(null), bus);
+    const handler = new PublishCardTemplateHandler(makeRepo(null), bus, makeImageRepo());
 
     const result = await handler.execute({ templateId: TEMPLATE_ID, tenantId: TENANT_ID });
 
@@ -191,7 +214,11 @@ describe("PublishCardTemplateHandler", () => {
 
   it("publish gate: rejects when iconRef is not registered", async () => {
     const bus = makeBus();
-    const handler = new PublishCardTemplateHandler(makeRepo(makeTemplateWithoutIcon()), bus);
+    const handler = new PublishCardTemplateHandler(
+      makeRepo(makeTemplateWithoutIcon()),
+      bus,
+      makeImageRepo(),
+    );
 
     const result = await handler.execute({ templateId: TEMPLATE_ID, tenantId: TENANT_ID });
 
@@ -202,11 +229,81 @@ describe("PublishCardTemplateHandler", () => {
     expect(bus.published).toHaveLength(0);
   });
 
+  it("publish gate: rejects when iconRef is set but does not resolve to a stored image", async () => {
+    const bus = makeBus();
+    const handler = new PublishCardTemplateHandler(
+      makeRepo(makePublishableTemplate()),
+      bus,
+      makeImageRepo(["s3://bucket/icon.png"]),
+    );
+
+    const result = await handler.execute({ templateId: TEMPLATE_ID, tenantId: TENANT_ID });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error).toBeInstanceOf(DomainError);
+    expect(result.error.message).toContain("iconRef");
+    expect(bus.published).toHaveLength(0);
+  });
+
+  it("publish gate: rejects when a SET logoRef does not resolve, even though logo is optional", async () => {
+    const bus = makeBus();
+    const template = makePublishableTemplate();
+    template.applyAssetRef("logo", "s3://bucket/logo.png");
+    const handler = new PublishCardTemplateHandler(
+      makeRepo(template),
+      bus,
+      makeImageRepo(["s3://bucket/logo.png"]),
+    );
+
+    const result = await handler.execute({ templateId: TEMPLATE_ID, tenantId: TENANT_ID });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error).toBeInstanceOf(DomainError);
+    expect(result.error.message).toContain("logoRef");
+    expect(bus.published).toHaveLength(0);
+  });
+
+  it("publish gate: rejects when a SET stripRef does not resolve", async () => {
+    const bus = makeBus();
+    const template = makePublishableTemplate();
+    template.applyAssetRef("strip", "s3://bucket/strip.png");
+    const handler = new PublishCardTemplateHandler(
+      makeRepo(template),
+      bus,
+      makeImageRepo(["s3://bucket/strip.png"]),
+    );
+
+    const result = await handler.execute({ templateId: TEMPLATE_ID, tenantId: TENANT_ID });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error).toBeInstanceOf(DomainError);
+    expect(result.error.message).toContain("stripRef");
+    expect(bus.published).toHaveLength(0);
+  });
+
+  it("publish: no warnings when logo and strip both resolve", async () => {
+    const bus = makeBus();
+    const template = makePublishableTemplate();
+    template.applyAssetRef("logo", "s3://bucket/logo.png");
+    template.applyAssetRef("strip", "s3://bucket/strip.png");
+    const handler = new PublishCardTemplateHandler(makeRepo(template), bus, makeImageRepo());
+
+    const result = await handler.execute({ templateId: TEMPLATE_ID, tenantId: TENANT_ID });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.warnings).toEqual([]);
+  });
+
   it("publish gate: allows 0 primaryFields (stamp card shows the count below the strip)", async () => {
     const bus = makeBus();
     const handler = new PublishCardTemplateHandler(
       makeRepo(makeTemplateWithNoPrimaryFields()),
       bus,
+      makeImageRepo(),
     );
 
     const result = await handler.execute({ templateId: TEMPLATE_ID, tenantId: TENANT_ID });
@@ -220,6 +317,7 @@ describe("PublishCardTemplateHandler", () => {
     const handler = new PublishCardTemplateHandler(
       makeRepo(makeTemplateWithTooManyPrimaries()),
       bus,
+      makeImageRepo(),
     );
 
     const result = await handler.execute({ templateId: TEMPLATE_ID, tenantId: TENANT_ID });
@@ -233,7 +331,11 @@ describe("PublishCardTemplateHandler", () => {
 
   it("publish gate: rejects when headerFields exceed Apple Wallet limit of 3", async () => {
     const bus = makeBus();
-    const handler = new PublishCardTemplateHandler(makeRepo(makeTemplateWithTooManyHeaders()), bus);
+    const handler = new PublishCardTemplateHandler(
+      makeRepo(makeTemplateWithTooManyHeaders()),
+      bus,
+      makeImageRepo(),
+    );
 
     const result = await handler.execute({ templateId: TEMPLATE_ID, tenantId: TENANT_ID });
 

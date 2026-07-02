@@ -23,6 +23,17 @@ export class DeviceRepository implements IDeviceRepository {
     return r.rows.length ? this._map(r.rows[0]) : null;
   }
 
+  /** Dead-token cleanup: resolve which device owns a push token APNs rejected. */
+  async findByPushToken(pushToken: string): Promise<Device | null> {
+    const r = await this.pool.query<DeviceRow>(
+      `SELECT id, device_library_identifier, push_token, updated_at
+       FROM delivery.devices
+       WHERE push_token = $1`,
+      [pushToken],
+    );
+    return r.rows.length ? this._map(r.rows[0]) : null;
+  }
+
   /**
    * Upsert: inserts on first contact; overwrites push_token on re-registration.
    * `xmax = 0` is a PostgreSQL-specific trick: true when the row was just INSERTed,

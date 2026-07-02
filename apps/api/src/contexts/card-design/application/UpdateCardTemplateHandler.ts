@@ -39,6 +39,8 @@ export class UpdateCardTemplateHandler {
         stampedRef: input.stampedRef ?? template.brand.stampedRef,
         unstampedRef: input.unstampedRef ?? template.brand.unstampedRef,
         stampStripRefs: input.stampStripRefs ?? template.brand.stampStripRefs?.slice(),
+        heroSource: input.heroSource ?? template.brand.heroSource,
+        logoSource: input.logoSource ?? template.brand.logoSource,
       });
 
       const rule = new RewardRule(

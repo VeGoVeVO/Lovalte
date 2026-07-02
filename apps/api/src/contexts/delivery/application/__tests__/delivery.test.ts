@@ -1,12 +1,20 @@
 import { describe, it, expect, vi } from "vitest";
 import { RegisterDeviceHandler, type RegisterDeviceCommand } from "../RegisterDeviceHandler";
 import { UnregisterDeviceHandler, type UnregisterDeviceCommand } from "../UnregisterDeviceHandler";
+import { GetUpdatedSerialsHandler } from "../GetUpdatedSerialsHandler";
+import { GetLatestPassHandler } from "../GetLatestPassHandler";
+import { PushPassUpdateHandler } from "../PushPassUpdateHandler";
 import type {
   IDeviceRepository,
   IRegistrationRepository,
   IPassReadPort,
+  IPassBinaryPort,
+  IPassResignPort,
   IPushNotificationPort,
+  IPushLogRepository,
   PassReadDTO,
+  UpdatedSerialRow,
+  PushResult,
 } from "../../domain/ports";
 import type { DomainEvent, DomainEventBus, DomainEventHandler } from "../../../../kernel";
 import { Device } from "../../domain/Device";
@@ -30,7 +38,7 @@ const fakePass: PassReadDTO = {
   passTypeIdentifier: PASS_TYPE_ID,
   authenticationToken: AUTH_TOKEN,
   updatedAt: new Date("2026-06-01T09:00:00Z"),
-  pkpassS3Key: "bucket/key.pkpass",
+  version: 1,
 };
 
 function makeDevice(libId = DEVICE_LIB_ID, pushToken = PUSH_TOKEN): Device {
@@ -51,12 +59,15 @@ function makePassRead(pass: PassReadDTO | null = fakePass): IPassReadPort {
   };
 }
 
-function makeDeviceRepo(existing: Device | null = null): IDeviceRepository & { deleted: string[] } {
+function makeDeviceRepo(
+  existing: Device | null = null,
+): IDeviceRepository & { deleted: string[] } {
   const device = existing ?? makeDevice();
   const deleted: string[] = [];
   return {
     deleted,
     findByLibId: vi.fn().mockResolvedValue(existing),
+    findByPushToken: vi.fn().mockResolvedValue(device),
     upsert: vi.fn().mockResolvedValue({ device, isNew: existing === null }),
     delete: vi.fn().mockImplementation(async (id: string) => {
       deleted.push(id);
@@ -69,15 +80,38 @@ function makeRegRepo(
     existing?: Registration | null;
     pushTokens?: string[];
     count?: number;
+    updatedSince?: UpdatedSerialRow[];
   } = {},
 ): IRegistrationRepository {
   return {
     findByDeviceAndPass: vi.fn().mockResolvedValue(opts.existing ?? null),
     save: vi.fn().mockResolvedValue(undefined),
     deleteByDeviceAndSerial: vi.fn().mockResolvedValue(undefined),
+    deleteAllByDevice: vi.fn().mockResolvedValue(undefined),
     countByDevice: vi.fn().mockResolvedValue(opts.count ?? 0),
-    findUpdatedSince: vi.fn().mockResolvedValue([]),
+    findUpdatedSince: vi.fn().mockResolvedValue(opts.updatedSince ?? []),
     findPushTokensByPassId: vi.fn().mockResolvedValue(opts.pushTokens ?? []),
+    touchLastFetchedByPass: vi.fn().mockResolvedValue(undefined),
+    findStalePassIds: vi.fn().mockResolvedValue([]),
+    purgeByTenant: vi.fn().mockResolvedValue(undefined),
+  };
+}
+
+function makeBinary(buffer: Buffer | null = Buffer.from("pkpass-bytes")): IPassBinaryPort {
+  return { get: vi.fn().mockResolvedValue(buffer) };
+}
+
+function makeResign(buffer: Buffer | null = null): IPassResignPort {
+  return { ensureCached: vi.fn().mockResolvedValue(buffer) };
+}
+
+function makePushLog(): IPushLogRepository & { entries: unknown[] } {
+  const entries: unknown[] = [];
+  return {
+    entries,
+    record: vi.fn().mockImplementation(async (entry: unknown) => {
+      entries.push(entry);
+    }),
   };
 }
 
@@ -373,6 +407,205 @@ describe("PassFieldsUpdated subscription behaviour", () => {
 
     await bus.publish([makeEvent("PassFieldsUpdated", { passId: PASS_ID })]);
 
+    expect(apns.notify).not.toHaveBeenCalled();
+  });
+});
+
+// ─── GetUpdatedSerialsHandler: tag precision ─────────────────────────────────
+
+describe("GetUpdatedSerialsHandler", () => {
+  it("echoes a millisecond-epoch tag, and the same tag returns nothing on the next call", async () => {
+    const updatedAt = new Date("2026-06-01T09:00:00.123Z");
+    const registrations = makeRegRepo({
+      updatedSince: [{ serialNumber: SERIAL, updatedAt }],
+    });
+    const handler = new GetUpdatedSerialsHandler(registrations);
+
+    const first = await handler.execute({
+      deviceLibraryIdentifier: DEVICE_LIB_ID,
+      passTypeIdentifier: PASS_TYPE_ID,
+    });
+    expect(first.ok).toBe(true);
+    if (!first.ok || !first.value) throw new Error("expected a result");
+    expect(first.value.lastUpdated).toBe(String(updatedAt.getTime()));
+
+    // Second call echoes the tag back; the repository (mocked here as the
+    // source of truth) reports nothing newer than it -> 204 (null).
+    (registrations.findUpdatedSince as ReturnType<typeof vi.fn>).mockResolvedValueOnce([]);
+    const second = await handler.execute({
+      deviceLibraryIdentifier: DEVICE_LIB_ID,
+      passTypeIdentifier: PASS_TYPE_ID,
+      passesUpdatedSince: first.value.lastUpdated,
+    });
+    expect(second.ok).toBe(true);
+    if (!second.ok) throw new Error("expected ok");
+    expect(second.value).toBeNull();
+    expect(registrations.findUpdatedSince).toHaveBeenLastCalledWith(
+      DEVICE_LIB_ID,
+      PASS_TYPE_ID,
+      updatedAt.getTime(),
+    );
+  });
+
+  it("upscales a legacy second-precision tag to milliseconds", async () => {
+    const registrations = makeRegRepo({ updatedSince: [] });
+    const handler = new GetUpdatedSerialsHandler(registrations);
+    const legacySeconds = 1_700_000_000; // < 1e12 -> legacy seconds tag
+
+    await handler.execute({
+      deviceLibraryIdentifier: DEVICE_LIB_ID,
+      passTypeIdentifier: PASS_TYPE_ID,
+      passesUpdatedSince: String(legacySeconds),
+    });
+
+    expect(registrations.findUpdatedSince).toHaveBeenCalledWith(
+      DEVICE_LIB_ID,
+      PASS_TYPE_ID,
+      legacySeconds * 1000,
+    );
+  });
+});
+
+// ─── GetLatestPassHandler ─────────────────────────────────────────────────────
+
+describe("GetLatestPassHandler", () => {
+  const baseQuery = {
+    serialNumber: SERIAL,
+    passTypeIdentifier: PASS_TYPE_ID,
+    authToken: AUTH_TOKEN,
+  };
+
+  it("returns 304 when If-Modified-Since (floored to seconds) is not before the pass's updatedAt", async () => {
+    const binary = makeBinary();
+    const resign = makeResign();
+    const registrations = makeRegRepo();
+    const handler = new GetLatestPassHandler(makePassRead(), binary, resign, registrations);
+
+    // Same second as fakePass.updatedAt (09:00:00), just later sub-second -
+    // must still 304 once both sides are floored to whole seconds.
+    const result = await handler.execute({
+      ...baseQuery,
+      ifModifiedSince: new Date("2026-06-01T09:00:00.900Z").toUTCString(),
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.status).toBe(304);
+    expect(binary.get).not.toHaveBeenCalled();
+  });
+
+  it("401s when the URL's passTypeIdentifier does not match the pass", async () => {
+    const handler = new GetLatestPassHandler(
+      makePassRead(),
+      makeBinary(),
+      makeResign(),
+      makeRegRepo(),
+    );
+
+    const result = await handler.execute({ ...baseQuery, passTypeIdentifier: "pass.other.id" });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.status).toBe(401);
+  });
+
+  it("calls the resign port on a cache miss and serves its buffer", async () => {
+    const resignedBuffer = Buffer.from("resigned-bytes");
+    const binary = makeBinary(null); // cache miss
+    const resign = makeResign(resignedBuffer);
+    const registrations = makeRegRepo();
+    const handler = new GetLatestPassHandler(makePassRead(), binary, resign, registrations);
+
+    const result = await handler.execute(baseQuery);
+
+    expect(resign.ensureCached).toHaveBeenCalledWith(SERIAL);
+    expect(result.ok).toBe(true);
+    if (!result.ok || result.value.status !== 200) throw new Error("expected 200");
+    expect(result.value.buffer).toBe(resignedBuffer);
+    expect(registrations.touchLastFetchedByPass).toHaveBeenCalledWith(PASS_ID);
+  });
+
+  it("does not stamp last_fetched_at when the resign port also comes back empty", async () => {
+    const binary = makeBinary(null);
+    const resign = makeResign(null);
+    const registrations = makeRegRepo();
+    const handler = new GetLatestPassHandler(makePassRead(), binary, resign, registrations);
+
+    const result = await handler.execute(baseQuery);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok || result.value.status !== 200) throw new Error("expected 200");
+    expect(result.value.buffer).toBeNull();
+    expect(registrations.touchLastFetchedByPass).not.toHaveBeenCalled();
+  });
+});
+
+// ─── PushPassUpdateHandler: push + log + dead-token cleanup ──────────────────
+
+describe("PushPassUpdateHandler", () => {
+  it("logs every push attempt and cleans up a device on a 410 response", async () => {
+    const registrations = makeRegRepo({ pushTokens: [PUSH_TOKEN] });
+    const devices = makeDeviceRepo();
+    const pushLog = makePushLog();
+    const results: PushResult[] = [{ pushToken: PUSH_TOKEN, ok: false, status: 410 }];
+    const apns: IPushNotificationPort = { notify: vi.fn().mockResolvedValue(results) };
+    const handler = new PushPassUpdateHandler(makePassRead(), registrations, devices, apns, pushLog);
+
+    const result = await handler.execute(PASS_ID);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.sent).toBe(1);
+    expect(pushLog.record).toHaveBeenCalledWith(
+      expect.objectContaining({ passId: PASS_ID, pushToken: PUSH_TOKEN, ok: false, apnsStatus: 410 }),
+    );
+    expect(devices.findByPushToken).toHaveBeenCalledWith(PUSH_TOKEN);
+    expect(registrations.deleteAllByDevice).toHaveBeenCalled();
+    expect(devices.delete).toHaveBeenCalled();
+  });
+
+  it("cleans up on a 400 BadDeviceToken response", async () => {
+    const registrations = makeRegRepo({ pushTokens: [PUSH_TOKEN] });
+    const devices = makeDeviceRepo();
+    const pushLog = makePushLog();
+    const results: PushResult[] = [
+      { pushToken: PUSH_TOKEN, ok: false, status: 400, reason: "BadDeviceToken" },
+    ];
+    const apns: IPushNotificationPort = { notify: vi.fn().mockResolvedValue(results) };
+    const handler = new PushPassUpdateHandler(makePassRead(), registrations, devices, apns, pushLog);
+
+    await handler.execute(PASS_ID);
+
+    expect(registrations.deleteAllByDevice).toHaveBeenCalled();
+    expect(devices.delete).toHaveBeenCalled();
+  });
+
+  it("does not clean up on a successful push", async () => {
+    const registrations = makeRegRepo({ pushTokens: [PUSH_TOKEN] });
+    const devices = makeDeviceRepo();
+    const pushLog = makePushLog();
+    const results: PushResult[] = [{ pushToken: PUSH_TOKEN, ok: true, status: 200 }];
+    const apns: IPushNotificationPort = { notify: vi.fn().mockResolvedValue(results) };
+    const handler = new PushPassUpdateHandler(makePassRead(), registrations, devices, apns, pushLog);
+
+    await handler.execute(PASS_ID);
+
+    expect(registrations.deleteAllByDevice).not.toHaveBeenCalled();
+    expect(devices.delete).not.toHaveBeenCalled();
+  });
+
+  it("is a no-op when no devices are registered for the pass", async () => {
+    const registrations = makeRegRepo({ pushTokens: [] });
+    const devices = makeDeviceRepo();
+    const pushLog = makePushLog();
+    const apns: IPushNotificationPort = { notify: vi.fn() };
+    const handler = new PushPassUpdateHandler(makePassRead(), registrations, devices, apns, pushLog);
+
+    const result = await handler.execute(PASS_ID);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.sent).toBe(0);
     expect(apns.notify).not.toHaveBeenCalled();
   });
 });
